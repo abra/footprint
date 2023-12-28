@@ -1,13 +1,22 @@
 class Location {
-  const Location(
-    this.latitude,
-    this.longitude,
-  );
+  const Location({
+    required this.id,
+    required this.latitude,
+    required this.longitude,
+    required this.dateTime,
+  });
 
+  final String id;
   final double latitude;
   final double longitude;
+  final DateTime dateTime;
 
-  (double, double) _equality() => (latitude, longitude);
+  (String, double, double, DateTime) _equality() => (
+        id,
+        latitude,
+        longitude,
+        dateTime,
+      );
 
   @override
   bool operator ==(covariant Location other) {
