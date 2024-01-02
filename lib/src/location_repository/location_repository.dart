@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '/src/local_database/local_database.dart';
 import 'location_local_storage.dart';
-import 'location_service.dart';
+import 'location_service/location_service.dart';
 
 class LocationRepository {
   LocationRepository({
