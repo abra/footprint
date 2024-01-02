@@ -4,8 +4,8 @@ import '/src/local_database/local_database.dart';
 import 'location_local_storage.dart';
 import 'location_service.dart';
 
-class GeocodingRepository {
-  GeocodingRepository({
+class LocationRepository {
+  LocationRepository({
     required LocalDatabase localDatabase,
     required this.locationService,
     @visibleForTesting LocationLocalStorage? locationLocalStorage,
