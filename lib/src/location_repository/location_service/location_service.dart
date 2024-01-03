@@ -12,7 +12,7 @@ class LocationService {
     _serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
     if (!_serviceEnabled) {
-      throw LocationSrvcDisabledException();
+      throw ServiceDisabledLocationServiceException();
     }
 
     if (_serviceEnabled) {
@@ -22,13 +22,14 @@ class LocationService {
         _permission = await Geolocator.requestPermission();
 
         if (_permission == LocationPermission.denied) {
-          throw LocationPermissionDeniedException();
+          throw PermissionDeniedLocationServiceException();
         }
       }
 
       if (_permission == LocationPermission.deniedForever) {
-        // Permissions are denied forever, handle appropriately.
-        throw LocationPermissionsPermanentlyDeniedException();
+        // Permissions are denied forever, handle appropriately,
+        // until the user updates the permission in the App settings.
+        throw PermissionsPermanentlyDeniedLocationServiceException();
       }
     }
   }
