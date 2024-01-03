@@ -1,5 +1,5 @@
-class LocationSrvcDisabledException implements Exception {}
+class ServiceDisabledLocationServiceException implements Exception {}
 
-class LocationPermissionDeniedException implements Exception {}
+class PermissionDeniedLocationServiceException implements Exception {}
 
-class LocationPermissionsPermanentlyDeniedException implements Exception {}
+class PermissionsPermanentlyDeniedLocationServiceException implements Exception {}
