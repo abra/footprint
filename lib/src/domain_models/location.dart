@@ -3,19 +3,19 @@ class Location {
     required this.id,
     required this.latitude,
     required this.longitude,
-    required this.dateTime,
+    required this.timestamp,
   });
 
   final String id;
   final double latitude;
   final double longitude;
-  final DateTime dateTime;
+  final DateTime timestamp;
 
   (String, double, double, DateTime) _equality() => (
         id,
         latitude,
         longitude,
-        dateTime,
+        timestamp,
       );
 
   @override
