@@ -1,3 +1,0 @@
-class GeocodingService {
-  GeocodingService();
-}

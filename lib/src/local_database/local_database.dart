@@ -1,3 +1,0 @@
-class LocalDatabase {
-  const LocalDatabase();
-}
