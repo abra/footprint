@@ -1,9 +1,9 @@
 import 'package:footprint/src/domain_models/exceptions.dart';
 import 'package:footprint/src/domain_models/location.dart';
-import 'package:footprint/src/location_repository/location_service/models/exceptions.dart';
-import 'package:footprint/src/location_repository/mappers/position_to_domain.dart';
 
 import 'location_service/location_service.dart';
+import 'location_service/models/exceptions.dart';
+import 'mappers/position_to_domain.dart';
 
 class LocationRepository {
   LocationRepository({
