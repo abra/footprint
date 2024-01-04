@@ -5,12 +5,15 @@ import 'package:uuid/uuid.dart';
 import 'models/exceptions.dart';
 
 class LocationService {
-  LocationService();
+  LocationService({
+    Duration? updateInterval,
+  }) : _updateInterval = updateInterval ?? const Duration(seconds: 2);
 
   static bool _serviceEnabled = false;
   static LocationPermission _permission = LocationPermission.denied;
+  final Duration _updateInterval;
 
-  Future<void> checkServiceAndPermissions() async {
+  Future<void> _checkServiceAndPermissions() async {
     _serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
     if (!_serviceEnabled) {
@@ -37,42 +40,58 @@ class LocationService {
   }
 
   Stream<Location> getLocationUpdatesStream() async* {
-    await checkServiceAndPermissions();
+    await _checkServiceAndPermissions();
 
-    await for (final Position position in Geolocator.getPositionStream()) {
-      yield Location(
+    try {
+      await for (final Position position in Geolocator.getPositionStream(
+        locationSettings: LocationSettings(timeLimit: _updateInterval),
+      )) {
+        yield Location(
+          id: const Uuid().v1(),
+          timestamp: position.timestamp,
+          latitude: position.latitude,
+          longitude: position.longitude,
+        );
+      }
+    } catch (e) {
+      throw ServiceDisabledLocationServiceException();
+    }
+  }
+
+  Future<Location> determineLocation() async {
+    await _checkServiceAndPermissions();
+
+    try {
+      final Position position = await Geolocator.getCurrentPosition(
+        timeLimit: _updateInterval,
+      );
+
+      return Location(
         id: const Uuid().v1(),
         timestamp: position.timestamp,
         latitude: position.latitude,
         longitude: position.longitude,
       );
+    } catch (e) {
+      throw ServiceDisabledLocationServiceException();
     }
-  }
-
-  Future<Location> determineLocation() async {
-    await checkServiceAndPermissions();
-
-    final Position position = await Geolocator.getCurrentPosition();
-
-    return Location(
-      id: const Uuid().v1(),
-      timestamp: position.timestamp,
-      latitude: position.latitude,
-      longitude: position.longitude,
-    );
   }
 
   Future<double> calculateDistance(
     Location start,
     Location end,
   ) async {
-    final double distance = Geolocator.distanceBetween(
-      start.latitude,
-      start.longitude,
-      end.latitude,
-      end.longitude,
-    );
+    try {
+      final double distance = Geolocator.distanceBetween(
+        start.latitude,
+        start.longitude,
+        end.latitude,
+        end.longitude,
+      );
 
-    return distance;
+      return distance;
+    } catch (e) {
+      throw UnableCalculateDistanceLocationServiceException();
+    }
   }
 }
