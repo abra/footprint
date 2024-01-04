@@ -39,26 +39,21 @@ class LocationService {
     }
   }
 
-  Stream<Location> getLocationUpdatesStream() async* {
+  Stream<Position> getLocationUpdatesStream() async* {
     await _checkServiceAndPermissions();
 
     try {
       await for (final Position position in Geolocator.getPositionStream(
         locationSettings: LocationSettings(timeLimit: _updateInterval),
       )) {
-        yield Location(
-          id: const Uuid().v1(),
-          timestamp: position.timestamp,
-          latitude: position.latitude,
-          longitude: position.longitude,
-        );
+        yield position;
       }
     } catch (e) {
       throw ServiceDisabledLocationServiceException();
     }
   }
 
-  Future<Location> determineLocation() async {
+  Future<Position> determineLocation() async {
     await _checkServiceAndPermissions();
 
     try {
@@ -66,12 +61,7 @@ class LocationService {
         timeLimit: _updateInterval,
       );
 
-      return Location(
-        id: const Uuid().v1(),
-        timestamp: position.timestamp,
-        latitude: position.latitude,
-        longitude: position.longitude,
-      );
+      return position;
     } catch (e) {
       throw ServiceDisabledLocationServiceException();
     }
