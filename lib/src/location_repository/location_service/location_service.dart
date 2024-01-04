@@ -1,6 +1,4 @@
-import 'package:footprint/src/domain_models/location.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:uuid/uuid.dart';
 
 import 'models/exceptions.dart';
 
@@ -48,7 +46,9 @@ class LocationService {
       )) {
         yield position;
       }
-    } catch (e) {
+    } on PermissionDeniedException {
+      throw PermissionDeniedLocationServiceException();
+    } on LocationServiceDisabledException {
       throw ServiceDisabledLocationServiceException();
     }
   }
@@ -62,21 +62,25 @@ class LocationService {
       );
 
       return position;
-    } catch (e) {
+    } on PermissionDeniedException {
+      throw PermissionDeniedLocationServiceException();
+    } on LocationServiceDisabledException {
       throw ServiceDisabledLocationServiceException();
     }
   }
 
-  Future<double> calculateDistance(
-    Location start,
-    Location end,
-  ) async {
+  Future<double> calculateDistance({
+    required double startLatitude,
+    required double startLongitude,
+    required double endLatitude,
+    required double endLongitude,
+  }) async {
     try {
       final double distance = Geolocator.distanceBetween(
-        start.latitude,
-        start.longitude,
-        end.latitude,
-        end.longitude,
+        startLatitude,
+        startLongitude,
+        endLatitude,
+        endLongitude,
       );
 
       return distance;
