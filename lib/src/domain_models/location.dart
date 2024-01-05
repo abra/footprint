@@ -11,8 +11,7 @@ class Location {
   final double longitude;
   final DateTime timestamp;
 
-  (String, double, double, DateTime) _equality() => (
-        id,
+  (double, double, DateTime) _equality() => (
         latitude,
         longitude,
         timestamp,
@@ -26,4 +25,13 @@ class Location {
 
   @override
   int get hashCode => _equality().hashCode;
+
+  static fromMap(Map<String, dynamic> map) {
+    return Location(
+      id: map['id'] as String,
+      latitude: map['latitude'] as double,
+      longitude: map['longitude'] as double,
+      timestamp: DateTime.parse(map['timestamp'] as String),
+    );
+  }
 }
