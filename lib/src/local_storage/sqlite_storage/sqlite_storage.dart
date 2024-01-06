@@ -11,6 +11,76 @@ class SqliteStorage implements LocalStorage {
   static Database? _database;
 
   @override
+  Future<void> init() async {
+    String path = join(await getDatabasesPath(), 'footprint.db');
+    try {
+      _database = await openDatabase(
+        path,
+        version: 1,
+        onCreate: _createTables,
+      );
+    } on DatabaseException catch (_) {
+      throw UnableCreateDatabaseException();
+    }
+  }
+
+  Future<void> _createTables(Database db, int version) async {
+    try {
+      await _Routes.createTable(db);
+      await _RoutePoints.createTable(db);
+    } on DatabaseException catch (_) {
+      throw UnableCreateTableException();
+    }
+  }
+
+  @override
+  Future<int> createRoute(Location location) async {
+    if (_database == null) {
+      await init();
+    }
+
+    try {
+      final routeId = await _database!.insert(_Routes.tableName, {
+        'start_point': location.id,
+        'start_time': location.timestamp.toIso8601String(),
+        'status': 0,
+      });
+
+      await _database!.insert(_RoutePoints.tableName, {
+        'route_id': routeId,
+        'latitude': location.latitude,
+        'longitude': location.longitude,
+        'timestamp': location.timestamp.toIso8601String(),
+      });
+
+      return routeId;
+    } on DatabaseException catch (_) {
+      throw UnableInsertDatabaseException();
+    }
+  }
+
+  @override
+  Future<void> addRoutePoints(
+    int routeId,
+    Location location,
+  ) async {
+    if (_database == null) {
+      await init();
+    }
+
+    try {
+      await _database!.insert(_RoutePoints.tableName, {
+        'route_id': routeId,
+        'latitude': location.latitude,
+        'longitude': location.longitude,
+        'timestamp': location.timestamp.toIso8601String(),
+      });
+    } on DatabaseException catch (_) {
+      throw UnableInsertDatabaseException();
+    }
+  }
+
+  @override
   Future<List<Location>> getRoutePoints(int routeId) async {
     if (_database == null) {
       await init();
@@ -72,76 +142,6 @@ class SqliteStorage implements LocalStorage {
       return result;
     } on DatabaseException catch (_) {
       throw UnableUpdateDatabaseException();
-    }
-  }
-
-  @override
-  Future<void> addRoutePoints(
-    int routeId,
-    Location location,
-  ) async {
-    if (_database == null) {
-      await init();
-    }
-
-    try {
-      await _database!.insert(_RoutePoints.tableName, {
-        'route_id': routeId,
-        'latitude': location.latitude,
-        'longitude': location.longitude,
-        'timestamp': location.timestamp.toIso8601String(),
-      });
-    } on DatabaseException catch (_) {
-      throw UnableInsertDatabaseException();
-    }
-  }
-
-  @override
-  Future<int> createRoute(Location location) async {
-    if (_database == null) {
-      await init();
-    }
-
-    try {
-      final routeId = await _database!.insert(_Routes.tableName, {
-        'start_point': location.id,
-        'start_time': location.timestamp.toIso8601String(),
-        'status': 0,
-      });
-
-      await _database!.insert(_RoutePoints.tableName, {
-        'route_id': routeId,
-        'latitude': location.latitude,
-        'longitude': location.longitude,
-        'timestamp': location.timestamp.toIso8601String(),
-      });
-
-      return routeId;
-    } on DatabaseException catch (_) {
-      throw UnableInsertDatabaseException();
-    }
-  }
-
-  @override
-  Future<void> init() async {
-    String path = join(await getDatabasesPath(), 'footprint.db');
-    try {
-      _database = await openDatabase(
-        path,
-        version: 1,
-        onCreate: _createTables,
-      );
-    } on DatabaseException catch (_) {
-      throw UnableCreateDatabaseException();
-    }
-  }
-
-  Future<void> _createTables(Database db, int version) async {
-    try {
-      await _Routes.createTable(db);
-      await _RoutePoints.createTable(db);
-    } on DatabaseException catch (_) {
-      throw UnableCreateTableException();
     }
   }
 }
