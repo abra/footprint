@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:footprint/src/features/splash_screen/splash_screen.dart';
 
 class FootprintApp extends StatefulWidget {
   const FootprintApp({super.key});
@@ -10,6 +11,8 @@ class FootprintApp extends StatefulWidget {
 class _FootprintAppState extends State<FootprintApp> {
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return const MaterialApp(
+      home: SplashScreen(),
+    );
   }
 }
