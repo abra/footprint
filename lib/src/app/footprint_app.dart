@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:footprint/src/features/splash_screen/splash_screen.dart';
+
+import 'splash_screen.dart';
 
 class FootprintApp extends StatelessWidget {
   const FootprintApp({super.key});
