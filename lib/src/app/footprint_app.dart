@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:footprint/src/components/page_manager.dart';
+import 'package:footprint/src/components/home_screen_page_manager.dart';
 
 import 'splash_screen.dart';
 
@@ -45,7 +45,7 @@ class _HomeScreen extends StatelessWidget {
       body: PageView(
         allowImplicitScrolling: true,
         physics: const NeverScrollableScrollPhysics(),
-        controller: PageManager.pageController,
+        controller: HomeScreenPageManager.pageController,
         children: pages,
         onPageChanged: (int index) {
           // TODO: implement
@@ -71,7 +71,7 @@ class MapScreen extends StatelessWidget {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                PageManager.goToPage(routeListPageIndex);
+                HomeScreenPageManager.goToPage(routeListPageIndex);
               },
               child: const Text('Go to RouteListScreen'),
             ),
@@ -98,7 +98,7 @@ class RouteListScreen extends StatelessWidget {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                PageManager.goToPage(mapPageIndex);
+                HomeScreenPageManager.goToPage(mapPageIndex);
               },
               child: const Text('Go to MapScreen'),
             ),

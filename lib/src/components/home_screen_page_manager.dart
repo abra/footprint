@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class PageManager {
+class HomeScreenPageManager {
   static final PageController _pageController = PageController();
 
   static PageController get pageController => _pageController;
