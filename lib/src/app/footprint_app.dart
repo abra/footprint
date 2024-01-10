@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:footprint/src/components/home_screen_page_manager.dart';
+import 'package:footprint/src/components/page_manager.dart';
+import 'package:footprint/src/features/map/map_screen.dart';
+import 'package:footprint/src/features/route_list/route_list_screen.dart';
+import 'package:footprint/src/location_repository/location_repository.dart';
+import 'package:footprint/src/location_repository/location_service.dart';
 
 import 'splash_screen.dart';
 
 class FootprintApp extends StatelessWidget {
   const FootprintApp({super.key});
+
+  final _locationRepository = const LocationRepository(
+    locationService: LocationService(
+      updateInterval: Duration(seconds: 5),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -18,10 +28,12 @@ class FootprintApp extends StatelessWidget {
           return AnimatedSwitcher(
             duration: const Duration(milliseconds: 500),
             child: snapshot.connectionState == ConnectionState.done
-                ? const _HomeScreen(
+                ? _HomeScreen(
                     pages: [
-                      MapScreen(),
-                      RouteListScreen(),
+                      MapScreen(
+                        repository: _locationRepository,
+                      ),
+                      const RouteListScreen(),
                     ],
                   )
                 : const SplashScreen(),
@@ -45,65 +57,8 @@ class _HomeScreen extends StatelessWidget {
       body: PageView(
         allowImplicitScrolling: true,
         physics: const NeverScrollableScrollPhysics(),
-        controller: HomeScreenPageManager.pageController,
+        controller: PageManager.pageController,
         children: pages,
-        onPageChanged: (int index) {
-          // TODO: implement
-        },
-      ),
-    );
-  }
-}
-
-class MapScreen extends StatelessWidget {
-  const MapScreen({super.key});
-
-  final int routeListPageIndex = 1;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('MapScreen'),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                HomeScreenPageManager.goToPage(routeListPageIndex);
-              },
-              child: const Text('Go to RouteListScreen'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class RouteListScreen extends StatelessWidget {
-  const RouteListScreen({super.key});
-
-  final int mapPageIndex = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('RouteListScreen'),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                HomeScreenPageManager.goToPage(mapPageIndex);
-              },
-              child: const Text('Go to MapScreen'),
-            ),
-          ],
-        ),
       ),
     );
   }
