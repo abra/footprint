@@ -65,7 +65,7 @@ class LocationService {
     } on LocationServiceDisabledException catch (_) {
       throw ServiceDisabledLocationServiceException();
     } on TimeoutException catch (_) {
-      throw LocationUpdateTimeoutException();
+      throw UpdateTimeoutLocationServiceException();
     }
   }
 
@@ -84,7 +84,7 @@ class LocationService {
     } on LocationServiceDisabledException catch (_) {
       throw ServiceDisabledLocationServiceException();
     } on TimeoutException catch (_) {
-      throw LocationUpdateTimeoutException();
+      throw UpdateTimeoutLocationServiceException();
     }
   }
 

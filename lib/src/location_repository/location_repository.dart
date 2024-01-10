@@ -21,6 +21,8 @@ class LocationRepository {
       throw PermissionDeniedException();
     } on ServiceDisabledLocationServiceException catch (_) {
       throw ServiceDisabledException();
+    } on UpdateTimeoutLocationServiceException catch (_) {
+      throw LocationUpdateTimeoutException();
     }
   }
 
@@ -33,6 +35,8 @@ class LocationRepository {
       throw PermissionDeniedException();
     } on ServiceDisabledLocationServiceException catch (_) {
       throw ServiceDisabledException();
+    } on UpdateTimeoutLocationServiceException catch (_) {
+      throw LocationUpdateTimeoutException();
     }
   }
 

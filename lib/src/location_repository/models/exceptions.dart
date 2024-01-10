@@ -6,4 +6,4 @@ class PermissionsPermanentlyDeniedLocationServiceException implements Exception 
 
 class UnableCalculateDistanceLocationServiceException implements Exception {}
 
-class LocationUpdateTimeoutException implements Exception {}
+class UpdateTimeoutLocationServiceException implements Exception {}
