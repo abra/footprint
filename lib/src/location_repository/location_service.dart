@@ -5,8 +5,8 @@ import 'models/exceptions.dart';
 /// Provides access to the device's location.
 class LocationService {
   const LocationService({
-    Duration? updateInterval,
-  }) : _updateInterval = updateInterval ?? const Duration(seconds: 2);
+    Duration? timeLimit,
+  }) : _timeLimit = timeLimit ?? const Duration(seconds: 0);
 
   /// Whether location service is enabled on the device.
   static bool _serviceEnabled = false;
@@ -15,7 +15,7 @@ class LocationService {
   static LocationPermission _permission = LocationPermission.denied;
 
   /// The location service update interval.
-  final Duration _updateInterval;
+  final Duration _timeLimit;
 
   /// Checks if location services are enabled and location permission is granted.
   Future<void> _checkServiceAndPermissions() async {
@@ -48,9 +48,13 @@ class LocationService {
   Stream<Position> getLocationUpdatesStream() async* {
     await _checkServiceAndPermissions();
 
+    final locationSettings = LocationSettings(
+      timeLimit: _timeLimit,
+    );
+
     try {
       await for (final Position position in Geolocator.getPositionStream(
-        locationSettings: LocationSettings(timeLimit: _updateInterval),
+        locationSettings: locationSettings,
       )) {
         yield position;
       }
@@ -67,7 +71,7 @@ class LocationService {
 
     try {
       final Position position = await Geolocator.getCurrentPosition(
-        timeLimit: _updateInterval,
+        timeLimit: _timeLimit,
       );
 
       return position;
