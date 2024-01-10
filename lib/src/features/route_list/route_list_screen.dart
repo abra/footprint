@@ -15,7 +15,7 @@ class RouteListScreen extends StatelessWidget {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                PageManager.goToPage(PageIndex.map);
+                PageManager.goToPage(Pages.map);
               },
               child: const Text('Go to MapScreen'),
             ),
