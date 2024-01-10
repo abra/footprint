@@ -4,12 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:footprint/src/domain_models/location.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
 
-part 'map_screen_state.dart';
+part 'map_state.dart';
 
-class MapScreenNotifier extends ValueNotifier<MapScreenState> {
-  MapScreenNotifier({
+class MapNotifier extends ValueNotifier<MapState> {
+  MapNotifier({
     required this.locationRepository,
-  }) : super(MapScreenInitial());
+  }) : super(MapUpdateLoading());
 
   final LocationRepository locationRepository;
   late StreamSubscription<Location> _locationSubscription;
@@ -20,12 +20,12 @@ class MapScreenNotifier extends ValueNotifier<MapScreenState> {
           locationRepository.getLocationUpdatesStream().listen((location) {
         // log('$runtimeType $hashCode}');
         // log('location: ${location.latitude}, ${location.longitude}');
-        value = MapScreenLocationUpdateSuccess(
+        value = MapLocationUpdateSuccess(
           location: location,
         );
       });
     } catch (error) {
-      value = const MapScreenLocationUpdateFailure();
+      value = const MapLocationUpdateFailure();
       return;
     }
   }
@@ -37,7 +37,7 @@ class MapScreenNotifier extends ValueNotifier<MapScreenState> {
   }
 
   Future<void> updateLocation() async {
-    value = MapScreenInitial();
+    value = MapUpdateLoading();
     await _updateLocation();
   }
 }

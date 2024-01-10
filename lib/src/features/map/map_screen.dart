@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:footprint/src/components/page_manager.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
 
-import 'map_screen_notifier.dart';
+import 'map_notifier.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({
@@ -17,20 +17,20 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  late final MapScreenNotifier _notifier;
+  late final MapNotifier _mapNotifier;
 
   @override
   void initState() {
     super.initState();
-    _notifier = MapScreenNotifier(
+    _mapNotifier = MapNotifier(
       locationRepository: widget.repository,
     );
-    _notifier.updateLocation();
+    _mapNotifier.updateLocation();
   }
 
   @override
   void dispose() {
-    _notifier.dispose();
+    _mapNotifier.dispose();
     super.dispose();
   }
 
@@ -41,19 +41,19 @@ class _MapScreenState extends State<MapScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ValueListenableBuilder<MapScreenState>(
-              valueListenable: _notifier,
-              builder: (BuildContext context, MapScreenState state, _) {
+            ValueListenableBuilder<MapState>(
+              valueListenable: _mapNotifier,
+              builder: (BuildContext context, MapState state, _) {
                 // TODO: Improve the code below
-                if (state is MapScreenInitial) {
+                if (state is MapUpdateLoading) {
                   return const CircularProgressIndicator();
-                } else if (state is MapScreenLocationUpdateSuccess) {
+                } else if (state is MapLocationUpdateSuccess) {
                   return Text(
                     'Timestamp: ${state.location.timestamp}\n'
                     'Latitude: ${state.location.latitude}\n'
                     'Longitude: ${state.location.longitude}',
                   );
-                } else if (state is MapScreenLocationUpdateFailure) {
+                } else if (state is MapLocationUpdateFailure) {
                   return const Text('Error');
                 }
                 return const Text('Error');
