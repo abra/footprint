@@ -6,16 +6,11 @@ import 'package:footprint/src/components/page_manager.dart';
 import 'package:footprint/src/features/map/map_screen.dart';
 import 'package:footprint/src/features/route_list/route_list_screen.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
-import 'package:footprint/src/location_repository/location_service.dart';
 
 class FootprintApp extends StatelessWidget {
   const FootprintApp({super.key});
 
-  final _locationRepository = const LocationRepository(
-    locationService: LocationService(
-      updateInterval: Duration(seconds: 5),
-    ),
-  );
+  final _locationRepository = const LocationRepository();
 
   @override
   Widget build(BuildContext context) {
