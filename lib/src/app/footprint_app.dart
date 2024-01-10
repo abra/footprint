@@ -13,7 +13,7 @@ class FootprintApp extends StatelessWidget {
 
   final _locationRepository = const LocationRepository(
     locationService: LocationService(
-      timeLimit: Duration(seconds: 5),
+      timeLimit: Duration(seconds: 15),
     ),
   );
 
