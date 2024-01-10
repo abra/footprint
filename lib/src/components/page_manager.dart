@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-abstract class PageIndex {
+abstract class Pages {
   static const int map = 0;
   static const int routeList = 1;
 }
@@ -10,7 +10,7 @@ abstract class PageIndex {
 /// This class should be shared because it is used in multiple places
 class PageManager {
   static final PageController _pageController = PageController(
-    initialPage: PageIndex.map,
+    initialPage: Pages.map,
   );
 
   static PageController get pageController => _pageController;
