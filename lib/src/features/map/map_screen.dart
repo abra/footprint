@@ -45,7 +45,7 @@ class _MapScreenState extends State<MapScreen> {
               valueListenable: _mapNotifier,
               builder: (BuildContext context, MapState state, _) {
                 // TODO: Improve the code below
-                if (state is MapUpdateLoading) {
+                if (state is MapInitialUpdate) {
                   return const CircularProgressIndicator();
                 } else if (state is MapLocationUpdateSuccess) {
                   return Text(

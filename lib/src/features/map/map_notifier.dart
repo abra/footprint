@@ -9,7 +9,7 @@ part 'map_state.dart';
 class MapNotifier extends ValueNotifier<MapState> {
   MapNotifier({
     required this.locationRepository,
-  }) : super(MapUpdateLoading());
+  }) : super(MapInitialUpdate());
 
   final LocationRepository locationRepository;
   late StreamSubscription<Location> _locationSubscription;
@@ -37,7 +37,7 @@ class MapNotifier extends ValueNotifier<MapState> {
   }
 
   Future<void> updateLocation() async {
-    value = MapUpdateLoading();
+    value = MapInitialUpdate();
     await _updateLocation();
   }
 }

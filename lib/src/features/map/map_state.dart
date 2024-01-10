@@ -4,7 +4,7 @@ sealed class MapState {
   const MapState();
 }
 
-class MapUpdateLoading extends MapState {}
+class MapInitialUpdate extends MapState {}
 
 class MapLocationUpdateSuccess extends MapState {
   const MapLocationUpdateSuccess({
