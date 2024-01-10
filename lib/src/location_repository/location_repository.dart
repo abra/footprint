@@ -1,20 +1,20 @@
 import 'package:footprint/src/domain_models/exceptions.dart';
 import 'package:footprint/src/domain_models/location.dart';
 
-import 'location_service/location_service.dart';
-import 'location_service/models/exceptions.dart';
+import 'location_service.dart';
 import 'mappers/position_to_domain.dart';
+import 'models/exceptions.dart';
 
 class LocationRepository {
-  LocationRepository({
-    required this.locationService,
-  });
+  const LocationRepository({
+    LocationService? locationService,
+  }) : _locationService = locationService ?? const LocationService();
 
-  final LocationService locationService;
+  final LocationService _locationService;
 
   Stream<Location> getLocationUpdatesStream() {
     try {
-      return locationService
+      return _locationService
           .getLocationUpdatesStream()
           .map((position) => position.toDomainModel());
     } on PermissionDeniedLocationServiceException catch (_) {
@@ -26,7 +26,7 @@ class LocationRepository {
 
   Future<Location> determineLocation() {
     try {
-      return locationService
+      return _locationService
           .determineLocation()
           .then((position) => position.toDomainModel());
     } on PermissionDeniedLocationServiceException catch (_) {
@@ -41,7 +41,7 @@ class LocationRepository {
     required Location to,
   }) {
     try {
-      return locationService.calculateDistance(
+      return _locationService.calculateDistance(
         startLatitude: from.latitude,
         startLongitude: from.longitude,
         endLatitude: to.latitude,
