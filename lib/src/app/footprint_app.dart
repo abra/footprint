@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:footprint/src/components/colors.dart';
+import 'package:footprint/src/components/constants.dart';
 import 'package:footprint/src/components/page_manager.dart';
 import 'package:footprint/src/features/map/map_screen.dart';
 import 'package:footprint/src/features/route_list/route_list_screen.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
 import 'package:footprint/src/location_repository/location_service.dart';
-
-import 'splash_screen.dart';
 
 class FootprintApp extends StatelessWidget {
   const FootprintApp({super.key});
@@ -36,7 +37,7 @@ class FootprintApp extends StatelessWidget {
                       const RouteListScreen(),
                     ],
                   )
-                : const SplashScreen(),
+                : const _SplashScreen(),
           );
         },
       ),
@@ -59,6 +60,31 @@ class _HomeScreen extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         controller: PageManager.pageController,
         children: pages,
+      ),
+    );
+  }
+}
+
+class _SplashScreen extends StatelessWidget {
+  const _SplashScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: ColoredBox(
+        color: greenColor,
+        child: Center(
+          child: FractionallySizedBox(
+            widthFactor: 0.6,
+            child: SvgPicture.asset(
+              svgFile,
+              colorFilter: const ColorFilter.mode(
+                whiteColor,
+                BlendMode.srcIn,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
