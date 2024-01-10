@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:geolocator/geolocator.dart';
 
 import 'models/exceptions.dart';
@@ -48,20 +50,22 @@ class LocationService {
   Stream<Position> getLocationUpdatesStream() async* {
     await _checkServiceAndPermissions();
 
-    final locationSettings = LocationSettings(
-      timeLimit: _timeLimit,
-    );
-
     try {
+      final locationSettings = LocationSettings(
+        timeLimit: _timeLimit,
+      );
+
       await for (final Position position in Geolocator.getPositionStream(
         locationSettings: locationSettings,
       )) {
         yield position;
       }
-    } on PermissionDeniedException {
+    } on PermissionDeniedException catch (_) {
       throw PermissionDeniedLocationServiceException();
-    } on LocationServiceDisabledException {
+    } on LocationServiceDisabledException catch (_) {
       throw ServiceDisabledLocationServiceException();
+    } on TimeoutException catch (_) {
+      throw LocationUpdateTimeoutException();
     }
   }
 
@@ -75,10 +79,12 @@ class LocationService {
       );
 
       return position;
-    } on PermissionDeniedException {
+    } on PermissionDeniedException catch (_) {
       throw PermissionDeniedLocationServiceException();
-    } on LocationServiceDisabledException {
+    } on LocationServiceDisabledException catch (_) {
       throw ServiceDisabledLocationServiceException();
+    } on TimeoutException catch (_) {
+      throw LocationUpdateTimeoutException();
     }
   }
 

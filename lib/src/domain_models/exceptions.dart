@@ -5,3 +5,5 @@ class PermissionDeniedException implements Exception {}
 class PermissionsPermanentlyDeniedException implements Exception {}
 
 class UnableCalculateDistanceException implements Exception {}
+
+class LocationUpdateTimeoutException implements Exception {}
