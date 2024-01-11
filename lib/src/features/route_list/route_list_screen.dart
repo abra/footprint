@@ -18,7 +18,7 @@ class RouteListScreen extends StatelessWidget {
             const Text('RouteListScreen'),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => goTo,
+              onPressed: () => goTo(),
               child: const Text('Go to MapScreen'),
             ),
           ],
