@@ -7,11 +7,6 @@ import 'package:footprint/src/features/route_list/route_list_screen.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
 import 'package:footprint/src/location_repository/location_service.dart';
 
-abstract class _Pages {
-  static const int map = 0;
-  static const int routeList = 1;
-}
-
 class FootprintApp extends StatelessWidget {
   const FootprintApp({super.key});
 
@@ -113,3 +108,9 @@ class _PageManager {
     );
   }
 }
+
+abstract class _Pages {
+  static const int map = 0;
+  static const int routeList = 1;
+}
+
