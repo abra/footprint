@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:footprint/src/components/colors.dart';
-import 'package:footprint/src/components/constants.dart';
-import 'package:footprint/src/components/page_manager.dart';
+import 'package:footprint/src/app/common/colors.dart';
+import 'package:footprint/src/app/common/constants.dart';
 import 'package:footprint/src/features/map/map_screen.dart';
 import 'package:footprint/src/features/route_list/route_list_screen.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
 import 'package:footprint/src/location_repository/location_service.dart';
+
+abstract class _Pages {
+  static const int map = 0;
+  static const int routeList = 1;
+}
 
 class FootprintApp extends StatelessWidget {
   const FootprintApp({super.key});
@@ -33,8 +37,11 @@ class FootprintApp extends StatelessWidget {
                     pages: [
                       MapScreen(
                         repository: _locationRepository,
+                        goTo: () => _PageManager.goToPage(_Pages.routeList),
                       ),
-                      const RouteListScreen(),
+                      RouteListScreen(
+                        goTo: () => _PageManager.goToPage(_Pages.map),
+                      ),
                     ],
                   )
                 : const _SplashScreen(),
@@ -58,7 +65,7 @@ class _HomeScreen extends StatelessWidget {
       body: PageView(
         allowImplicitScrolling: true,
         physics: const NeverScrollableScrollPhysics(),
-        controller: PageManager.pageController,
+        controller: _PageManager.pageController,
         children: pages,
       ),
     );
@@ -86,6 +93,23 @@ class _SplashScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Page controller for switching between pages at _HomeScreen of FootprintApp
+class _PageManager {
+  static final PageController _pageController = PageController(
+    initialPage: _Pages.map,
+  );
+
+  static PageController get pageController => _pageController;
+
+  static void goToPage(int pageIndex) {
+    _pageController.animateToPage(
+      pageIndex,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.linearToEaseOut,
     );
   }
 }

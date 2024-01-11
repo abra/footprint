@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:footprint/src/components/page_manager.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
 
 import 'map_notifier.dart';
@@ -8,9 +7,11 @@ class MapScreen extends StatefulWidget {
   const MapScreen({
     super.key,
     required this.repository,
+    required this.goTo,
   });
 
   final LocationRepository repository;
+  final VoidCallback goTo;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -61,9 +62,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                PageManager.goToPage(Pages.routeList);
-              },
+              onPressed: () => widget.goTo(),
               child: const Text('Go to RouteListScreen'),
             ),
           ],
