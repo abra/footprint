@@ -53,8 +53,10 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
+              whiteColor.withOpacity(1.0),
               whiteColor.withOpacity(0.8),
-              whiteColor.withOpacity(0.5),
+              whiteColor.withOpacity(0.6),
+              whiteColor.withOpacity(0.2),
               whiteColor.withOpacity(0.0),
             ],
             begin: Alignment.topCenter,
