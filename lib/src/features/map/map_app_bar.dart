@@ -38,6 +38,7 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
               text: TextSpan(
+                // TODO: Add address based on current location
                 text: 'Location Address',
                 style: GoogleFonts.robotoCondensed(
                   fontSize: 16,
