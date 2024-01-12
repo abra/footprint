@@ -60,6 +60,7 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
             end: Alignment.bottomCenter,
           ),
         ),
+        child: const SizedBox.expand(),
       ),
       elevation: 0,
       backgroundColor: whiteColor.withOpacity(0.0),
