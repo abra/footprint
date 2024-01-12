@@ -71,30 +71,18 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
       actions: <Widget>[
         Padding(
           padding: const EdgeInsets.only(right: 8.0),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: <Color>[
-                  whiteColor.withOpacity(0.6),
-                  whiteColor.withOpacity(0.4),
-                  whiteColor.withOpacity(0.0),
-                ],
+          child: SizedBox(
+            width: kToolbarHeight,
+            height: kToolbarHeight,
+            child: IconButton(
+              key: const Key('map-screen-button'),
+              color: grayColor,
+              alignment: Alignment.center,
+              icon: const Icon(
+                CupertinoIcons.square_stack_3d_down_right_fill,
+                size: 34,
               ),
-            ),
-            child: SizedBox(
-              width: kToolbarHeight,
-              height: kToolbarHeight,
-              child: IconButton(
-                key: const Key('map-screen-button'),
-                color: grayColor,
-                alignment: Alignment.center,
-                icon: const Icon(
-                  CupertinoIcons.square_stack_3d_down_right_fill,
-                  size: 34,
-                ),
-                onPressed: () => onGoToRouteList(),
-              ),
+              onPressed: () => onGoToRouteList(),
             ),
           ),
         ),
