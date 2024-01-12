@@ -32,10 +32,14 @@ class FootprintApp extends StatelessWidget {
                     pages: [
                       MapScreen(
                         repository: _locationRepository,
-                        goTo: () => _PageManager.goToPage(_Pages.routeList),
+                        onGoToRouteList: () => _PageManager.goToPage(
+                          _Pages.routeList,
+                        ),
                       ),
                       RouteListScreen(
-                        goTo: () => _PageManager.goToPage(_Pages.map),
+                        onGoToMap: () => _PageManager.goToPage(
+                          _Pages.map,
+                        ),
                       ),
                     ],
                   )
@@ -113,4 +117,3 @@ abstract class _Pages {
   static const int map = 0;
   static const int routeList = 1;
 }
-

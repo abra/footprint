@@ -9,17 +9,15 @@ part 'map_state.dart';
 class MapNotifier extends ValueNotifier<MapState> {
   MapNotifier({
     required this.locationRepository,
-  }) : super(MapInitialUpdate());
+  }) : super(MapInitialLoading());
 
   final LocationRepository locationRepository;
-  late StreamSubscription<Location> _locationSubscription;
+  StreamSubscription<Location>? _locationSubscription;
 
   Future<void> _updateLocation() async {
     try {
       _locationSubscription =
           locationRepository.getLocationUpdatesStream().listen((location) {
-        // log('$runtimeType $hashCode}');
-        // log('location: ${location.latitude}, ${location.longitude}');
         value = MapLocationUpdateSuccess(
           location: location,
         );
@@ -32,12 +30,12 @@ class MapNotifier extends ValueNotifier<MapState> {
 
   @override
   void dispose() {
-    _locationSubscription.cancel();
+    _locationSubscription?.cancel();
     super.dispose();
   }
 
   Future<void> updateLocation() async {
-    value = MapInitialUpdate();
+    value = MapInitialLoading();
     await _updateLocation();
   }
 }
