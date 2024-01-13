@@ -16,7 +16,7 @@ class MapView extends StatefulWidget {
   State<MapView> createState() => _MapViewState();
 }
 
-class _MapViewState extends State<MapView> {
+class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   late final MapController _mapController;
   late MapNotifier _mapNotifier;
 
@@ -36,6 +36,8 @@ class _MapViewState extends State<MapView> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     return Stack(
       children: [
         FlutterMap(
@@ -79,6 +81,9 @@ class _MapViewState extends State<MapView> {
       ],
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }
 
 abstract class _Config {
