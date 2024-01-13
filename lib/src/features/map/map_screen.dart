@@ -3,7 +3,7 @@ import 'package:footprint/src/location_repository/location_repository.dart';
 
 import 'map_app_bar.dart';
 import 'map_view.dart';
-import 'map_notifier.dart';
+import 'map_location_notifier.dart';
 
 class MapScreen extends StatelessWidget {
   const MapScreen({
@@ -23,7 +23,7 @@ class MapScreen extends StatelessWidget {
         onGoToRouteList: onGoToRouteList,
       ),
       body: MapView(
-        mapNotifier: MapNotifier(
+        mapLocationNotifier: MapLocationNotifier(
           locationRepository: repository,
         ),
       ),

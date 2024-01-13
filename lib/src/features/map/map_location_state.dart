@@ -1,15 +1,15 @@
-part of 'map_notifier.dart';
+part of 'map_location_notifier.dart';
 
-sealed class MapState extends Equatable {
-  const MapState();
+sealed class MapLocationState extends Equatable {
+  const MapLocationState();
 }
 
-class MapInitialLoading extends MapState {
+class MapInitialLoading extends MapLocationState {
   @override
   List<Object?> get props => [];
 }
 
-class MapLocationUpdateSuccess extends MapState {
+class MapLocationUpdateSuccess extends MapLocationState {
   const MapLocationUpdateSuccess({
     required this.location,
   });
@@ -20,7 +20,7 @@ class MapLocationUpdateSuccess extends MapState {
   List<Object?> get props => [location];
 }
 
-class MapLocationUpdateFailure extends MapState {
+class MapLocationUpdateFailure extends MapLocationState {
   const MapLocationUpdateFailure();
 
   @override

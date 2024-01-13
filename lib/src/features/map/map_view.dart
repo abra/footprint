@@ -4,15 +4,15 @@ import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:footprint/src/domain_models/location.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'map_notifier.dart';
+import 'map_location_notifier.dart';
 
 class MapView extends StatefulWidget {
   const MapView({
     super.key,
-    required this.mapNotifier,
+    required this.mapLocationNotifier,
   });
 
-  final MapNotifier mapNotifier;
+  final MapLocationNotifier mapLocationNotifier;
 
   @override
   State<MapView> createState() => _MapViewState();
@@ -21,24 +21,24 @@ class MapView extends StatefulWidget {
 class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final AnimatedMapController _animatedMapController;
-  late MapNotifier _mapNotifier;
+  late MapLocationNotifier _mapLocationNotifier;
   bool _centerMapToCurrentLocation = true;
 
   @override
   void initState() {
     super.initState();
-    _mapNotifier = widget.mapNotifier;
+    _mapLocationNotifier = widget.mapLocationNotifier;
     _animatedMapController = AnimatedMapController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
       curve: Curves.fastOutSlowIn,
     );
-    _mapNotifier.addListener(_moveMapOnLocationUpdate);
-    _mapNotifier.updateLocation();
+    _mapLocationNotifier.addListener(_moveMapOnLocationUpdate);
+    _mapLocationNotifier.updateLocation();
   }
 
   void _moveMapOnLocationUpdate() {
-    final mapState = _mapNotifier.value;
+    final mapState = _mapLocationNotifier.value;
 
     // TODO: Temporary code during development
     if (mapState is MapLocationUpdateSuccess) {
@@ -53,8 +53,8 @@ class _MapViewState extends State<MapView>
   @override
   void dispose() {
     _animatedMapController.dispose();
-    _mapNotifier.removeListener(_moveMapOnLocationUpdate);
-    _mapNotifier.dispose();
+    _mapLocationNotifier.removeListener(_moveMapOnLocationUpdate);
+    _mapLocationNotifier.dispose();
     super.dispose();
   }
 
@@ -84,8 +84,8 @@ class _MapViewState extends State<MapView>
               minZoom: _Config.minZoom,
             ),
             ValueListenableBuilder(
-                valueListenable: _mapNotifier,
-                builder: (BuildContext context, MapState value, _) {
+                valueListenable: _mapLocationNotifier,
+                builder: (BuildContext context, MapLocationState value, _) {
                   if (value is MapLocationUpdateSuccess) {
                     return MarkerLayer(
                       markers: [
