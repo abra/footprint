@@ -1,10 +1,13 @@
 part of 'map_notifier.dart';
 
-sealed class MapState {
+sealed class MapState extends Equatable {
   const MapState();
 }
 
-class MapInitialLoading extends MapState {}
+class MapInitialLoading extends MapState {
+  @override
+  List<Object?> get props => [];
+}
 
 class MapLocationUpdateSuccess extends MapState {
   const MapLocationUpdateSuccess({
@@ -12,8 +15,14 @@ class MapLocationUpdateSuccess extends MapState {
   });
 
   final Location location;
+
+  @override
+  List<Object?> get props => [location];
 }
 
 class MapLocationUpdateFailure extends MapState {
   const MapLocationUpdateFailure();
+
+  @override
+  List<Object?> get props => [];
 }

@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:footprint/src/domain_models/location.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
+import 'package:equatable/equatable.dart';
 
 part 'map_state.dart';
 

@@ -1,4 +1,6 @@
-class Location {
+import 'package:equatable/equatable.dart';
+
+class Location extends Equatable {
   const Location({
     required this.id,
     required this.latitude,
@@ -11,21 +13,6 @@ class Location {
   final double longitude;
   final DateTime timestamp;
 
-  (double, double, DateTime) _equality() => (
-        latitude,
-        longitude,
-        timestamp,
-      );
-
-  @override
-  bool operator ==(covariant Location other) {
-    if (identical(this, other)) return true;
-    return other._equality() == _equality();
-  }
-
-  @override
-  int get hashCode => _equality().hashCode;
-
   static fromMap(Map<String, dynamic> map) {
     return Location(
       id: map['id'] as String,
@@ -34,4 +21,7 @@ class Location {
       timestamp: DateTime.parse(map['timestamp'] as String),
     );
   }
+
+  @override
+  List<Object?> get props => [latitude, longitude, timestamp];
 }
