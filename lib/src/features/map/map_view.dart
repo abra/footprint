@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:footprint/src/domain_models/location.dart';
+import 'package:footprint/src/features/map/map_view_notifier.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'map_location_notifier.dart';
@@ -22,28 +23,44 @@ class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final AnimatedMapController _animatedMapController;
   late MapLocationNotifier _mapLocationNotifier;
+  late MapViewNotifier _mapViewNotifier;
 
   @override
   void initState() {
     super.initState();
+
     _mapLocationNotifier = widget.mapLocationNotifier;
+
+    _mapViewNotifier = MapViewNotifier(
+      shouldCenter: _Config.shouldCenter,
+      zoom: _Config.defaultZoom,
+      maxZoom: _Config.maxZoom,
+      minZoom: _Config.minZoom,
+    );
+
     _animatedMapController = AnimatedMapController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
       curve: Curves.fastOutSlowIn,
     );
-    _mapLocationNotifier.addListener(_moveMapOnLocationUpdate);
-    _mapLocationNotifier.updateLocation();
+
+    _mapViewNotifier.addListener(_onZoomChanged);
+    _mapLocationNotifier.addListener(_onMapLocationChanged);
+    _mapLocationNotifier.runLocationUpdate();
   }
 
-  void _moveMapOnLocationUpdate() {
-    final mapState = _mapLocationNotifier.value;
+  void _onZoomChanged() {
+    final mapViewState = _mapViewNotifier.value as MapViewUpdated;
+    _animatedMapController.animatedZoomTo(mapViewState.zoom);
+  }
+
+  void _onMapLocationChanged() {
+    final mapLocationState = _mapLocationNotifier.value;
 
     // TODO: Temporary code during development
-    if (mapState is MapLocationUpdateSuccess) {
+    if (mapLocationState is MapLocationUpdateSuccess) {
       _animatedMapController.animateTo(
-        dest: mapState.location.toLatLng(),
-        zoom: 14,
+        dest: mapLocationState.location.toLatLng(),
         customId: 'location',
       );
     }
@@ -52,7 +69,9 @@ class _MapViewState extends State<MapView>
   @override
   void dispose() {
     _animatedMapController.dispose();
-    _mapLocationNotifier.removeListener(_moveMapOnLocationUpdate);
+    _mapViewNotifier.removeListener(_onZoomChanged);
+    _mapLocationNotifier.removeListener(_onMapLocationChanged);
+    _mapViewNotifier.dispose();
     _mapLocationNotifier.dispose();
     super.dispose();
   }
@@ -67,7 +86,6 @@ class _MapViewState extends State<MapView>
           mapController: _animatedMapController.mapController,
           options: MapOptions(
             interactionOptions: _Config.interactionOptions,
-            initialCenter: const LatLng(64.4316, 76.5235),
             initialZoom: _Config.defaultZoom,
             maxZoom: _Config.maxZoom,
             minZoom: _Config.minZoom,
@@ -105,6 +123,31 @@ class _MapViewState extends State<MapView>
                 }),
           ],
         ),
+        Positioned(
+          right: 0,
+          left: 0,
+          bottom: 20,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                  icon: const Icon(
+                    Icons.zoom_in,
+                  ),
+                  onPressed: () {
+                    _mapViewNotifier.onZoomIn(0.25);
+                  }),
+              const SizedBox(width: 20),
+              IconButton(
+                  icon: const Icon(
+                    Icons.zoom_out,
+                  ),
+                  onPressed: () {
+                    _mapViewNotifier.onZoomOut(0.25);
+                  }),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -114,12 +157,11 @@ class _MapViewState extends State<MapView>
 }
 
 abstract class _Config {
-  static bool centerMapToCurrentLocation = true;
+  static bool shouldCenter = true;
   static double defaultZoom = 17;
-  static double maxZoom = 18;
+  static double maxZoom = 17.5;
   static double minZoom = 14;
   static String urlTemplate = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-
   static String fallbackUrl =
       'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
   static String userAgentPackageName = 'com.github.abra.footprint';
