@@ -22,7 +22,6 @@ class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final AnimatedMapController _animatedMapController;
   late MapLocationNotifier _mapLocationNotifier;
-  bool _centerMapToCurrentLocation = true;
 
   @override
   void initState() {
@@ -115,6 +114,7 @@ class _MapViewState extends State<MapView>
 }
 
 abstract class _Config {
+  static bool centerMapToCurrentLocation = true;
   static double defaultZoom = 17;
   static double maxZoom = 18;
   static double minZoom = 14;
