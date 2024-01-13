@@ -23,5 +23,10 @@ class Location extends Equatable {
   }
 
   @override
-  List<Object?> get props => [latitude, longitude, timestamp];
+  List<Object?> get props => [
+        id,
+        latitude,
+        longitude,
+        timestamp,
+      ];
 }
