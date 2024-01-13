@@ -15,6 +15,11 @@ class MapNotifier extends ValueNotifier<MapState> {
   final LocationRepository locationRepository;
   StreamSubscription<Location>? _locationSubscription;
 
+  Future<void> updateLocation() async {
+    value = MapInitialLoading();
+    await _updateLocation();
+  }
+
   Future<void> _updateLocation() async {
     try {
       final stream = locationRepository.getLocationUpdatesStream();
@@ -36,10 +41,5 @@ class MapNotifier extends ValueNotifier<MapState> {
   void dispose() {
     _locationSubscription?.cancel();
     super.dispose();
-  }
-
-  Future<void> updateLocation() async {
-    value = MapInitialLoading();
-    await _updateLocation();
   }
 }
