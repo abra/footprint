@@ -16,8 +16,9 @@ class MapNotifier extends ValueNotifier<MapState> {
 
   Future<void> _updateLocation() async {
     try {
-      _locationSubscription =
-          locationRepository.getLocationUpdatesStream().listen((location) {
+      final stream = locationRepository.getLocationUpdatesStream();
+
+      _locationSubscription = stream.listen((location) {
         value = MapLocationUpdateSuccess(
           location: location,
         );
