@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:footprint/src/domain_models/location.dart';
@@ -22,6 +23,8 @@ class MapNotifier extends ValueNotifier<MapState> {
         value = MapLocationUpdateSuccess(
           location: location,
         );
+        // TODO: Remove after testing
+        log('Location: ${location.latitude}, ${location.longitude}');
       });
     } catch (error) {
       value = const MapLocationUpdateFailure();
