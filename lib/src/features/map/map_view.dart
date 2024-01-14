@@ -171,7 +171,7 @@ class _MapViewState extends State<MapView>
 
 abstract class _Config {
   static bool shouldCenter = true;
-  static double defaultZoom = 17;
+  static double defaultZoom = 16;
   static double maxZoom = 17.5;
   static double minZoom = 14;
   static String urlTemplate = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
