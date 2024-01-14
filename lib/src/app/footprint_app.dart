@@ -78,14 +78,14 @@ class _SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: ColoredBox(
-        color: greenColor,
+        color: darkCyan,
         child: Center(
           child: FractionallySizedBox(
             widthFactor: 0.6,
             child: SvgPicture.asset(
               svgFile,
               colorFilter: const ColorFilter.mode(
-                whiteColor,
+                white,
                 BlendMode.srcIn,
               ),
             ),

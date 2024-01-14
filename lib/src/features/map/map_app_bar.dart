@@ -24,7 +24,7 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
         offset: const Offset(0, 2),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: grayColor.withOpacity(0.7),
+            color: grayBlue.withOpacity(0.7),
             borderRadius: BorderRadius.circular(25),
           ),
           child: Padding(
@@ -42,7 +42,7 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
                 text: 'Location Address',
                 style: GoogleFonts.robotoCondensed(
                   fontSize: 16,
-                  color: whiteColor,
+                  color: white,
                 ),
               ),
             ),
@@ -53,11 +53,11 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              whiteColor.withOpacity(1.0),
-              whiteColor.withOpacity(0.8),
-              whiteColor.withOpacity(0.6),
-              whiteColor.withOpacity(0.2),
-              whiteColor.withOpacity(0.0),
+              white.withOpacity(1.0),
+              white.withOpacity(0.8),
+              white.withOpacity(0.6),
+              white.withOpacity(0.2),
+              white.withOpacity(0.0),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -66,7 +66,7 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
         child: const SizedBox.expand(),
       ),
       elevation: 0,
-      backgroundColor: whiteColor.withOpacity(0.0),
+      backgroundColor: white.withOpacity(0.0),
       centerTitle: true,
       actions: <Widget>[
         Padding(
@@ -76,7 +76,7 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
             height: kToolbarHeight,
             child: IconButton(
               key: const Key('map-screen-button'),
-              color: grayColor,
+              color: grayBlue,
               alignment: Alignment.center,
               icon: const Icon(
                 CupertinoIcons.square_stack_3d_down_right_fill,
