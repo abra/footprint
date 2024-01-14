@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:footprint/src/app/common/colors.dart';
-import 'package:footprint/src/app/common/constants.dart';
 import 'package:footprint/src/features/map/map_screen.dart';
 import 'package:footprint/src/features/route_list/route_list_screen.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
@@ -20,32 +17,20 @@ class FootprintApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: FutureBuilder(
-        future: Future<void>.delayed(
-          const Duration(seconds: 2),
-        ),
-        builder: (BuildContext ctx, AsyncSnapshot<void> snapshot) {
-          return AnimatedSwitcher(
-            duration: const Duration(milliseconds: 500),
-            child: snapshot.connectionState == ConnectionState.done
-                ? _HomeScreen(
-                    pages: [
-                      MapScreen(
-                        repository: _locationRepository,
-                        onGoToRouteList: () => _PageManager.goToPage(
-                          _Pages.routeList,
-                        ),
-                      ),
-                      RouteListScreen(
-                        onGoToMap: () => _PageManager.goToPage(
-                          _Pages.map,
-                        ),
-                      ),
-                    ],
-                  )
-                : const _SplashScreen(),
-          );
-        },
+      home: _HomeScreen(
+        pages: [
+          MapScreen(
+            repository: _locationRepository,
+            onGoToRouteList: () => _PageManager.goToPage(
+              _Pages.routeList,
+            ),
+          ),
+          RouteListScreen(
+            onGoToMap: () => _PageManager.goToPage(
+              _Pages.map,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -66,31 +51,6 @@ class _HomeScreen extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         controller: _PageManager.pageController,
         children: pages,
-      ),
-    );
-  }
-}
-
-class _SplashScreen extends StatelessWidget {
-  const _SplashScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: ColoredBox(
-        color: darkCyan,
-        child: Center(
-          child: FractionallySizedBox(
-            widthFactor: 0.6,
-            child: SvgPicture.asset(
-              svgFile,
-              colorFilter: const ColorFilter.mode(
-                white,
-                BlendMode.srcIn,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
