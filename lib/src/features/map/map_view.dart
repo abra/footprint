@@ -138,6 +138,19 @@ class _MapViewState extends State<MapView>
                     _mapViewNotifier.onZoomIn(0.25);
                   }),
               const SizedBox(width: 20),
+              // TODO: For debugging
+              ValueListenableBuilder<MapViewState>(
+                valueListenable: _mapViewNotifier,
+                builder: (BuildContext context, MapViewState state, _) {
+                  if (state is MapViewUpdated) {
+                    return Text(
+                      '${state.zoom}',
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }
+              ),
+              const SizedBox(width: 20),
               IconButton(
                   icon: const Icon(
                     Icons.zoom_out,
