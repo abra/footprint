@@ -6,26 +6,26 @@ sealed class MapViewState extends Equatable {
 
 class MapViewUpdated extends MapViewState {
   const MapViewUpdated({
-    required this.shouldCenter,
+    required this.shouldCenterMap,
     required this.zoom,
     required this.maxZoom,
     required this.minZoom,
   });
 
-  final bool shouldCenter;
+  final bool shouldCenterMap;
   final double zoom;
   final double maxZoom;
   final double minZoom;
 
   MapViewUpdated copyWith({
-    bool? shouldCenter,
+    bool? shouldCenterMap,
     double? zoom,
     double? maxZoom,
     double? minZoom,
   }) {
-    log('zoom: $zoom, shouldCenter: $shouldCenter');
+    log('zoom: $zoom, shouldCenter: $shouldCenterMap');
     return MapViewUpdated(
-      shouldCenter: shouldCenter ?? this.shouldCenter,
+      shouldCenterMap: shouldCenterMap ?? this.shouldCenterMap,
       zoom: zoom ?? this.zoom,
       maxZoom: maxZoom ?? this.maxZoom,
       minZoom: minZoom ?? this.minZoom,
@@ -34,7 +34,7 @@ class MapViewUpdated extends MapViewState {
 
   @override
   List<Object?> get props => [
-        shouldCenter,
+        shouldCenterMap,
         zoom,
         maxZoom,
         minZoom,

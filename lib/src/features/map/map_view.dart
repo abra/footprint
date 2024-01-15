@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
@@ -22,8 +24,13 @@ class MapView extends StatefulWidget {
 class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final AnimatedMapController _animatedMapController;
-  late MapLocationNotifier _mapLocationNotifier;
-  late MapViewNotifier _mapViewNotifier;
+  late final MapLocationNotifier _mapLocationNotifier;
+  final MapViewNotifier _mapViewNotifier = MapViewNotifier(
+    shouldCenterMap: _Config.shouldCenterMap,
+    zoom: _Config.defaultZoom,
+    maxZoom: _Config.maxZoom,
+    minZoom: _Config.minZoom,
+  );
 
   @override
   void initState() {
@@ -31,60 +38,37 @@ class _MapViewState extends State<MapView>
 
     _mapLocationNotifier = widget.mapLocationNotifier;
 
-    _mapViewNotifier = MapViewNotifier(
-      shouldCenter: _Config.shouldCenter,
-      zoom: _Config.defaultZoom,
-      maxZoom: _Config.maxZoom,
-      minZoom: _Config.minZoom,
-    );
-
     _animatedMapController = AnimatedMapController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
       curve: Curves.fastOutSlowIn,
     );
 
-    _mapViewNotifier.addListener(_onZoomChanged);
-    _mapLocationNotifier.addListener(_onMapLocationChanged);
+    _mapViewNotifier.addListener(_handleZoomChanged);
+    _mapLocationNotifier.addListener(_handleMapLocationChanged);
     _mapLocationNotifier.runLocationUpdate();
-  }
-
-  void _onZoomChanged() {
-    final mapViewState = _mapViewNotifier.value as MapViewUpdated;
-    _animatedMapController.animatedZoomTo(mapViewState.zoom);
-  }
-
-  void _onMapLocationChanged() {
-    final mapLocationState = _mapLocationNotifier.value;
-
-    // TODO: Temporary code during development
-    if (mapLocationState is MapLocationUpdateSuccess) {
-      _animatedMapController.animateTo(
-        dest: mapLocationState.location.toLatLng(),
-        customId: 'location',
-      );
-    }
   }
 
   @override
   void dispose() {
     _animatedMapController.dispose();
-    _mapViewNotifier.removeListener(_onZoomChanged);
-    _mapLocationNotifier.removeListener(_onMapLocationChanged);
+    _mapViewNotifier.removeListener(_handleZoomChanged);
     _mapViewNotifier.dispose();
+    _mapLocationNotifier.removeListener(_handleMapLocationChanged);
     _mapLocationNotifier.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    log('build map view');
     super.build(context);
 
     return Stack(
       children: [
         FlutterMap(
           mapController: _animatedMapController.mapController,
-          options: MapOptions(
+          options: const MapOptions(
             interactionOptions: _Config.interactionOptions,
             initialZoom: _Config.defaultZoom,
             maxZoom: _Config.maxZoom,
@@ -100,27 +84,28 @@ class _MapViewState extends State<MapView>
               maxZoom: _Config.maxZoom,
               minZoom: _Config.minZoom,
             ),
-            ValueListenableBuilder(
-                valueListenable: _mapLocationNotifier,
-                builder: (BuildContext context, MapLocationState value, _) {
-                  if (value is MapLocationUpdateSuccess) {
-                    return MarkerLayer(
-                      markers: [
-                        Marker(
-                          width: 30.0,
-                          height: 30.0,
-                          point: value.location.toLatLng(),
-                          child: const Icon(
-                            Icons.circle,
-                            size: 20.0,
-                            color: Colors.blue,
-                          ),
+            ValueListenableBuilder<MapLocationState>(
+              valueListenable: _mapLocationNotifier,
+              builder: (BuildContext context, MapLocationState value, _) {
+                if (value is MapLocationUpdateSuccess) {
+                  return MarkerLayer(
+                    markers: [
+                      Marker(
+                        width: 30.0,
+                        height: 30.0,
+                        point: value.location.toLatLng(),
+                        child: const Icon(
+                          Icons.circle,
+                          size: 20.0,
+                          color: Colors.blue,
                         ),
-                      ],
-                    );
-                  }
-                  return const SizedBox.shrink();
-                }),
+                      ),
+                    ],
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ],
         ),
         Positioned(
@@ -135,7 +120,7 @@ class _MapViewState extends State<MapView>
                     Icons.zoom_in,
                   ),
                   onPressed: () {
-                    _mapViewNotifier.onZoomIn(0.25);
+                    _mapViewNotifier.onZoomIn(_Config.zoomStep);
                   }),
               const SizedBox(width: 20),
               // TODO: For debugging
@@ -148,7 +133,20 @@ class _MapViewState extends State<MapView>
                     );
                   }
                   return const SizedBox.shrink();
-                }
+                },
+              ),
+              const SizedBox(width: 20),
+              ValueListenableBuilder<MapViewState>(
+                valueListenable: _mapViewNotifier,
+                builder: (BuildContext context, MapViewState state, _) {
+                  if (state is MapViewUpdated) {
+                    return Switch(
+                      value: state.shouldCenterMap,
+                      onChanged: _handleToggleButtonSwitched,
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
               ),
               const SizedBox(width: 20),
               IconButton(
@@ -156,7 +154,7 @@ class _MapViewState extends State<MapView>
                     Icons.zoom_out,
                   ),
                   onPressed: () {
-                    _mapViewNotifier.onZoomOut(0.25);
+                    _mapViewNotifier.onZoomOut(_Config.zoomStep);
                   }),
             ],
           ),
@@ -165,20 +163,51 @@ class _MapViewState extends State<MapView>
     );
   }
 
+  void _handleZoomChanged() {
+    final mapViewState = _mapViewNotifier.value;
+    if (mapViewState is MapViewUpdated) {
+      _animatedMapController.animatedZoomTo(mapViewState.zoom);
+    }
+  }
+
+  void _handleMapLocationChanged() {
+    final mapViewState = _mapViewNotifier.value as MapViewUpdated;
+
+    if (mapViewState.shouldCenterMap) {
+      _moveToOnLocationUpdateSuccess();
+    }
+  }
+
+  void _handleToggleButtonSwitched(bool value) {
+    _mapViewNotifier.onCenterMap(value);
+    _moveToOnLocationUpdateSuccess();
+  }
+
+  void _moveToOnLocationUpdateSuccess() {
+    final mapLocationState = _mapLocationNotifier.value;
+    if (mapLocationState is MapLocationUpdateSuccess) {
+      _animatedMapController.animateTo(
+        dest: mapLocationState.location.toLatLng(),
+      );
+    }
+  }
+
   @override
   bool get wantKeepAlive => true;
 }
 
 abstract class _Config {
-  static bool shouldCenter = true;
-  static double defaultZoom = 16;
-  static double maxZoom = 17.5;
-  static double minZoom = 14;
-  static String urlTemplate = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-  static String fallbackUrl =
+  static const bool shouldCenterMap = true;
+  static const double zoomStep = 0.5;
+  static const double defaultZoom = 16;
+  static const double maxZoom = 18;
+  static const double minZoom = 14;
+  static const String fallbackUrl =
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  static const String urlTemplate =
       'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-  static String userAgentPackageName = 'com.github.abra.footprint';
-  static InteractionOptions interactionOptions = const InteractionOptions(
+  static const String userAgentPackageName = 'com.github.abra.footprint';
+  static const InteractionOptions interactionOptions = InteractionOptions(
     pinchZoomWinGestures: InteractiveFlag.pinchZoom,
   );
 }

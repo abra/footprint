@@ -7,28 +7,28 @@ part 'map_view_state.dart';
 
 class MapViewNotifier extends ValueNotifier<MapViewState> {
   MapViewNotifier({
-    required this.shouldCenter,
+    required this.shouldCenterMap,
     required this.zoom,
     required this.maxZoom,
     required this.minZoom,
   }) : super(
           MapViewUpdated(
-            shouldCenter: shouldCenter,
+            shouldCenterMap: shouldCenterMap,
             zoom: zoom,
             maxZoom: maxZoom,
             minZoom: minZoom,
           ),
         );
 
-  final bool shouldCenter;
+  final bool shouldCenterMap;
   final double zoom;
   final double maxZoom;
   final double minZoom;
 
-  void onCenterMapChanged(bool newValue) {
+  void onCenterMap(bool newValue) {
     final currentState = value as MapViewUpdated;
     final newState = currentState.copyWith(
-      shouldCenter: newValue,
+      shouldCenterMap: newValue,
     );
     value = newState;
   }
