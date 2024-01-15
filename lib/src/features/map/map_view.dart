@@ -3,9 +3,9 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
-import 'package:footprint/src/domain_models/location.dart';
-import 'package:latlong2/latlong.dart';
 
+import 'extensions.dart';
+import 'map_config.dart';
 import 'map_location_notifier.dart';
 import 'map_view_notifier.dart';
 
@@ -25,12 +25,7 @@ class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final AnimatedMapController _animatedMapController;
   late final MapLocationNotifier _mapLocationNotifier;
-  final MapViewNotifier _mapViewNotifier = MapViewNotifier(
-    shouldCenterMap: _Config.shouldCenterMap,
-    zoom: _Config.defaultZoom,
-    maxZoom: _Config.maxZoom,
-    minZoom: _Config.minZoom,
-  );
+  final MapViewNotifier _mapViewNotifier = MapViewNotifier();
 
   @override
   void initState() {
@@ -69,20 +64,20 @@ class _MapViewState extends State<MapView>
         FlutterMap(
           mapController: _animatedMapController.mapController,
           options: const MapOptions(
-            interactionOptions: _Config.interactionOptions,
-            initialZoom: _Config.defaultZoom,
-            maxZoom: _Config.maxZoom,
-            minZoom: _Config.minZoom,
+            interactionOptions: MapConfig.interactionOptions,
+            initialZoom: MapConfig.defaultZoom,
+            maxZoom: MapConfig.maxZoom,
+            minZoom: MapConfig.minZoom,
           ),
           children: [
             TileLayer(
               retinaMode: true,
-              userAgentPackageName: _Config.userAgentPackageName,
-              urlTemplate: _Config.urlTemplate,
-              fallbackUrl: _Config.fallbackUrl,
+              userAgentPackageName: MapConfig.userAgentPackageName,
+              urlTemplate: MapConfig.urlTemplate,
+              fallbackUrl: MapConfig.fallbackUrl,
               subdomains: const ['a', 'b', 'c'],
-              maxZoom: _Config.maxZoom,
-              minZoom: _Config.minZoom,
+              maxZoom: MapConfig.maxZoom,
+              minZoom: MapConfig.minZoom,
             ),
             ValueListenableBuilder<MapLocationState>(
               valueListenable: _mapLocationNotifier,
@@ -97,7 +92,7 @@ class _MapViewState extends State<MapView>
                         child: const Icon(
                           Icons.circle,
                           size: 20.0,
-                          color: Colors.blue,
+                          color: Colors.deepPurple,
                         ),
                       ),
                     ],
@@ -120,7 +115,7 @@ class _MapViewState extends State<MapView>
                     Icons.zoom_in,
                   ),
                   onPressed: () {
-                    _mapViewNotifier.onZoomIn(_Config.zoomStep);
+                    _mapViewNotifier.handleZoomedIn(MapConfig.zoomStep);
                   }),
               const SizedBox(width: 20),
               // TODO: For debugging
@@ -154,7 +149,7 @@ class _MapViewState extends State<MapView>
                     Icons.zoom_out,
                   ),
                   onPressed: () {
-                    _mapViewNotifier.onZoomOut(_Config.zoomStep);
+                    _mapViewNotifier.handleZoomedOut(MapConfig.zoomStep);
                   }),
             ],
           ),
@@ -179,7 +174,7 @@ class _MapViewState extends State<MapView>
   }
 
   void _handleToggleButtonSwitched(bool value) {
-    _mapViewNotifier.onCenterMap(value);
+    _mapViewNotifier.handleCenterMap(value);
     _moveToOnLocationUpdateSuccess();
   }
 
@@ -194,26 +189,4 @@ class _MapViewState extends State<MapView>
 
   @override
   bool get wantKeepAlive => true;
-}
-
-abstract class _Config {
-  static const bool shouldCenterMap = true;
-  static const double zoomStep = 0.5;
-  static const double defaultZoom = 16;
-  static const double maxZoom = 18;
-  static const double minZoom = 14;
-  static const String fallbackUrl =
-      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-  static const String urlTemplate =
-      'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-  static const String userAgentPackageName = 'com.github.abra.footprint';
-  static const InteractionOptions interactionOptions = InteractionOptions(
-    pinchZoomWinGestures: InteractiveFlag.pinchZoom,
-  );
-}
-
-extension LocationToLatLng on Location {
-  LatLng toLatLng() {
-    return LatLng(latitude, longitude);
-  }
 }
