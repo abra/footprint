@@ -16,8 +16,7 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   final LocationRepository locationRepository;
   StreamSubscription<Location>? _locationSubscription;
 
-  Future<void> runLocationUpdate() async {
-    value = MapInitialLoading();
+  Future<void> init() async {
     await _runLocationUpdate();
   }
 

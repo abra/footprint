@@ -3,20 +3,27 @@ import 'dart:developer';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
-import 'map_config.dart';
-
 part 'map_view_state.dart';
 
 class MapViewNotifier extends ValueNotifier<MapViewState> {
-  MapViewNotifier()
-      : super(
-          const MapViewUpdated(
-            shouldCenterMap: MapConfig.shouldCenterMap,
-            zoom: MapConfig.defaultZoom,
-            maxZoom: MapConfig.maxZoom,
-            minZoom: MapConfig.minZoom,
+  MapViewNotifier({
+    required this.shouldCenterMap,
+    required this.zoom,
+    required this.maxZoom,
+    required this.minZoom,
+  }) : super(
+          MapViewUpdated(
+            shouldCenterMap: shouldCenterMap,
+            zoom: zoom,
+            maxZoom: maxZoom,
+            minZoom: minZoom,
           ),
         );
+
+  final bool shouldCenterMap;
+  final double zoom;
+  final double maxZoom;
+  final double minZoom;
 
   void handleCenterMap(bool newValue) async {
     final currentState = value;
@@ -32,7 +39,7 @@ class MapViewNotifier extends ValueNotifier<MapViewState> {
     final currentState = value;
     if (currentState is MapViewUpdated) {
       final previousZoom = currentState.zoom;
-      if (previousZoom + newValue <= MapConfig.maxZoom) {
+      if (previousZoom + newValue <= maxZoom) {
         final newState = currentState.copyWith(
           zoom: previousZoom + newValue,
         );
@@ -45,7 +52,7 @@ class MapViewNotifier extends ValueNotifier<MapViewState> {
     final currentState = value;
     if (currentState is MapViewUpdated) {
       final previousZoom = currentState.zoom;
-      if (previousZoom - newValue >= MapConfig.minZoom) {
+      if (previousZoom - newValue >= minZoom) {
         final newState = currentState.copyWith(
           zoom: previousZoom - newValue,
         );

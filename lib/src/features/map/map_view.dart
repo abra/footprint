@@ -5,7 +5,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 
 import 'extensions.dart';
-import 'map_config.dart';
 import 'map_location_notifier.dart';
 import 'map_view_notifier.dart';
 
@@ -25,13 +24,19 @@ class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final AnimatedMapController _animatedMapController;
   late final MapLocationNotifier _mapLocationNotifier;
-  final MapViewNotifier _mapViewNotifier = MapViewNotifier();
+  final MapViewNotifier _mapViewNotifier = MapViewNotifier(
+    shouldCenterMap: MapConfig.shouldCenterMap,
+    zoom: MapConfig.defaultZoom,
+    maxZoom: MapConfig.maxZoom,
+    minZoom: MapConfig.minZoom,
+  );
 
   @override
   void initState() {
     super.initState();
 
     _mapLocationNotifier = widget.mapLocationNotifier;
+    _mapLocationNotifier.init();
 
     _animatedMapController = AnimatedMapController(
       vsync: this,
@@ -41,7 +46,6 @@ class _MapViewState extends State<MapView>
 
     _mapViewNotifier.addListener(_handleZoomChanged);
     _mapLocationNotifier.addListener(_handleMapLocationChanged);
-    _mapLocationNotifier.runLocationUpdate();
   }
 
   @override
@@ -190,3 +194,20 @@ class _MapViewState extends State<MapView>
   @override
   bool get wantKeepAlive => true;
 }
+
+abstract class MapConfig {
+  static const bool shouldCenterMap = true;
+  static const double zoomStep = 0.5;
+  static const double defaultZoom = 16;
+  static const double maxZoom = 18;
+  static const double minZoom = 14;
+  static const String fallbackUrl =
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  static const String urlTemplate =
+      'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  static const String userAgentPackageName = 'com.github.abra.footprint';
+  static const InteractionOptions interactionOptions = InteractionOptions(
+    pinchZoomWinGestures: InteractiveFlag.pinchZoom,
+  );
+}
+
