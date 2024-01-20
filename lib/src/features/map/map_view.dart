@@ -130,6 +130,7 @@ class _MapViewState extends State<MapView>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // TODO: For debugging
               IconButton(
                   icon: const Icon(
                     Icons.zoom_in,
@@ -138,7 +139,7 @@ class _MapViewState extends State<MapView>
                     _mapViewNotifier.handleZoomedIn(MapConfig.zoomStep);
                   }),
               const SizedBox(width: 20),
-              // TODO: For debugging
+              // TODO: Temporary for testing
               ValueListenableBuilder<MapViewState>(
                 valueListenable: _mapViewNotifier,
                 builder: (BuildContext context, MapViewState state, _) {
@@ -151,6 +152,7 @@ class _MapViewState extends State<MapView>
                 },
               ),
               const SizedBox(width: 20),
+              // TODO: Temporary for testing
               ValueListenableBuilder<MapViewState>(
                 valueListenable: _mapViewNotifier,
                 builder: (BuildContext context, MapViewState state, _) {
@@ -164,6 +166,7 @@ class _MapViewState extends State<MapView>
                 },
               ),
               const SizedBox(width: 20),
+              // TODO: Temporary for testing
               ElevatedButton(
                 onPressed: () {
                   _mapLocationNotifier.init();
@@ -171,6 +174,7 @@ class _MapViewState extends State<MapView>
                 child: const Text('Start'),
               ),
               const SizedBox(width: 20),
+              // TODO: Temporary for testing
               IconButton(
                   icon: const Icon(
                     Icons.zoom_out,
