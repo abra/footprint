@@ -12,13 +12,29 @@ class LocationRepository {
 
   final LocationService _locationService;
 
+  Future<void> checkLocationServiceEnabled() async {
+    try {
+      await _locationService.checkLocationServiceEnabled();
+    } on ServiceDisabledLocationServiceException catch (_) {
+      throw ServiceDisabledException();
+    }
+  }
+
+  Future<void> checkPermissionGranted() async {
+    try {
+      await _locationService.checkPermissionGranted();
+    } on PermissionDeniedLocationServiceException catch (_) {
+      throw PermissionDeniedException();
+    } on PermissionsPermanentlyDeniedLocationServiceException catch (_) {
+      throw PermissionsPermanentlyDeniedException();
+    }
+  }
+
   Stream<Location> getLocationUpdatesStream() {
     try {
       return _locationService
           .getLocationUpdatesStream()
           .map((position) => position.toDomainModel());
-    } on PermissionDeniedLocationServiceException catch (_) {
-      throw PermissionDeniedException();
     } on ServiceDisabledLocationServiceException catch (_) {
       throw ServiceDisabledException();
     } on UpdateTimeoutLocationServiceException catch (_) {
@@ -31,8 +47,6 @@ class LocationRepository {
       return _locationService
           .determineLocation()
           .then((position) => position.toDomainModel());
-    } on PermissionDeniedLocationServiceException catch (_) {
-      throw PermissionDeniedException();
     } on ServiceDisabledLocationServiceException catch (_) {
       throw ServiceDisabledException();
     } on UpdateTimeoutLocationServiceException catch (_) {
@@ -44,15 +58,11 @@ class LocationRepository {
     required Location from,
     required Location to,
   }) {
-    try {
-      return _locationService.calculateDistance(
-        startLatitude: from.latitude,
-        startLongitude: from.longitude,
-        endLatitude: to.latitude,
-        endLongitude: to.longitude,
-      );
-    } on UnableCalculateDistanceLocationServiceException catch (_) {
-      throw UnableCalculateDistanceException();
-    }
+    return _locationService.calculateDistance(
+      startLatitude: from.latitude,
+      startLongitude: from.longitude,
+      endLatitude: to.latitude,
+      endLongitude: to.longitude,
+    );
   }
 }
