@@ -49,7 +49,7 @@ class LocationService {
     }
   }
 
-  /// Gets a stream of location updates based on the desired update interval.
+  /// Gets a stream of location updates
   Stream<Position> getLocationUpdatesStream() async* {
     try {
       final locationSettings = LocationSettings(
