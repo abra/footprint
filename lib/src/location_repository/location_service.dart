@@ -7,8 +7,8 @@ import 'models/exceptions.dart';
 /// Provides access to the device's location.
 class LocationService {
   const LocationService({
-    Duration? timeLimit,
-  }) : _timeLimit = timeLimit ?? const Duration(seconds: 0);
+    int? distanceFilter,
+  })  : _distanceFilter = distanceFilter ?? 5;
 
   /// Whether location service is enabled on the device.
   static bool _serviceEnabled = false;
@@ -16,17 +16,20 @@ class LocationService {
   /// The current location permission status.
   static LocationPermission _permission = LocationPermission.denied;
 
-  /// The location service update interval.
-  final Duration _timeLimit;
+  /// The distance between each location update.
+  final int _distanceFilter;
 
-  /// Checks if location services are enabled and location permission is granted.
-  Future<void> _checkServiceAndPermissions() async {
+  /// Checks if location service is enabled
+  Future<void> checkLocationServiceEnabled() async {
     _serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
     if (!_serviceEnabled) {
       throw ServiceDisabledLocationServiceException();
     }
+  }
 
+  /// Checks if location service permission is granted.
+  Future<void> checkPermissionGranted() async {
     if (_serviceEnabled) {
       _permission = await Geolocator.checkPermission();
 
@@ -48,20 +51,14 @@ class LocationService {
 
   /// Gets a stream of location updates based on the desired update interval.
   Stream<Position> getLocationUpdatesStream() async* {
-    await _checkServiceAndPermissions();
-
     try {
       final locationSettings = LocationSettings(
-        timeLimit: _timeLimit,
+        distanceFilter: _distanceFilter,
       );
 
-      await for (final Position position in Geolocator.getPositionStream(
+      yield* Geolocator.getPositionStream(
         locationSettings: locationSettings,
-      )) {
-        yield position;
-      }
-    } on PermissionDeniedException catch (_) {
-      throw PermissionDeniedLocationServiceException();
+      );
     } on LocationServiceDisabledException catch (_) {
       throw ServiceDisabledLocationServiceException();
     } on TimeoutException catch (_) {
@@ -71,16 +68,8 @@ class LocationService {
 
   /// Gets the current location of the device.
   Future<Position> determineLocation() async {
-    await _checkServiceAndPermissions();
-
     try {
-      final Position position = await Geolocator.getCurrentPosition(
-        timeLimit: _timeLimit,
-      );
-
-      return position;
-    } on PermissionDeniedException catch (_) {
-      throw PermissionDeniedLocationServiceException();
+      return await Geolocator.getCurrentPosition();
     } on LocationServiceDisabledException catch (_) {
       throw ServiceDisabledLocationServiceException();
     } on TimeoutException catch (_) {
@@ -95,17 +84,11 @@ class LocationService {
     required double endLatitude,
     required double endLongitude,
   }) async {
-    try {
-      final double distance = Geolocator.distanceBetween(
-        startLatitude,
-        startLongitude,
-        endLatitude,
-        endLongitude,
-      );
-
-      return distance;
-    } catch (e) {
-      throw UnableCalculateDistanceLocationServiceException();
-    }
+    return Geolocator.distanceBetween(
+      startLatitude,
+      startLongitude,
+      endLatitude,
+      endLongitude,
+    );
   }
 }
