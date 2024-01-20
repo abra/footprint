@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer' as logger;
 import 'dart:developer';
 
 import 'package:equatable/equatable.dart';
@@ -19,14 +18,14 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   StreamSubscription<Location>? _locationSubscription;
 
   Future<void> init() async {
-    final isStillSubscribed =
+    bool locationSubscriptionPaused =
         _locationSubscription != null && _locationSubscription!.isPaused;
 
     try {
       await _checkServiceAndPermission();
       if (_locationSubscription == null) {
         await _startLocationUpdate();
-      } else if (isStillSubscribed) {
+      } else if (locationSubscriptionPaused) {
         _locationSubscription?.resume();
       }
     } catch (e) {
@@ -58,9 +57,8 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
         log('$location');
         value = MapLocationUpdateSuccess(location: location);
       });
-    } catch (error) {
-      logger.log('### Error: $error');
-      value = const MapLocationUpdateFailure();
+    } catch (_) {
+      rethrow;
     }
     //
     // final lastMapLocationState = value;
