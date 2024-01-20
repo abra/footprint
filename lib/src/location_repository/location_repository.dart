@@ -37,8 +37,6 @@ class LocationRepository {
           .map((position) => position.toDomainModel());
     } on ServiceDisabledLocationServiceException catch (_) {
       throw ServiceDisabledException();
-    } on UpdateTimeoutLocationServiceException catch (_) {
-      throw LocationUpdateTimeoutException();
     }
   }
 
@@ -49,8 +47,6 @@ class LocationRepository {
           .then((position) => position.toDomainModel());
     } on ServiceDisabledLocationServiceException catch (_) {
       throw ServiceDisabledException();
-    } on UpdateTimeoutLocationServiceException catch (_) {
-      throw LocationUpdateTimeoutException();
     }
   }
 

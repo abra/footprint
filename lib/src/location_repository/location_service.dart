@@ -61,8 +61,6 @@ class LocationService {
       );
     } on LocationServiceDisabledException catch (_) {
       throw ServiceDisabledLocationServiceException();
-    } on TimeoutException catch (_) {
-      throw UpdateTimeoutLocationServiceException();
     }
   }
 
@@ -72,8 +70,6 @@ class LocationService {
       return await Geolocator.getCurrentPosition();
     } on LocationServiceDisabledException catch (_) {
       throw ServiceDisabledLocationServiceException();
-    } on TimeoutException catch (_) {
-      throw UpdateTimeoutLocationServiceException();
     }
   }
 
