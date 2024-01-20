@@ -86,6 +86,7 @@ class _MapViewState extends State<MapView>
             ValueListenableBuilder<MapLocationState>(
               valueListenable: _mapLocationNotifier,
               builder: (BuildContext context, MapLocationState state, _) {
+                // TODO: Replace
                 if (state is MapLocationUpdateSuccess) {
                   if (state.locationUpdateError != null) {
                     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {

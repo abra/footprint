@@ -27,6 +27,10 @@ class LocationRepository {
       throw PermissionDeniedException();
     } on PermissionsPermanentlyDeniedLocationServiceException catch (_) {
       throw PermissionsPermanentlyDeniedException();
+    } on PermissionDefinitionsNotFoundLocationServiceException catch (_) {
+      throw PermissionDefinitionsNotFoundException();
+    } on PermissionRequestInProgressLocationServiceException catch (_) {
+      throw PermissionRequestInProgressException();
     }
   }
 

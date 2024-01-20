@@ -38,6 +38,12 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
       } else if (e is PermissionsPermanentlyDeniedException) {
         // TODO: Handle exception
         log('Permission Permanently Denied Exception');
+      } else if (e is PermissionDefinitionsNotFoundException) {
+        // TODO: Handle exception
+        log('Permission Definitions Not Found Exception');
+      } else if (e is PermissionRequestInProgressException) {
+        // TODO: Handle exception
+        log('Permission Request In Progress Exception');
       }
     }
   }

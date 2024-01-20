@@ -31,10 +31,16 @@ class LocationService {
   /// Checks if location service permission is granted.
   Future<void> checkPermissionGranted() async {
     if (_serviceEnabled) {
-      _permission = await Geolocator.checkPermission();
+        _permission = await Geolocator.checkPermission();
 
       if (_permission == LocationPermission.denied) {
-        _permission = await Geolocator.requestPermission();
+        try {
+          _permission = await Geolocator.requestPermission();
+        } on PermissionDefinitionsNotFoundException catch (_) {
+          throw PermissionDefinitionsNotFoundLocationServiceException();
+        } on PermissionRequestInProgressException catch (_) {
+          throw PermissionRequestInProgressLocationServiceException();
+        }
 
         if (_permission == LocationPermission.denied) {
           throw PermissionDeniedLocationServiceException();

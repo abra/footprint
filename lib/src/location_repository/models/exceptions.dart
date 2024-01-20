@@ -5,4 +5,8 @@ class PermissionDeniedLocationServiceException implements Exception {}
 class PermissionsPermanentlyDeniedLocationServiceException
     implements Exception {}
 
-class UpdateTimeoutLocationServiceException implements Exception {}
+class PermissionDefinitionsNotFoundLocationServiceException
+    implements Exception {}
+
+class PermissionRequestInProgressLocationServiceException
+    implements Exception {}
