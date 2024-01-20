@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:developer' as logger;
 import 'dart:developer';
 
+import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
+import 'package:footprint/src/domain_models/exceptions.dart';
 import 'package:footprint/src/domain_models/location.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
-import 'package:equatable/equatable.dart';
 
 part 'map_location_state.dart';
 
@@ -17,25 +19,86 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   StreamSubscription<Location>? _locationSubscription;
 
   Future<void> init() async {
-    await _runLocationUpdate();
+    final isStillSubscribed =
+        _locationSubscription != null && _locationSubscription!.isPaused;
+
+    try {
+      await _checkServiceAndPermission();
+      if (_locationSubscription == null) {
+        await _startLocationUpdate();
+      } else if (isStillSubscribed) {
+        _locationSubscription?.resume();
+      }
+    } catch (e) {
+      if (e is ServiceDisabledException) {
+        // TODO: Handle exception
+        log('Service Disabled Exception');
+      } else if (e is PermissionDeniedException) {
+        // TODO: Handle exception
+        log('Permission Denied Exception');
+      } else if (e is PermissionsPermanentlyDeniedException) {
+        // TODO: Handle exception
+        log('Permission Permanently Denied Exception');
+      }
+    }
   }
 
-  Future<void> _runLocationUpdate() async {
+  Future<void> _checkServiceAndPermission() async {
+    await locationRepository.checkLocationServiceEnabled();
+    await locationRepository.checkPermissionGranted();
+  }
+
+  Future<void> _startLocationUpdate() async {
     try {
       final stream = locationRepository.getLocationUpdatesStream();
 
-      _locationSubscription = stream.listen((location) {
-        value = MapLocationUpdateSuccess(
-          location: location,
-        );
-        // TODO: Remove after testing
-        log('Location: ${location.latitude}, ${location.longitude}');
+      Location? prev;
+
+      _locationSubscription = stream.listen((location) async {
+        log('$location');
+        value = MapLocationUpdateSuccess(location: location);
       });
     } catch (error) {
+      logger.log('### Error: $error');
       value = const MapLocationUpdateFailure();
-      return;
     }
+    //
+    // final lastMapLocationState = value;
+    // if (lastMapLocationState is MapLocationUpdateSuccess) {
+    //   value = MapLocationUpdateSuccess(
+    //     location: lastMapLocationState.location,
+    //     locationUpdateError: error,
+    //   );
+    //   _locationSubscription?.pause();
+    //   logger.log(
+    //       'Location Subscription is paused: ${_locationSubscription?.isPaused}');
+    // }
+    // });
+    // } catch (error) {
+    //   log('### Error: $error');
+    //   final lastMapLocationState = value;
+    //   if (lastMapLocationState is MapLocationUpdateSuccess) {
+    //     value = MapLocationUpdateSuccess(
+    //       location: lastMapLocationState.location,
+    //       locationUpdateError: error,
+    //     );
+    //   }
+    // }
   }
+
+  // Future<double> _calculateSpeed({
+  //   required Location from,
+  //   required Location to,
+  // }) async {
+  //   Duration timeDifference = to.timestamp.difference(from.timestamp);
+  //   double distance = await _calculateDistance(from: from, to: to);
+  //   double speed = distance / timeDifference.inHours;
+  //   return speed;
+  // }
+  //
+  // double _degreesToRadians(double degrees) {
+  //   return degrees * pi / 180;
+  // }
 
   @override
   void dispose() {
