@@ -85,14 +85,24 @@ class _MapViewState extends State<MapView>
             ),
             ValueListenableBuilder<MapLocationState>(
               valueListenable: _mapLocationNotifier,
-              builder: (BuildContext context, MapLocationState value, _) {
-                if (value is MapLocationUpdateSuccess) {
+              builder: (BuildContext context, MapLocationState state, _) {
+                if (state is MapLocationUpdateSuccess) {
+                  if (state.locationUpdateError != null) {
+                    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content:
+                              Text('${state.locationUpdateError ?? 'ERROR'}!'),
+                        ),
+                      );
+                    });
+                  }
                   return MarkerLayer(
                     markers: [
                       Marker(
                         width: 30.0,
                         height: 30.0,
-                        point: value.location.toLatLng(),
+                        point: state.location.toLatLng(),
                         child: const Icon(
                           Icons.circle,
                           size: 20.0,
@@ -101,8 +111,14 @@ class _MapViewState extends State<MapView>
                       ),
                     ],
                   );
+                } else if (state is MapLocationUpdateFailure) {
+                  log('${state.runtimeType}');
+                  return const Center(
+                    child: Text('Failed to get location'),
+                  );
+                } else {
+                  return const Center(child: CircularProgressIndicator());
                 }
-                return const SizedBox.shrink();
               },
             ),
           ],
@@ -148,6 +164,13 @@ class _MapViewState extends State<MapView>
                 },
               ),
               const SizedBox(width: 20),
+              ElevatedButton(
+                onPressed: () {
+                  _mapLocationNotifier.init();
+                },
+                child: const Text('Start'),
+              ),
+              const SizedBox(width: 20),
               IconButton(
                   icon: const Icon(
                     Icons.zoom_out,
@@ -171,7 +194,6 @@ class _MapViewState extends State<MapView>
 
   void _handleMapLocationChanged() {
     final mapViewState = _mapViewNotifier.value as MapViewUpdated;
-
     if (mapViewState.shouldCenterMap) {
       _moveToOnLocationUpdateSuccess();
     }
@@ -210,4 +232,3 @@ abstract class MapConfig {
     pinchZoomWinGestures: InteractiveFlag.pinchZoom,
   );
 }
-
