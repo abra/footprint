@@ -8,7 +8,7 @@ import 'models/exceptions.dart';
 class LocationService {
   const LocationService({
     int? distanceFilter,
-  })  : _distanceFilter = distanceFilter ?? 5;
+  }) : _distanceFilter = distanceFilter ?? 5;
 
   /// Whether location service is enabled on the device.
   static bool _serviceEnabled = false;
@@ -31,7 +31,7 @@ class LocationService {
   /// Checks if location service permission is granted.
   Future<void> checkPermissionGranted() async {
     if (_serviceEnabled) {
-        _permission = await Geolocator.checkPermission();
+      _permission = await Geolocator.checkPermission();
 
       if (_permission == LocationPermission.denied) {
         try {
@@ -56,18 +56,14 @@ class LocationService {
   }
 
   /// Gets a stream of location updates
-  Stream<Position> getLocationUpdatesStream() async* {
-    try {
-      final locationSettings = LocationSettings(
-        distanceFilter: _distanceFilter,
-      );
+  Stream<Position> getLocationUpdatesStream() {
+    final locationSettings = LocationSettings(
+      distanceFilter: _distanceFilter,
+    );
 
-      yield* Geolocator.getPositionStream(
-        locationSettings: locationSettings,
-      );
-    } on LocationServiceDisabledException catch (_) {
-      throw ServiceDisabledLocationServiceException();
-    }
+    return Geolocator.getPositionStream(
+      locationSettings: locationSettings,
+    );
   }
 
   /// Gets the current location of the device.

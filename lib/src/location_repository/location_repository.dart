@@ -35,13 +35,9 @@ class LocationRepository {
   }
 
   Stream<Location> getLocationUpdatesStream() {
-    try {
-      return _locationService
-          .getLocationUpdatesStream()
-          .map((position) => position.toDomainModel());
-    } on ServiceDisabledLocationServiceException catch (_) {
-      throw ServiceDisabledException();
-    }
+    return _locationService
+        .getLocationUpdatesStream()
+        .map((position) => position.toDomainModel());
   }
 
   Future<Location> determineLocation() {
