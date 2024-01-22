@@ -20,7 +20,7 @@ class LocationService {
   final int _distanceFilter;
 
   /// Checks if location service is enabled
-  Future<void> checkLocationServiceEnabled() async {
+  Future<void> ensureLocationServiceEnabled() async {
     _serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
     if (!_serviceEnabled) {
@@ -29,7 +29,7 @@ class LocationService {
   }
 
   /// Checks if location service permission is granted.
-  Future<void> checkPermissionGranted() async {
+  Future<void> ensurePermissionGranted() async {
     if (_serviceEnabled) {
       _permission = await Geolocator.checkPermission();
 
@@ -56,18 +56,30 @@ class LocationService {
   }
 
   /// Gets a stream of location updates
-  Stream<Position> getLocationUpdatesStream() {
+  Stream<Position> positionUpdateStream() async* {
     final locationSettings = LocationSettings(
       distanceFilter: _distanceFilter,
     );
 
-    return Geolocator.getPositionStream(
-      locationSettings: locationSettings,
-    );
+    try {
+      final positionStream = Geolocator.getPositionStream(
+        locationSettings: locationSettings,
+      );
+
+      await for (Position position in positionStream) {
+        yield position;
+        // TODO: Remove!!!!!!!!!!!!!!
+        // throw const LocationServiceDisabledException();
+      }
+    } catch (e) {
+      if (e is LocationServiceDisabledException) {
+        throw ServiceDisabledLocationServiceException();
+      }
+    }
   }
 
   /// Gets the current location of the device.
-  Future<Position> determineLocation() async {
+  Future<Position> determinePosition() async {
     try {
       return await Geolocator.getCurrentPosition();
     } on LocationServiceDisabledException catch (_) {
