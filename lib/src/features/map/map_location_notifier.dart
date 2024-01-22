@@ -18,21 +18,25 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   StreamSubscription<Location>? _locationSubscription;
 
   Future<void> init() async {
-    bool locationSubscriptionPaused =
+    bool isStillSubscribed =
         _locationSubscription != null && _locationSubscription!.isPaused;
 
     try {
-      await _checkServiceAndPermission();
+      await _ensureServiceAndPermission();
       if (_locationSubscription == null) {
-        await _startLocationUpdate();
-      } else if (locationSubscriptionPaused) {
+        log('start!');
+        await _runLocationUpdate();
+      } else if (isStillSubscribed) {
+        log('resume!');
         _locationSubscription?.resume();
       }
     } catch (e) {
-      if (e is ServiceDisabledException) {
-        // TODO: Handle exception
-        log('Service Disabled Exception');
-      } else if (e is PermissionDeniedException) {
+      log('Caught exception!');
+      // if (e is ServiceDisabledException) {
+      //   // TODO: Handle exception
+      //   log('Service Disabled Exception');
+      // } else
+      if (e is PermissionDeniedException) {
         // TODO: Handle exception
         log('Permission Denied Exception');
       } else if (e is PermissionsPermanentlyDeniedException) {
@@ -48,61 +52,30 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
     }
   }
 
-  Future<void> _checkServiceAndPermission() async {
-    await locationRepository.checkLocationServiceEnabled();
-    await locationRepository.checkPermissionGranted();
+  Future<void> _ensureServiceAndPermission() async {
+    await locationRepository.ensureLocationServiceEnabled();
+    await locationRepository.ensurePermissionGranted();
   }
 
-  Future<void> _startLocationUpdate() async {
-    try {
-      final stream = locationRepository.getLocationUpdatesStream();
+  Future<void> _runLocationUpdate() async {
+    final stream = locationRepository.locationUpdateStream();
 
-      Location? prev;
+    Location? prev;
 
-      _locationSubscription = stream.listen((location) async {
-        log('$location');
-        value = MapLocationUpdateSuccess(location: location);
-      });
-    } catch (_) {
-      rethrow;
-    }
-    //
-    // final lastMapLocationState = value;
-    // if (lastMapLocationState is MapLocationUpdateSuccess) {
-    //   value = MapLocationUpdateSuccess(
-    //     location: lastMapLocationState.location,
-    //     locationUpdateError: error,
-    //   );
-    //   _locationSubscription?.pause();
-    //   logger.log(
-    //       'Location Subscription is paused: ${_locationSubscription?.isPaused}');
-    // }
-    // });
-    // } catch (error) {
-    //   log('### Error: $error');
-    //   final lastMapLocationState = value;
-    //   if (lastMapLocationState is MapLocationUpdateSuccess) {
-    //     value = MapLocationUpdateSuccess(
-    //       location: lastMapLocationState.location,
-    //       locationUpdateError: error,
-    //     );
-    //   }
-    // }
+    _locationSubscription = stream.listen((location) {
+      log('$location');
+      value = MapLocationUpdateSuccess(location: location);
+    }, onError: (error) {
+      if (error is ServiceDisabledException) {
+        log('Location Service Disabled Exception!');
+        _locationSubscription?.cancel();
+        _locationSubscription = null;
+      }
+    }, onDone: () {
+      log('Done!');
+    });
+    log('Here');
   }
-
-  // Future<double> _calculateSpeed({
-  //   required Location from,
-  //   required Location to,
-  // }) async {
-  //   Duration timeDifference = to.timestamp.difference(from.timestamp);
-  //   double distance = await _calculateDistance(from: from, to: to);
-  //   double speed = distance / timeDifference.inHours;
-  //   return speed;
-  // }
-  //
-  // double _degreesToRadians(double degrees) {
-  //   return degrees * pi / 180;
-  // }
 
   @override
   void dispose() {
