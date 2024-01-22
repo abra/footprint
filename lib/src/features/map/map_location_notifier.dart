@@ -12,7 +12,7 @@ part 'map_location_state.dart';
 class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   MapLocationNotifier({
     required this.locationRepository,
-  }) : super(MapInitialLoading());
+  }) : super(MapInitialLocationUpdate());
 
   final LocationRepository locationRepository;
   StreamSubscription<Location>? _locationSubscription;

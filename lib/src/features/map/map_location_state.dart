@@ -4,7 +4,7 @@ sealed class MapLocationState extends Equatable {
   const MapLocationState();
 }
 
-class MapInitialLoading extends MapLocationState {
+class MapInitialLocationUpdate extends MapLocationState {
   @override
   List<Object?> get props => [];
 }
