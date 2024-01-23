@@ -18,63 +18,50 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   StreamSubscription<Location>? _locationSubscription;
 
   Future<void> init() async {
-    bool isStillSubscribed =
+    bool isStillSubscribedButPaused =
         _locationSubscription != null && _locationSubscription!.isPaused;
 
     try {
-      await _ensureServiceAndPermission();
+      await locationRepository.ensureLocationServiceEnabled();
+      await locationRepository.ensurePermissionGranted();
+
       if (_locationSubscription == null) {
-        log('start!');
-        await _runLocationUpdate();
-      } else if (isStillSubscribed) {
-        log('resume!');
+        await _startLocationUpdate();
+      } else if (isStillSubscribedButPaused) {
         _locationSubscription?.resume();
       }
     } catch (e) {
-      log('Caught exception!');
-      // if (e is ServiceDisabledException) {
-      //   // TODO: Handle exception
-      //   log('Service Disabled Exception');
-      // } else
-      if (e is PermissionDeniedException) {
-        // TODO: Handle exception
-        log('Permission Denied Exception');
-      } else if (e is PermissionsPermanentlyDeniedException) {
-        // TODO: Handle exception
-        log('Permission Permanently Denied Exception');
-      } else if (e is PermissionDefinitionsNotFoundException) {
-        // TODO: Handle exception
-        log('Permission Definitions Not Found Exception');
-      } else if (e is PermissionRequestInProgressException) {
-        // TODO: Handle exception
-        log('Permission Request In Progress Exception');
-      }
+      _handlePermissionExceptions(e);
     }
   }
 
-  Future<void> _ensureServiceAndPermission() async {
-    await locationRepository.ensureLocationServiceEnabled();
-    await locationRepository.ensurePermissionGranted();
+  Future<void> _handlePermissionExceptions(Object e) async {
+    if (e is PermissionDeniedException) {
+      value = MapLocationServicePermissionDenied();
+    } else if (e is PermissionsPermanentlyDeniedException) {
+      value = MapLocationServicePermissionPermanentlyDenied();
+    } else if (e is PermissionDefinitionsNotFoundException) {
+      value = MapLocationServicePermissionDefinitionsNotFound();
+    } else if (e is PermissionRequestInProgressException) {
+      value = MapLocationServicePermissionRequestInProgress();
+    }
   }
 
-  Future<void> _runLocationUpdate() async {
+  Future<void> _startLocationUpdate() async {
     final stream = locationRepository.locationUpdateStream();
-
-    Location? prev;
 
     _locationSubscription = stream.listen((location) {
       log('$location');
       value = MapLocationUpdateSuccess(location: location);
     }, onError: (error) {
       if (error is ServiceDisabledException) {
-        log('Location Service Disabled Exception!');
+        value = MapLocationServiceDisabled();
         _locationSubscription?.cancel();
         _locationSubscription = null;
       }
     }, onDone: () {
       log('Done!');
     });
-    log('Here');
   }
 
   @override

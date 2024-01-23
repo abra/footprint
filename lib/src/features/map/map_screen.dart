@@ -8,11 +8,11 @@ import 'map_view.dart';
 class MapScreen extends StatelessWidget {
   const MapScreen({
     super.key,
-    required this.repository,
+    required this.locationRepository,
     required this.onGoToRouteList,
   });
 
-  final LocationRepository repository;
+  final LocationRepository locationRepository;
   final VoidCallback onGoToRouteList;
 
   @override
@@ -23,8 +23,8 @@ class MapScreen extends StatelessWidget {
         onGoToRouteList: onGoToRouteList,
       ),
       body: MapView(
-        mapLocationNotifier: MapLocationNotifier(
-          locationRepository: repository,
+        locationNotifier: MapLocationNotifier(
+          locationRepository: locationRepository,
         ),
       ),
     );

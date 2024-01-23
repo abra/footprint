@@ -5,16 +5,17 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 
 import 'extensions.dart';
+import 'map_config.dart';
 import 'map_location_notifier.dart';
 import 'map_view_notifier.dart';
 
 class MapView extends StatefulWidget {
   const MapView({
     super.key,
-    required this.mapLocationNotifier,
+    required this.locationNotifier,
   });
 
-  final MapLocationNotifier mapLocationNotifier;
+  final MapLocationNotifier locationNotifier;
 
   @override
   State<MapView> createState() => _MapViewState();
@@ -23,8 +24,8 @@ class MapView extends StatefulWidget {
 class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final AnimatedMapController _animatedMapController;
-  late final MapLocationNotifier _mapLocationNotifier;
-  final MapViewNotifier _mapViewNotifier = MapViewNotifier(
+  late final MapLocationNotifier _locationNotifier;
+  final MapViewNotifier _viewNotifier = MapViewNotifier(
     shouldCenterMap: MapConfig.shouldCenterMap,
     zoom: MapConfig.defaultZoom,
     maxZoom: MapConfig.maxZoom,
@@ -35,8 +36,8 @@ class _MapViewState extends State<MapView>
   void initState() {
     super.initState();
 
-    _mapLocationNotifier = widget.mapLocationNotifier;
-    _mapLocationNotifier.init();
+    _locationNotifier = widget.locationNotifier;
+    _locationNotifier.init();
 
     _animatedMapController = AnimatedMapController(
       vsync: this,
@@ -44,23 +45,23 @@ class _MapViewState extends State<MapView>
       curve: Curves.fastOutSlowIn,
     );
 
-    _mapViewNotifier.addListener(_handleZoomChanged);
-    _mapLocationNotifier.addListener(_handleMapLocationChanged);
+    _viewNotifier.addListener(_handleZoomChanged);
+    _locationNotifier.addListener(_handleMapLocationChanged);
   }
 
   @override
   void dispose() {
     _animatedMapController.dispose();
-    _mapViewNotifier.removeListener(_handleZoomChanged);
-    _mapViewNotifier.dispose();
-    _mapLocationNotifier.removeListener(_handleMapLocationChanged);
-    _mapLocationNotifier.dispose();
+    _viewNotifier.removeListener(_handleZoomChanged);
+    _viewNotifier.dispose();
+    _locationNotifier.removeListener(_handleMapLocationChanged);
+    _locationNotifier.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    log('build map view');
+    log('>>> build $runtimeType');
     super.build(context);
 
     return Stack(
@@ -68,7 +69,9 @@ class _MapViewState extends State<MapView>
         FlutterMap(
           mapController: _animatedMapController.mapController,
           options: const MapOptions(
-            interactionOptions: MapConfig.interactionOptions,
+            interactionOptions: InteractionOptions(
+              pinchZoomWinGestures: InteractiveFlag.pinchZoom,
+            ),
             initialZoom: MapConfig.defaultZoom,
             maxZoom: MapConfig.maxZoom,
             minZoom: MapConfig.minZoom,
@@ -84,20 +87,20 @@ class _MapViewState extends State<MapView>
               minZoom: MapConfig.minZoom,
             ),
             ValueListenableBuilder<MapLocationState>(
-              valueListenable: _mapLocationNotifier,
+              valueListenable: _locationNotifier,
               builder: (BuildContext context, MapLocationState state, _) {
                 // TODO: Replace
                 if (state is MapLocationUpdateSuccess) {
-                  if (state.locationUpdateError != null) {
-                    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content:
-                              Text('${state.locationUpdateError ?? 'ERROR'}!'),
-                        ),
-                      );
-                    });
-                  }
+                  // if (state.locationUpdateError != null) {
+                  //   WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                  //     ScaffoldMessenger.of(context).showSnackBar(
+                  //       SnackBar(
+                  //         content:
+                  //             Text('${state.locationUpdateError ?? 'ERROR'}!'),
+                  //       ),
+                  //     );
+                  //   });
+                  // }
                   return MarkerLayer(
                     markers: [
                       Marker(
@@ -112,10 +115,21 @@ class _MapViewState extends State<MapView>
                       ),
                     ],
                   );
-                } else if (state is MapLocationUpdateFailure) {
+                } else if (state is MapLocationServiceDisabled) {
                   log('${state.runtimeType}');
                   return const Center(
-                    child: Text('Failed to get location'),
+                    child: Text('Service disabled'),
+                  );
+                } else if (state is MapLocationServicePermissionDenied) {
+                  log('${state.runtimeType}');
+                  return const Center(
+                    child: Text('Permission denied'),
+                  );
+                } else if (state
+                    is MapLocationServicePermissionPermanentlyDenied) {
+                  log('${state.runtimeType}');
+                  return const Center(
+                    child: Text('Permission Permanently denied'),
                   );
                 } else {
                   return const Center(child: CircularProgressIndicator());
@@ -137,12 +151,12 @@ class _MapViewState extends State<MapView>
                     Icons.zoom_in,
                   ),
                   onPressed: () {
-                    _mapViewNotifier.handleZoomedIn(MapConfig.zoomStep);
+                    _viewNotifier.handleZoomedIn(MapConfig.zoomStep);
                   }),
               const SizedBox(width: 20),
               // TODO: Temporary for testing
               ValueListenableBuilder<MapViewState>(
-                valueListenable: _mapViewNotifier,
+                valueListenable: _viewNotifier,
                 builder: (BuildContext context, MapViewState state, _) {
                   if (state is MapViewUpdated) {
                     return Text(
@@ -155,7 +169,7 @@ class _MapViewState extends State<MapView>
               const SizedBox(width: 20),
               // TODO: Temporary for testing
               ValueListenableBuilder<MapViewState>(
-                valueListenable: _mapViewNotifier,
+                valueListenable: _viewNotifier,
                 builder: (BuildContext context, MapViewState state, _) {
                   if (state is MapViewUpdated) {
                     return Switch(
@@ -170,7 +184,7 @@ class _MapViewState extends State<MapView>
               // TODO: Temporary for testing
               ElevatedButton(
                 onPressed: () {
-                  _mapLocationNotifier.init();
+                  _locationNotifier.init();
                 },
                 child: const Text('Start'),
               ),
@@ -181,7 +195,7 @@ class _MapViewState extends State<MapView>
                     Icons.zoom_out,
                   ),
                   onPressed: () {
-                    _mapViewNotifier.handleZoomedOut(MapConfig.zoomStep);
+                    _viewNotifier.handleZoomedOut(MapConfig.zoomStep);
                   }),
             ],
           ),
@@ -191,26 +205,26 @@ class _MapViewState extends State<MapView>
   }
 
   void _handleZoomChanged() {
-    final mapViewState = _mapViewNotifier.value;
+    final mapViewState = _viewNotifier.value;
     if (mapViewState is MapViewUpdated) {
       _animatedMapController.animatedZoomTo(mapViewState.zoom);
     }
   }
 
   void _handleMapLocationChanged() {
-    final mapViewState = _mapViewNotifier.value as MapViewUpdated;
+    final mapViewState = _viewNotifier.value as MapViewUpdated;
     if (mapViewState.shouldCenterMap) {
       _moveToOnLocationUpdateSuccess();
     }
   }
 
   void _handleToggleButtonSwitched(bool value) {
-    _mapViewNotifier.handleCenterMap(value);
+    _viewNotifier.handleCenterMap(value);
     _moveToOnLocationUpdateSuccess();
   }
 
   void _moveToOnLocationUpdateSuccess() {
-    final mapLocationState = _mapLocationNotifier.value;
+    final mapLocationState = _locationNotifier.value;
     if (mapLocationState is MapLocationUpdateSuccess) {
       _animatedMapController.animateTo(
         dest: mapLocationState.location.toLatLng(),
@@ -220,20 +234,4 @@ class _MapViewState extends State<MapView>
 
   @override
   bool get wantKeepAlive => true;
-}
-
-abstract class MapConfig {
-  static const bool shouldCenterMap = true;
-  static const double zoomStep = 0.5;
-  static const double defaultZoom = 16;
-  static const double maxZoom = 18;
-  static const double minZoom = 14;
-  static const String fallbackUrl =
-      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-  static const String urlTemplate =
-      'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-  static const String userAgentPackageName = 'com.github.abra.footprint';
-  static const InteractionOptions interactionOptions = InteractionOptions(
-    pinchZoomWinGestures: InteractiveFlag.pinchZoom,
-  );
 }
