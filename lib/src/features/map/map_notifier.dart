@@ -59,8 +59,6 @@ class MapNotifier extends ValueNotifier<MapState> {
         _locationSubscription?.cancel();
         _locationSubscription = null;
       }
-    }, onDone: () {
-      log('Done!');
     });
   }
 

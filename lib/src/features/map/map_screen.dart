@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:footprint/src/features/map/map_notifier_provider.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
 
 import 'map_app_bar.dart';
 import 'map_notifier.dart';
+import 'map_notifier_provider.dart';
 import 'map_view.dart';
 
 class MapScreen extends StatefulWidget {
