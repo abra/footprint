@@ -31,17 +31,20 @@ class _MapViewState extends State<MapView>
   );
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _mapNotifier = MapNotifierProvider.of(context).notifier;
-    _mapNotifier.init();
-
+  void initState() {
+    super.initState();
     _animatedMapController = AnimatedMapController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
       curve: Curves.fastOutSlowIn,
     );
+  }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _mapNotifier = MapNotifierProvider.of(context).notifier;
+    _mapNotifier.init();
     _viewNotifier.addListener(_handleZoomChanged);
     _mapNotifier.addListener(_handleMapLocationChanged);
   }
