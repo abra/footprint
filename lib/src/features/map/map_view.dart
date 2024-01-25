@@ -6,16 +6,14 @@ import 'package:flutter_map_animations/flutter_map_animations.dart';
 
 import 'extensions.dart';
 import 'map_config.dart';
-import 'map_location_notifier.dart';
+import 'map_notifier.dart';
+import 'map_notifier_provider.dart';
 import 'map_view_notifier.dart';
 
 class MapView extends StatefulWidget {
   const MapView({
     super.key,
-    required this.locationNotifier,
   });
-
-  final MapLocationNotifier locationNotifier;
 
   @override
   State<MapView> createState() => _MapViewState();
@@ -24,7 +22,7 @@ class MapView extends StatefulWidget {
 class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final AnimatedMapController _animatedMapController;
-  late final MapLocationNotifier _locationNotifier;
+  late final MapNotifier _mapNotifier;
   final MapViewNotifier _viewNotifier = MapViewNotifier(
     shouldCenterMap: MapConfig.shouldCenterMap,
     zoom: MapConfig.defaultZoom,
@@ -33,11 +31,10 @@ class _MapViewState extends State<MapView>
   );
 
   @override
-  void initState() {
-    super.initState();
-
-    _locationNotifier = widget.locationNotifier;
-    _locationNotifier.init();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _mapNotifier = MapNotifierProvider.of(context).notifier;
+    _mapNotifier.init();
 
     _animatedMapController = AnimatedMapController(
       vsync: this,
@@ -46,7 +43,7 @@ class _MapViewState extends State<MapView>
     );
 
     _viewNotifier.addListener(_handleZoomChanged);
-    _locationNotifier.addListener(_handleMapLocationChanged);
+    _mapNotifier.addListener(_handleMapLocationChanged);
   }
 
   @override
@@ -54,8 +51,8 @@ class _MapViewState extends State<MapView>
     _animatedMapController.dispose();
     _viewNotifier.removeListener(_handleZoomChanged);
     _viewNotifier.dispose();
-    _locationNotifier.removeListener(_handleMapLocationChanged);
-    _locationNotifier.dispose();
+    _mapNotifier.removeListener(_handleMapLocationChanged);
+    _mapNotifier.dispose();
     super.dispose();
   }
 
@@ -86,55 +83,8 @@ class _MapViewState extends State<MapView>
               maxZoom: MapConfig.maxZoom,
               minZoom: MapConfig.minZoom,
             ),
-            ValueListenableBuilder<MapLocationState>(
-              valueListenable: _locationNotifier,
-              builder: (BuildContext context, MapLocationState state, _) {
-                // TODO: Replace
-                if (state is MapLocationUpdateSuccess) {
-                  // if (state.locationUpdateError != null) {
-                  //   WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-                  //     ScaffoldMessenger.of(context).showSnackBar(
-                  //       SnackBar(
-                  //         content:
-                  //             Text('${state.locationUpdateError ?? 'ERROR'}!'),
-                  //       ),
-                  //     );
-                  //   });
-                  // }
-                  return MarkerLayer(
-                    markers: [
-                      Marker(
-                        width: 30.0,
-                        height: 30.0,
-                        point: state.location.toLatLng(),
-                        child: const Icon(
-                          Icons.circle,
-                          size: 20.0,
-                          color: Colors.deepPurple,
-                        ),
-                      ),
-                    ],
-                  );
-                } else if (state is MapLocationServiceDisabled) {
-                  log('${state.runtimeType}');
-                  return const Center(
-                    child: Text('Service disabled'),
-                  );
-                } else if (state is MapLocationServicePermissionDenied) {
-                  log('${state.runtimeType}');
-                  return const Center(
-                    child: Text('Permission denied'),
-                  );
-                } else if (state
-                    is MapLocationServicePermissionPermanentlyDenied) {
-                  log('${state.runtimeType}');
-                  return const Center(
-                    child: Text('Permission Permanently denied'),
-                  );
-                } else {
-                  return const Center(child: CircularProgressIndicator());
-                }
-              },
+            _MapMarker(
+              locationNotifier: _mapNotifier,
             ),
           ],
         ),
@@ -184,7 +134,7 @@ class _MapViewState extends State<MapView>
               // TODO: Temporary for testing
               ElevatedButton(
                 onPressed: () {
-                  _locationNotifier.init();
+                  _mapNotifier.init();
                 },
                 child: const Text('Start'),
               ),
@@ -212,9 +162,11 @@ class _MapViewState extends State<MapView>
   }
 
   void _handleMapLocationChanged() {
-    final mapViewState = _viewNotifier.value as MapViewUpdated;
-    if (mapViewState.shouldCenterMap) {
-      _moveToOnLocationUpdateSuccess();
+    final mapViewState = _viewNotifier.value;
+    if (mapViewState is MapViewUpdated) {
+      if (mapViewState.shouldCenterMap) {
+        _moveToOnLocationUpdateSuccess();
+      }
     }
   }
 
@@ -224,7 +176,7 @@ class _MapViewState extends State<MapView>
   }
 
   void _moveToOnLocationUpdateSuccess() {
-    final mapLocationState = _locationNotifier.value;
+    final mapLocationState = _mapNotifier.value;
     if (mapLocationState is MapLocationUpdateSuccess) {
       _animatedMapController.animateTo(
         dest: mapLocationState.location.toLatLng(),
@@ -234,4 +186,52 @@ class _MapViewState extends State<MapView>
 
   @override
   bool get wantKeepAlive => true;
+}
+
+class _MapMarker extends StatelessWidget {
+  const _MapMarker({
+    required MapNotifier locationNotifier,
+  }) : _locationNotifier = locationNotifier;
+
+  final MapNotifier _locationNotifier;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<MapState>(
+      valueListenable: _locationNotifier,
+      builder: (BuildContext context, MapState state, _) {
+        // TODO: Replace
+        if (state is MapLocationUpdateSuccess) {
+          return MarkerLayer(
+            markers: [
+              Marker(
+                width: 30.0,
+                height: 30.0,
+                point: state.location.toLatLng(),
+                child: const Icon(
+                  Icons.circle,
+                  size: 20.0,
+                  color: Colors.deepPurple,
+                ),
+              ),
+            ],
+          );
+        } else if (state is MapLocationServiceDisabled) {
+          return const Center(
+            child: Text('Service disabled'),
+          );
+        } else if (state is MapLocationServicePermissionDenied) {
+          return const Center(
+            child: Text('Permission denied'),
+          );
+        } else if (state is MapLocationServicePermissionPermanentlyDenied) {
+          return const Center(
+            child: Text('Permission Permanently denied'),
+          );
+        } else {
+          return const Center(child: CircularProgressIndicator());
+        }
+      },
+    );
+  }
 }

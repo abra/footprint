@@ -1,31 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:footprint/src/features/map/map_notifier_provider.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
 
 import 'map_app_bar.dart';
-import 'map_location_notifier.dart';
+import 'map_notifier.dart';
 import 'map_view.dart';
 
-class MapScreen extends StatelessWidget {
+class MapScreen extends StatefulWidget {
   const MapScreen({
     super.key,
     required this.locationRepository,
     required this.onGoToRouteList,
   });
 
-  final LocationRepository locationRepository;
   final VoidCallback onGoToRouteList;
+  final LocationRepository locationRepository;
+
+  @override
+  State<MapScreen> createState() => _MapScreenState();
+}
+
+class _MapScreenState extends State<MapScreen> {
+  late final MapNotifier _mapNotifier = MapNotifier(
+    locationRepository: widget.locationRepository,
+  );
+
+  @override
+  void dispose() {
+    _mapNotifier.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: MapAppBar(
-        onGoToRouteList: onGoToRouteList,
-      ),
-      body: MapView(
-        locationNotifier: MapLocationNotifier(
-          locationRepository: locationRepository,
+    return MapNotifierProvider(
+      notifier: _mapNotifier,
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: MapAppBar(
+          onGoToRouteList: widget.onGoToRouteList,
         ),
+        body: const MapView(),
       ),
     );
   }

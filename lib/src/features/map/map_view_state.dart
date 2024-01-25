@@ -23,7 +23,6 @@ class MapViewUpdated extends MapViewState {
     double? maxZoom,
     double? minZoom,
   }) {
-    log('zoom: $zoom, shouldCenter: $shouldCenterMap');
     return MapViewUpdated(
       shouldCenterMap: shouldCenterMap ?? this.shouldCenterMap,
       zoom: zoom ?? this.zoom,
