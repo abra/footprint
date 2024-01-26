@@ -143,14 +143,14 @@ class _ExceptionNotificationState extends State<_ExceptionNotification> {
       fit: BoxFit.fitWidth,
       child: OverlayPortal(
         controller: _overlayPortalController,
-        overlayChildBuilder: (BuildContext ctx) {
+        overlayChildBuilder: (BuildContext context) {
           return Positioned(
             top: kToolbarHeight + 44,
             left: 0,
             right: 0,
             child: Center(
               child: SizedBox(
-                width: MediaQuery.of(ctx).size.width - 20,
+                width: MediaQuery.of(context).size.width - 20,
                 height: kToolbarHeight + 14,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
