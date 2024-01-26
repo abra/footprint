@@ -22,7 +22,7 @@ class MapView extends StatefulWidget {
 class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final AnimatedMapController _animatedMapController;
-  late final MapLocationNotifier _mapNotifier;
+  late final MapLocationNotifier _mapLocationNotifier;
   final MapViewNotifier _viewNotifier = MapViewNotifier(
     shouldCenterMap: MapConfig.shouldCenterMap,
     zoom: MapConfig.defaultZoom,
@@ -43,10 +43,10 @@ class _MapViewState extends State<MapView>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _mapNotifier = MapLocationNotifierProvider.of(context).notifier;
-    _mapNotifier.init();
+    _mapLocationNotifier = MapLocationNotifierProvider.of(context).notifier;
+    _mapLocationNotifier.init();
     _viewNotifier.addListener(_handleZoomChanged);
-    _mapNotifier.addListener(_handleMapLocationChanged);
+    _mapLocationNotifier.addListener(_handleMapLocationChanged);
   }
 
   @override
@@ -54,8 +54,8 @@ class _MapViewState extends State<MapView>
     _animatedMapController.dispose();
     _viewNotifier.removeListener(_handleZoomChanged);
     _viewNotifier.dispose();
-    _mapNotifier.removeListener(_handleMapLocationChanged);
-    _mapNotifier.dispose();
+    _mapLocationNotifier.removeListener(_handleMapLocationChanged);
+    _mapLocationNotifier.dispose();
     super.dispose();
   }
 
@@ -87,7 +87,7 @@ class _MapViewState extends State<MapView>
               minZoom: MapConfig.minZoom,
             ),
             _MapMarker(
-              locationNotifier: _mapNotifier,
+              locationNotifier: _mapLocationNotifier,
             ),
           ],
         ),
@@ -137,7 +137,7 @@ class _MapViewState extends State<MapView>
               // TODO: Temporary for testing
               ElevatedButton(
                 onPressed: () {
-                  _mapNotifier.init();
+                  _mapLocationNotifier.init();
                 },
                 child: const Text('Start'),
               ),
@@ -179,7 +179,7 @@ class _MapViewState extends State<MapView>
   }
 
   void _moveToOnLocationUpdateSuccess() {
-    final mapLocationState = _mapNotifier.value;
+    final mapLocationState = _mapLocationNotifier.value;
     if (mapLocationState is MapLocationUpdateSuccess) {
       _animatedMapController.animateTo(
         dest: mapLocationState.location.toLatLng(),
