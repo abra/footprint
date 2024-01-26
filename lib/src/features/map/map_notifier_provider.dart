@@ -1,23 +1,23 @@
 import 'package:flutter/widgets.dart';
 
-import 'map_notifier.dart';
+import 'map_location_notifier.dart';
 
-class MapNotifierProvider extends InheritedWidget {
-  const MapNotifierProvider({
+class MapLocationNotifierProvider extends InheritedWidget {
+  const MapLocationNotifierProvider({
     super.key,
     required this.notifier,
     required super.child,
   });
 
-  final MapNotifier notifier;
+  final MapLocationNotifier notifier;
 
-  static MapNotifierProvider of(BuildContext context) {
+  static MapLocationNotifierProvider of(BuildContext context) {
     return context
-        .dependOnInheritedWidgetOfExactType<MapNotifierProvider>()!;
+        .dependOnInheritedWidgetOfExactType<MapLocationNotifierProvider>()!;
   }
 
   @override
-  bool updateShouldNotify(MapNotifierProvider oldWidget) {
+  bool updateShouldNotify(MapLocationNotifierProvider oldWidget) {
     return oldWidget.notifier != notifier;
   }
 }

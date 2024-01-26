@@ -6,7 +6,7 @@ import 'package:flutter_map_animations/flutter_map_animations.dart';
 
 import 'extensions.dart';
 import 'map_config.dart';
-import 'map_notifier.dart';
+import 'map_location_notifier.dart';
 import 'map_notifier_provider.dart';
 import 'map_view_notifier.dart';
 
@@ -22,7 +22,7 @@ class MapView extends StatefulWidget {
 class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final AnimatedMapController _animatedMapController;
-  late final MapNotifier _mapNotifier;
+  late final MapLocationNotifier _mapNotifier;
   final MapViewNotifier _viewNotifier = MapViewNotifier(
     shouldCenterMap: MapConfig.shouldCenterMap,
     zoom: MapConfig.defaultZoom,
@@ -43,7 +43,7 @@ class _MapViewState extends State<MapView>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _mapNotifier = MapNotifierProvider.of(context).notifier;
+    _mapNotifier = MapLocationNotifierProvider.of(context).notifier;
     _mapNotifier.init();
     _viewNotifier.addListener(_handleZoomChanged);
     _mapNotifier.addListener(_handleMapLocationChanged);
@@ -193,16 +193,16 @@ class _MapViewState extends State<MapView>
 
 class _MapMarker extends StatelessWidget {
   const _MapMarker({
-    required MapNotifier locationNotifier,
+    required MapLocationNotifier locationNotifier,
   }) : _locationNotifier = locationNotifier;
 
-  final MapNotifier _locationNotifier;
+  final MapLocationNotifier _locationNotifier;
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<MapState>(
+    return ValueListenableBuilder<MapLocationState>(
       valueListenable: _locationNotifier,
-      builder: (BuildContext context, MapState state, _) {
+      builder: (BuildContext context, MapLocationState state, _) {
         // TODO: Replace
         if (state is MapLocationUpdateSuccess) {
           return MarkerLayer(

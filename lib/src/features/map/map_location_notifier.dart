@@ -7,10 +7,10 @@ import 'package:footprint/src/domain_models/exceptions.dart';
 import 'package:footprint/src/domain_models/location.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
 
-part 'map_state.dart';
+part 'map_location_state.dart';
 
-class MapNotifier extends ValueNotifier<MapState> {
-  MapNotifier({
+class MapLocationNotifier extends ValueNotifier<MapLocationState> {
+  MapLocationNotifier({
     required this.locationRepository,
   }) : super(MapInitialLocationUpdate());
 

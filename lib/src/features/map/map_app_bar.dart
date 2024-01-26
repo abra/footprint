@@ -6,10 +6,10 @@ import 'package:footprint/src/app/common/colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:simple_shadow/simple_shadow.dart';
 
-import 'map_notifier.dart';
+import 'map_location_notifier.dart';
 import 'map_notifier_provider.dart';
 
-class MapAppBar extends StatefulWidget implements PreferredSizeWidget {
+class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
   const MapAppBar({
     super.key,
     required this.onGoToRouteList,
@@ -19,34 +19,6 @@ class MapAppBar extends StatefulWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-
-  @override
-  State<MapAppBar> createState() => _MapAppBarState();
-}
-
-class _MapAppBarState extends State<MapAppBar> {
-  final _overlayPortalController = OverlayPortalController();
-  late final MapNotifier _mapNotifier;
-
-  void _handleLocationError() {
-    final locationState = _mapNotifier.value;
-    if (locationState is MapLocationUpdateSuccess) {
-      _overlayPortalController.show();
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _mapNotifier = MapNotifierProvider.of(context).notifier;
-  }
-
-  @override
-  void dispose() {
-    // _locationNotifier.removeListener(_handleLocationError);
-    _mapNotifier.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,9 +41,10 @@ class _MapAppBarState extends State<MapAppBar> {
               right: 8,
               bottom: 4,
             ),
-            child: ValueListenableBuilder<MapState>(
-              valueListenable: _mapNotifier,
-              builder: (BuildContext context, MapState state, _) {
+            child: ValueListenableBuilder<MapLocationState>(
+              // TODO: Rewrite it
+              valueListenable: MapLocationNotifierProvider.of(context).notifier,
+              builder: (BuildContext context, MapLocationState state, _) {
                 var currentLocation = 'Unknown place';
                 if (state is MapLocationUpdateSuccess) {
                   currentLocation =
@@ -85,7 +58,7 @@ class _MapAppBarState extends State<MapAppBar> {
                     text: currentLocation,
                     style: GoogleFonts.robotoCondensed(
                       fontSize: 16,
-                      color: white,
+                      color: appWhite,
                     ),
                   ),
                 );
@@ -98,11 +71,11 @@ class _MapAppBarState extends State<MapAppBar> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              white.withOpacity(1.0),
-              white.withOpacity(0.8),
-              white.withOpacity(0.6),
-              white.withOpacity(0.2),
-              white.withOpacity(0.0),
+              appWhite.withOpacity(1.0),
+              appWhite.withOpacity(0.8),
+              appWhite.withOpacity(0.6),
+              appWhite.withOpacity(0.2),
+              appWhite.withOpacity(0.0),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -111,49 +84,11 @@ class _MapAppBarState extends State<MapAppBar> {
         child: const SizedBox.expand(),
       ),
       elevation: 0,
-      backgroundColor: white.withOpacity(0.0),
+      backgroundColor: appWhite.withOpacity(0.0),
       centerTitle: true,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 8.0),
-        child: FittedBox(
-          alignment: Alignment.center,
-          fit: BoxFit.fitWidth,
-          child: OverlayPortal(
-            controller: _overlayPortalController,
-            overlayChildBuilder: (BuildContext ctx) {
-              return Positioned(
-                top: kToolbarHeight + 24,
-                left: 0,
-                right: 0,
-                child: ColoredBox(
-                  color: white.withOpacity(0.7),
-                  child: const Text(
-                    'Location updated',
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontSize: 40,
-                    ),
-                  ),
-                ),
-              );
-            },
-            child: IconButton(
-              onPressed: () {
-                if (_overlayPortalController.isShowing) {
-                  _overlayPortalController.hide();
-                  return;
-                }
-                _overlayPortalController.show();
-              },
-              icon: const Icon(
-                Icons.location_off,
-                color: Colors.deepOrange,
-                size: 34,
-              ),
-              alignment: Alignment.center,
-            ),
-          ),
-        ),
+      leading: const Padding(
+        padding: EdgeInsets.only(left: 8.0),
+        child: _ExceptionNotification(),
       ),
       actions: <Widget>[
         Padding(
@@ -168,11 +103,97 @@ class _MapAppBarState extends State<MapAppBar> {
                 CupertinoIcons.square_stack_3d_down_right_fill,
                 size: 34,
               ),
-              onPressed: () => widget.onGoToRouteList(),
+              onPressed: () => onGoToRouteList(),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ExceptionNotification extends StatefulWidget {
+  const _ExceptionNotification();
+
+  @override
+  State<_ExceptionNotification> createState() => _ExceptionNotificationState();
+}
+
+class _ExceptionNotificationState extends State<_ExceptionNotification> {
+  final _overlayPortalController = OverlayPortalController();
+  late final MapLocationNotifier _mapLocationNotifier;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _mapLocationNotifier = MapLocationNotifierProvider.of(context).notifier;
+  }
+
+  @override
+  void dispose() {
+    // _locationNotifier.removeListener(_handleLocationError);
+    _mapLocationNotifier.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FittedBox(
+      alignment: Alignment.center,
+      fit: BoxFit.fitWidth,
+      child: OverlayPortal(
+        controller: _overlayPortalController,
+        overlayChildBuilder: (BuildContext ctx) {
+          return Positioned(
+            top: kToolbarHeight + 44,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: SizedBox(
+                width: MediaQuery.of(ctx).size.width - 20,
+                height: kToolbarHeight + 14,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: grayBlue.withOpacity(0.2),
+                        spreadRadius: 0,
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                    shape: BoxShape.rectangle,
+                    color: trueWhite,
+                  ),
+                  child: const Text(
+                    '',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+        child: IconButton(
+          onPressed: () {
+            if (_overlayPortalController.isShowing) {
+              _overlayPortalController.hide();
+              return;
+            }
+            _overlayPortalController.show();
+          },
+          icon: const Icon(
+            Icons.location_off,
+            color: Colors.deepOrange,
+            size: 34,
+          ),
+          alignment: Alignment.center,
+        ),
+      ),
     );
   }
 }
