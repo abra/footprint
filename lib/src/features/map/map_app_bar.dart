@@ -150,7 +150,7 @@ class _ExceptionNotificationState extends State<_ExceptionNotification> {
             right: 0,
             child: Center(
               child: SizedBox(
-                width: MediaQuery.of(context).size.width - 20,
+                width: MediaQuery.of(context).size.width - 24,
                 height: kToolbarHeight + 14,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
