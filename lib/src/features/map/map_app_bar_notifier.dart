@@ -17,7 +17,7 @@ class MapAppBarNotifier extends ValueNotifier<MapAppBarState> {
     value = MapAppBarUpdated();
   }
 
-  void showExceptionInDialog() async {
+  void showExceptionDialog() async {
     final appBarState = value;
     if (appBarState is MapAppBarHasException) {
       final newState = appBarState.copyWith(
@@ -28,7 +28,7 @@ class MapAppBarNotifier extends ValueNotifier<MapAppBarState> {
     }
   }
 
-  void showExceptionInIcon() async {
+  void showExceptionIcon() async {
     final appBarState = value;
     if (appBarState is MapAppBarHasException) {
       final newState = appBarState.copyWith(

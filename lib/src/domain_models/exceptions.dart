@@ -15,8 +15,8 @@ class PermissionDeniedException implements Exception {
 class PermissionsPermanentlyDeniedException implements Exception {
   @override
   String toString() {
-    return 'Permissions are denied forever, handle appropriately, '
-        'until the user updates the permission in the App settings.';
+    return 'Permissions will be permanently denied until you update '
+        'the permission in the App settings of your phone.';
   }
 }
 

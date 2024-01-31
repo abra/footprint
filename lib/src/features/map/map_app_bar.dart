@@ -156,7 +156,7 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
           return state is MapAppBarHasException && state.showExceptionIconButton
               ? IconButton(
                   onPressed: () {
-                    _mapAppBarNotifier.showExceptionInDialog();
+                    _mapAppBarNotifier.showExceptionDialog();
                   },
                   icon: const Icon(
                     Icons.error_outlined,
@@ -179,16 +179,14 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
       if (appBarState.showExceptionDialog) {
         await _showExceptionDialog(
           context,
-          locationState,
         );
-        _mapAppBarNotifier.showExceptionInIcon();
+        _mapAppBarNotifier.showExceptionIcon();
       }
     }
   }
 
   void _handleLocationUpdateException() async {
-    final locationState = _mapLocationNotifier.value;
-    if (locationState is MapLocationUpdateFailure) {
+    if (_mapLocationNotifier.value is MapLocationUpdateFailure) {
       _mapAppBarNotifier.showException();
     } else {
       _mapAppBarNotifier.hideException();
@@ -197,7 +195,6 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
 
   Future<MapAppBarState?> _showExceptionDialog(
     BuildContext context,
-    MapLocationState locationState,
   ) async {
     return await showDialog<MapAppBarState>(
       barrierDismissible: false,
@@ -230,7 +227,21 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
                       Navigator.of(context).pop();
                       _mapLocationNotifier.reInit();
                     },
-                    child: const Text('Request location permission'),
+                    child: Column(
+                      children: [
+                        ValueListenableBuilder(
+                          valueListenable: _mapLocationNotifier,
+                          builder: (ctx, state, _) {
+                            if (state is MapLocationUpdateFailure) {
+                              return Text(state.errorMessage);
+                            }
+                            return const Text('');
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        const Text('Request location permission'),
+                      ],
+                    ),
                   ),
                 ),
               ),
