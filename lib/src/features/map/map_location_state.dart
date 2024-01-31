@@ -9,41 +9,6 @@ class MapInitialLocationUpdate extends MapLocationState {
   List<Object?> get props => [];
 }
 
-class MapLocationServiceEnabled extends MapLocationState {
-  @override
-  List<Object?> get props => [];
-}
-
-class MapLocationServiceDisabled extends MapLocationState {
-  @override
-  List<Object?> get props => [];
-}
-
-class MapLocationServicePermissionGranted extends MapLocationState {
-  @override
-  List<Object?> get props => [];
-}
-
-class MapLocationServicePermissionDenied extends MapLocationState {
-  @override
-  List<Object?> get props => [];
-}
-
-class MapLocationServicePermissionPermanentlyDenied extends MapLocationState {
-  @override
-  List<Object?> get props => [];
-}
-
-class MapLocationServicePermissionDefinitionsNotFound extends MapLocationState {
-  @override
-  List<Object?> get props => [];
-}
-
-class MapLocationServicePermissionRequestInProgress extends MapLocationState {
-  @override
-  List<Object?> get props => [];
-}
-
 class MapLocationUpdateSuccess extends MapLocationState {
   const MapLocationUpdateSuccess({
     required this.location,
@@ -54,5 +19,21 @@ class MapLocationUpdateSuccess extends MapLocationState {
   @override
   List<Object?> get props => [
         location,
+      ];
+}
+
+class MapLocationUpdateFailure extends MapLocationState {
+  const MapLocationUpdateFailure({
+    required this.error,
+  }) : errorMessage = '$error';
+
+  final dynamic error;
+  final String errorMessage;
+
+  @override
+  // TODO: implement props
+  List<Object?> get props => [
+        error,
+        errorMessage,
       ];
 }

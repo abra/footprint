@@ -21,6 +21,7 @@ class LocationService {
 
   /// Checks if location service is enabled
   Future<void> ensureLocationServiceEnabled() async {
+    // throw ServiceDisabledLocationServiceException();
     _serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
     if (!_serviceEnabled) {
@@ -36,8 +37,6 @@ class LocationService {
       if (_permission == LocationPermission.denied) {
         try {
           _permission = await Geolocator.requestPermission();
-        } on PermissionDefinitionsNotFoundException catch (_) {
-          throw PermissionDefinitionsNotFoundLocationServiceException();
         } on PermissionRequestInProgressException catch (_) {
           throw PermissionRequestInProgressLocationServiceException();
         }
@@ -68,7 +67,7 @@ class LocationService {
 
       await for (Position position in positionStream) {
         yield position;
-        // TODO: Remove!!!!!!!!!!!!!!
+        // TODO: Remove it
         // throw const LocationServiceDisabledException();
       }
     } catch (e) {

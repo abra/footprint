@@ -1,27 +1,24 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
+import 'map_config.dart';
+
 part 'map_view_state.dart';
 
 class MapViewNotifier extends ValueNotifier<MapViewState> {
-  MapViewNotifier({
-    required this.shouldCenterMap,
-    required this.zoom,
-    required this.maxZoom,
-    required this.minZoom,
-  }) : super(
-          MapViewUpdated(
-            shouldCenterMap: shouldCenterMap,
-            zoom: zoom,
-            maxZoom: maxZoom,
-            minZoom: minZoom,
+  MapViewNotifier()
+      : super(
+          const MapViewUpdated(
+            shouldCenterMap: MapConfig.shouldCenterMap,
+            zoomStep: MapConfig.zoomStep,
+            zoom: MapConfig.defaultZoom,
+            maxZoom: MapConfig.maxZoom,
+            minZoom: MapConfig.minZoom,
+            urlTemplate: MapConfig.urlTemplate,
+            fallbackUrl: MapConfig.fallbackUrl,
+            userAgentPackageName: MapConfig.userAgentPackageName,
           ),
         );
-
-  final bool shouldCenterMap;
-  final double zoom;
-  final double maxZoom;
-  final double minZoom;
 
   void handleCenterMap(bool newValue) async {
     final currentState = value;
@@ -33,26 +30,26 @@ class MapViewNotifier extends ValueNotifier<MapViewState> {
     }
   }
 
-  void handleZoomedIn(double newValue) async {
+  void handleZoomedIn() async {
     final currentState = value;
     if (currentState is MapViewUpdated) {
       final previousZoom = currentState.zoom;
-      if (previousZoom + newValue <= maxZoom) {
+      if (previousZoom + MapConfig.zoomStep <= MapConfig.maxZoom) {
         final newState = currentState.copyWith(
-          zoom: previousZoom + newValue,
+          zoom: previousZoom + MapConfig.zoomStep,
         );
         value = newState;
       }
     }
   }
 
-  void handleZoomedOut(double newValue) async {
+  void handleZoomedOut() async {
     final currentState = value;
     if (currentState is MapViewUpdated) {
       final previousZoom = currentState.zoom;
-      if (previousZoom - newValue >= minZoom) {
+      if (previousZoom - MapConfig.zoomStep >= MapConfig.minZoom) {
         final newState = currentState.copyWith(
-          zoom: previousZoom - newValue,
+          zoom: previousZoom - MapConfig.zoomStep,
         );
         value = newState;
       }

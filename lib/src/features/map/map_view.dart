@@ -23,12 +23,7 @@ class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final AnimatedMapController _animatedMapController;
   late final MapLocationNotifier _mapLocationNotifier;
-  final MapViewNotifier _viewNotifier = MapViewNotifier(
-    shouldCenterMap: MapConfig.shouldCenterMap,
-    zoom: MapConfig.defaultZoom,
-    maxZoom: MapConfig.maxZoom,
-    minZoom: MapConfig.minZoom,
-  );
+  final MapViewNotifier _viewNotifier = MapViewNotifier();
 
   @override
   void initState() {
@@ -55,7 +50,6 @@ class _MapViewState extends State<MapView>
     _viewNotifier.removeListener(_handleZoomChanged);
     _viewNotifier.dispose();
     _mapLocationNotifier.removeListener(_handleMapLocationChanged);
-    _mapLocationNotifier.dispose();
     super.dispose();
   }
 
@@ -77,14 +71,8 @@ class _MapViewState extends State<MapView>
             minZoom: MapConfig.minZoom,
           ),
           children: [
-            TileLayer(
-              retinaMode: true,
-              userAgentPackageName: MapConfig.userAgentPackageName,
-              urlTemplate: MapConfig.urlTemplate,
-              fallbackUrl: MapConfig.fallbackUrl,
-              subdomains: const ['a', 'b', 'c'],
-              maxZoom: MapConfig.maxZoom,
-              minZoom: MapConfig.minZoom,
+            _TileLayer(
+              viewNotifier: _viewNotifier,
             ),
             _MapMarker(
               locationNotifier: _mapLocationNotifier,
@@ -104,7 +92,7 @@ class _MapViewState extends State<MapView>
                     Icons.zoom_in,
                   ),
                   onPressed: () {
-                    _viewNotifier.handleZoomedIn(MapConfig.zoomStep);
+                    _viewNotifier.handleZoomedIn();
                   }),
               const SizedBox(width: 20),
               // TODO: Temporary for testing
@@ -148,7 +136,7 @@ class _MapViewState extends State<MapView>
                     Icons.zoom_out,
                   ),
                   onPressed: () {
-                    _viewNotifier.handleZoomedOut(MapConfig.zoomStep);
+                    _viewNotifier.handleZoomedOut();
                   }),
             ],
           ),
@@ -164,6 +152,11 @@ class _MapViewState extends State<MapView>
     }
   }
 
+  void _handleToggleButtonSwitched(bool value) {
+    _viewNotifier.handleCenterMap(value);
+    _moveToOnLocationUpdateSuccess();
+  }
+
   void _handleMapLocationChanged() {
     final mapViewState = _viewNotifier.value;
     if (mapViewState is MapViewUpdated) {
@@ -171,11 +164,6 @@ class _MapViewState extends State<MapView>
         _moveToOnLocationUpdateSuccess();
       }
     }
-  }
-
-  void _handleToggleButtonSwitched(bool value) {
-    _viewNotifier.handleCenterMap(value);
-    _moveToOnLocationUpdateSuccess();
   }
 
   void _moveToOnLocationUpdateSuccess() {
@@ -189,6 +177,35 @@ class _MapViewState extends State<MapView>
 
   @override
   bool get wantKeepAlive => true;
+}
+
+class _TileLayer extends StatelessWidget {
+  const _TileLayer({
+    required MapViewNotifier viewNotifier,
+  }) : _viewNotifier = viewNotifier;
+
+  final MapViewNotifier _viewNotifier;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder(
+      valueListenable: _viewNotifier,
+      builder: (BuildContext context, MapViewState state, _) {
+        if (state is MapViewUpdated) {
+          return TileLayer(
+            retinaMode: true,
+            userAgentPackageName: state.userAgentPackageName,
+            urlTemplate: state.urlTemplate,
+            fallbackUrl: state.fallbackUrl,
+            subdomains: const ['a', 'b', 'c'],
+            maxZoom: state.maxZoom,
+            minZoom: state.minZoom,
+          );
+        }
+        return TileLayer();
+      },
+    );
+  }
 }
 
 class _MapMarker extends StatelessWidget {
@@ -219,21 +236,23 @@ class _MapMarker extends StatelessWidget {
               ),
             ],
           );
-        } else if (state is MapLocationServiceDisabled) {
-          return const Center(
-            child: Text('Service disabled'),
-          );
-        } else if (state is MapLocationServicePermissionDenied) {
-          return const Center(
-            child: Text('Permission denied'),
-          );
-        } else if (state is MapLocationServicePermissionPermanentlyDenied) {
-          return const Center(
-            child: Text('Permission Permanently denied'),
-          );
-        } else {
+        }
+        // else if (state is MapLocationServiceDisabled) {
+        //   return const Center(
+        //     child: Text('Service disabled'),
+        //   );
+        // } else if (state is MapLocationServicePermissionDenied) {
+        //   return const Center(
+        //     child: Text('Permission denied'),
+        //   );
+        // } else if (state is MapLocationServicePermissionPermanentlyDenied) {
+        //   return const Center(
+        //     child: Text('Permission Permanently denied'),
+        //   );
+        else if (state is MapInitialLocationUpdate) {
           return const Center(child: CircularProgressIndicator());
         }
+        return const SizedBox.shrink();
       },
     );
   }

@@ -17,6 +17,11 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   final LocationRepository locationRepository;
   StreamSubscription<Location>? _locationSubscription;
 
+  Future<void> reInit() async {
+    value = MapInitialLocationUpdate();
+    init();
+  }
+
   Future<void> init() async {
     bool isStillSubscribedButPaused =
         _locationSubscription != null && _locationSubscription!.isPaused;
@@ -31,19 +36,7 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
         _locationSubscription?.resume();
       }
     } catch (e) {
-      _handlePermissionExceptions(e);
-    }
-  }
-
-  Future<void> _handlePermissionExceptions(Object e) async {
-    if (e is PermissionDeniedException) {
-      value = MapLocationServicePermissionDenied();
-    } else if (e is PermissionsPermanentlyDeniedException) {
-      value = MapLocationServicePermissionPermanentlyDenied();
-    } else if (e is PermissionDefinitionsNotFoundException) {
-      value = MapLocationServicePermissionDefinitionsNotFound();
-    } else if (e is PermissionRequestInProgressException) {
-      value = MapLocationServicePermissionRequestInProgress();
+      value = MapLocationUpdateFailure(error: e);
     }
   }
 
@@ -53,9 +46,9 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
     _locationSubscription = stream.listen((location) {
       log('$location');
       value = MapLocationUpdateSuccess(location: location);
-    }, onError: (error) {
-      if (error is ServiceDisabledException) {
-        value = MapLocationServiceDisabled();
+    }, onError: (e) {
+      if (e is ServiceDisabledException) {
+        value = MapLocationUpdateFailure(error: e);
         _locationSubscription?.cancel();
         _locationSubscription = null;
       }

@@ -4,8 +4,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:footprint/src/app/common/colors.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:simple_shadow/simple_shadow.dart';
 
+import 'map_app_bar_notifier.dart';
 import 'map_location_notifier.dart';
 import 'map_notifier_provider.dart';
 
@@ -24,46 +24,52 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     log('>>> build $runtimeType');
 
+    final mapLocationNotifier =
+        MapLocationNotifierProvider.of(context).notifier;
+
     return AppBar(
-      title: SimpleShadow(
-        opacity: 0.2,
-        sigma: 1,
-        offset: const Offset(0, 2),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: grayBlue.withOpacity(0.7),
-            borderRadius: BorderRadius.circular(25),
+      title: DecoratedBox(
+        decoration: BoxDecoration(
+          color: grayBlue.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: grayBlue.withOpacity(0.3),
+              spreadRadius: 0,
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(
+            left: 8,
+            top: 4,
+            right: 8,
+            bottom: 4,
           ),
-          child: Padding(
-            padding: const EdgeInsets.only(
-              left: 8,
-              top: 4,
-              right: 8,
-              bottom: 4,
-            ),
-            child: ValueListenableBuilder<MapLocationState>(
-              // TODO: Rewrite it
-              valueListenable: MapLocationNotifierProvider.of(context).notifier,
-              builder: (BuildContext context, MapLocationState state, _) {
-                var currentLocation = 'Unknown place';
-                if (state is MapLocationUpdateSuccess) {
-                  currentLocation =
-                      '${state.location.latitude}, ${state.location.longitude}';
-                }
-                return RichText(
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  text: TextSpan(
-                    // TODO: Add address based on current location
-                    text: currentLocation,
-                    style: GoogleFonts.robotoCondensed(
-                      fontSize: 16,
-                      color: appWhite,
-                    ),
+          child: ValueListenableBuilder<MapLocationState>(
+            // TODO: Rewrite it
+            valueListenable: mapLocationNotifier,
+            builder: (BuildContext context, MapLocationState state, _) {
+              var currentLocation = 'Footprint';
+              if (state is MapLocationUpdateSuccess) {
+                currentLocation =
+                    '${state.location.latitude}, ${state.location.longitude}';
+              }
+              return RichText(
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                text: TextSpan(
+                  // TODO: Add address based on current location
+                  text: currentLocation,
+                  style: GoogleFonts.robotoCondensed(
+                    fontSize: 16,
+                    color: appWhite,
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -88,7 +94,7 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: true,
       leading: const Padding(
         padding: EdgeInsets.only(left: 8.0),
-        child: _ExceptionNotification(),
+        child: _ExceptionIndicator(),
       ),
       actions: <Widget>[
         Padding(
@@ -112,27 +118,30 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-class _ExceptionNotification extends StatefulWidget {
-  const _ExceptionNotification();
+class _ExceptionIndicator extends StatefulWidget {
+  const _ExceptionIndicator();
 
   @override
-  State<_ExceptionNotification> createState() => _ExceptionNotificationState();
+  State<_ExceptionIndicator> createState() => _ExceptionIndicatorState();
 }
 
-class _ExceptionNotificationState extends State<_ExceptionNotification> {
-  final _overlayPortalController = OverlayPortalController();
+class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
   late final MapLocationNotifier _mapLocationNotifier;
+  late MapAppBarNotifier _mapAppBarNotifier;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _mapLocationNotifier = MapLocationNotifierProvider.of(context).notifier;
+    _mapAppBarNotifier = MapAppBarNotifier();
+    _mapLocationNotifier.addListener(_handleLocationUpdateException);
+    _mapAppBarNotifier.addListener(_handleExceptionDisplay);
   }
 
   @override
   void dispose() {
-    // _locationNotifier.removeListener(_handleLocationError);
-    _mapLocationNotifier.dispose();
+    _mapLocationNotifier.removeListener(_handleLocationUpdateException);
+    _mapAppBarNotifier.dispose();
     super.dispose();
   }
 
@@ -141,59 +150,94 @@ class _ExceptionNotificationState extends State<_ExceptionNotification> {
     return FittedBox(
       alignment: Alignment.center,
       fit: BoxFit.fitWidth,
-      child: OverlayPortal(
-        controller: _overlayPortalController,
-        overlayChildBuilder: (BuildContext context) {
-          return Positioned(
-            top: kToolbarHeight + 44,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width - 24,
-                height: kToolbarHeight + 14,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10.0),
-                    boxShadow: [
-                      BoxShadow(
-                        color: grayBlue.withOpacity(0.2),
-                        spreadRadius: 0,
-                        blurRadius: 5,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                    shape: BoxShape.rectangle,
-                    color: trueWhite,
+      child: ValueListenableBuilder<MapAppBarState>(
+        valueListenable: _mapAppBarNotifier,
+        builder: (BuildContext context, MapAppBarState state, _) {
+          return state is MapAppBarHasException && state.showExceptionIconButton
+              ? IconButton(
+                  onPressed: () {
+                    _mapAppBarNotifier.showExceptionInDialog();
+                  },
+                  icon: const Icon(
+                    Icons.error_outlined,
+                    color: Colors.deepOrange,
+                    size: 34,
                   ),
-                  child: const Text(
-                    '',
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontSize: 10,
-                    ),
+                  alignment: Alignment.center,
+                )
+              : const SizedBox.shrink();
+        },
+      ),
+    );
+  }
+
+  void _handleExceptionDisplay() async {
+    final appBarState = _mapAppBarNotifier.value;
+    final locationState = _mapLocationNotifier.value;
+    if (appBarState is MapAppBarHasException &&
+        locationState is MapLocationUpdateFailure) {
+      if (appBarState.showExceptionDialog) {
+        await _showExceptionDialog(
+          context,
+          locationState,
+        );
+        _mapAppBarNotifier.showExceptionInIcon();
+      }
+    }
+  }
+
+  void _handleLocationUpdateException() async {
+    final locationState = _mapLocationNotifier.value;
+    if (locationState is MapLocationUpdateFailure) {
+      _mapAppBarNotifier.showException();
+    } else {
+      _mapAppBarNotifier.hideException();
+    }
+  }
+
+  Future<MapAppBarState?> _showExceptionDialog(
+    BuildContext context,
+    MapLocationState locationState,
+  ) async {
+    return await showDialog<MapAppBarState>(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        return Center(
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width - 96,
+            height: 180,
+            child: Dismissible(
+              key: const Key('exception-dialog'),
+              direction: DismissDirection.horizontal,
+              onDismissed: (action) {
+                Navigator.of(context).pop(
+                  const MapAppBarHasException(
+                    showExceptionIconButton: true,
+                    showExceptionDialog: false,
+                  ),
+                );
+              },
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10.0),
+                  shape: BoxShape.rectangle,
+                  color: trueWhite,
+                ),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _mapLocationNotifier.reInit();
+                    },
+                    child: const Text('Request location permission'),
                   ),
                 ),
               ),
             ),
-          );
-        },
-        child: IconButton(
-          onPressed: () {
-            if (_overlayPortalController.isShowing) {
-              _overlayPortalController.hide();
-              return;
-            }
-            _overlayPortalController.show();
-          },
-          icon: const Icon(
-            Icons.location_off,
-            color: Colors.deepOrange,
-            size: 34,
           ),
-          alignment: Alignment.center,
-        ),
-      ),
+        );
+      },
     );
   }
 }
