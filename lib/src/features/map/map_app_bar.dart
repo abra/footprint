@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:footprint/src/app/common/colors.dart';
+import 'package:footprint/src/domain_models/exceptions.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'map_app_bar_notifier.dart';
@@ -92,9 +93,11 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       backgroundColor: appWhite.withOpacity(0.0),
       centerTitle: true,
-      leading: const Padding(
-        padding: EdgeInsets.only(left: 8.0),
-        child: _ExceptionIndicator(),
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 8.0),
+        child: _ExceptionIndicator(
+          mapLocationNotifier: mapLocationNotifier,
+        ),
       ),
       actions: <Widget>[
         Padding(
@@ -119,20 +122,24 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 class _ExceptionIndicator extends StatefulWidget {
-  const _ExceptionIndicator();
+  const _ExceptionIndicator({
+    required this.mapLocationNotifier,
+  });
+
+  final MapLocationNotifier mapLocationNotifier;
 
   @override
   State<_ExceptionIndicator> createState() => _ExceptionIndicatorState();
 }
 
 class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
-  late final MapLocationNotifier _mapLocationNotifier;
+  late MapLocationNotifier _mapLocationNotifier;
   late MapAppBarNotifier _mapAppBarNotifier;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _mapLocationNotifier = MapLocationNotifierProvider.of(context).notifier;
+    _mapLocationNotifier = widget.mapLocationNotifier;
     _mapAppBarNotifier = MapAppBarNotifier();
     _mapLocationNotifier.addListener(_handleLocationUpdateException);
     _mapAppBarNotifier.addListener(_handleExceptionDisplay);
@@ -140,8 +147,8 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
 
   @override
   void dispose() {
-    _mapLocationNotifier.removeListener(_handleLocationUpdateException);
     _mapAppBarNotifier.dispose();
+    _mapLocationNotifier.removeListener(_handleLocationUpdateException);
     super.dispose();
   }
 
@@ -159,8 +166,8 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
                     _mapAppBarNotifier.showExceptionDialog();
                   },
                   icon: const Icon(
-                    Icons.error_outlined,
-                    color: Colors.deepOrange,
+                    Icons.error_rounded,
+                    color: Colors.red,
                     size: 34,
                   ),
                   alignment: Alignment.center,
@@ -173,14 +180,12 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
 
   void _handleExceptionDisplay() async {
     final appBarState = _mapAppBarNotifier.value;
-    final locationState = _mapLocationNotifier.value;
-    if (appBarState is MapAppBarHasException &&
-        locationState is MapLocationUpdateFailure) {
+    if (appBarState is MapAppBarHasException) {
       if (appBarState.showExceptionDialog) {
-        await _showExceptionDialog(
-          context,
-        );
-        _mapAppBarNotifier.showExceptionIcon();
+        final appBarState = await _showExceptionDialog(context);
+        if (appBarState is MapAppBarHasException) {
+          _mapAppBarNotifier.showExceptionIcon();
+        }
       }
     }
   }
@@ -193,6 +198,14 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
     }
   }
 
+  void _onTryAgain() {
+    _mapLocationNotifier.reInit();
+  }
+
+  void _onDismiss() {
+    _mapAppBarNotifier.showExceptionIcon();
+  }
+
   Future<MapAppBarState?> _showExceptionDialog(
     BuildContext context,
   ) async {
@@ -201,54 +214,153 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
       context: context,
       builder: (BuildContext context) {
         return Center(
-          child: SizedBox(
-            width: MediaQuery.of(context).size.width - 96,
-            height: 180,
-            child: Dismissible(
-              key: const Key('exception-dialog'),
-              direction: DismissDirection.horizontal,
-              onDismissed: (action) {
-                Navigator.of(context).pop(
-                  const MapAppBarHasException(
-                    showExceptionIconButton: true,
-                    showExceptionDialog: false,
-                  ),
-                );
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width - 96,
+              maxHeight: 350,
+              minHeight: 150,
+            ),
+            child: Builder(
+              builder: (BuildContext context) {
+                final locationState = _mapLocationNotifier.value;
+                if (locationState is MapLocationUpdateFailure) {
+                  if (locationState.error is PermissionDeniedException) {
+                    return _ExceptionDialog(
+                      onTryAgain: _onTryAgain,
+                      onDismiss: _onDismiss,
+                      message: locationState.errorMessage,
+                    );
+                  } else {
+                    return _ExceptionDialog(
+                      onDismiss: _onDismiss,
+                      message: locationState.errorMessage,
+                    );
+                  }
+                } else {
+                  return const SizedBox.shrink();
+                }
               },
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10.0),
-                  shape: BoxShape.rectangle,
-                  color: trueWhite,
-                ),
-                child: Center(
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      _mapLocationNotifier.reInit();
-                    },
-                    child: Column(
-                      children: [
-                        ValueListenableBuilder(
-                          valueListenable: _mapLocationNotifier,
-                          builder: (ctx, state, _) {
-                            if (state is MapLocationUpdateFailure) {
-                              return Text(state.errorMessage);
-                            }
-                            return const Text('');
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        const Text('Request location permission'),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _ExceptionDialog extends StatelessWidget {
+  const _ExceptionDialog({
+    VoidCallback? onTryAgain,
+    required this.onDismiss,
+    required this.message,
+  }) : _onTryAgain = onTryAgain;
+
+  final VoidCallback? _onTryAgain;
+  final VoidCallback onDismiss;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dismissible(
+      key: const Key('exception-dialog'),
+      direction: DismissDirection.horizontal,
+      onDismissed: (action) {
+        Navigator.of(context).pop();
+        onDismiss();
+      },
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10.0),
+          shape: BoxShape.rectangle,
+          color: trueWhite,
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Icon(
+                    Icons.error_outlined,
+                    color: Colors.red,
+                    size: 40,
+                  ),
+                ),
+              ),
+              Align(
+                alignment: Alignment.center,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+                  child: Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Builder(
+                    builder: (BuildContext context) {
+                      if (_onTryAgain == null) {
+                        return TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            onDismiss();
+                          },
+                          child: const Text(
+                            'Hide',
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        );
+                      }
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          SizedBox(
+                            width: 120,
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                onDismiss();
+                              },
+                              child: const Text(
+                                'Hide',
+                                style: TextStyle(fontSize: 18),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 120,
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                _onTryAgain();
+                              },
+                              child: const Text(
+                                'Try again',
+                                style: TextStyle(fontSize: 18),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
