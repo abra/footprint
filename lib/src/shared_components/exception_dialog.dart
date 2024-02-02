@@ -32,83 +32,78 @@ class ExceptionDialog extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Align(
-                alignment: Alignment.topCenter,
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Icon(
-                    Icons.error_outlined,
-                    color: Colors.red,
-                    size: 40,
-                  ),
+              const Padding(
+                padding: EdgeInsets.only(top: 16.0, bottom: 8.0),
+                child: Icon(
+                  Icons.warning_rounded,
+                  color: Colors.deepOrangeAccent,
+                  size: 40,
                 ),
               ),
-              Align(
-                alignment: Alignment.center,
+              Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-                  child: Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      color: Colors.black,
+                  child: Center(
+                    child: Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: grayBlue,
+                      ),
                     ),
                   ),
                 ),
               ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Builder(
-                    builder: (BuildContext context) {
-                      if (_onTryAgain == null) {
-                        return TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            onDismiss();
-                          },
-                          child: const Text(
-                            'Hide',
-                            style: TextStyle(fontSize: 18),
-                          ),
-                        );
-                      }
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          SizedBox(
-                            width: 120,
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                onDismiss();
-                              },
-                              child: const Text(
-                                'Hide',
-                                style: TextStyle(fontSize: 18),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 120,
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                _onTryAgain();
-                              },
-                              child: const Text(
-                                'Try again',
-                                style: TextStyle(fontSize: 18),
-                              ),
-                            ),
-                          ),
-                        ],
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Builder(
+                  builder: (BuildContext context) {
+                    if (_onTryAgain == null) {
+                      return TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          onDismiss();
+                        },
+                        child: const Text(
+                          'Hide',
+                          style: TextStyle(fontSize: 18),
+                        ),
                       );
-                    },
-                  ),
+                    }
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        SizedBox(
+                          width: 120,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              onDismiss();
+                            },
+                            child: const Text(
+                              'Hide',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 120,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              _onTryAgain();
+                            },
+                            child: const Text(
+                              'Try again',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],

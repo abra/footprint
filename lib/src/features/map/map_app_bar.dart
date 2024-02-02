@@ -167,8 +167,8 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
                     _mapAppBarNotifier.showExceptionDialog();
                   },
                   icon: const Icon(
-                    Icons.error_rounded,
-                    color: Colors.red,
+                    Icons.warning_rounded,
+                    color: Colors.deepOrangeAccent,
                     size: 34,
                   ),
                   alignment: Alignment.center,
@@ -218,7 +218,7 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width - 96,
-              maxHeight: 350,
+              maxHeight: 250,
               minHeight: 150,
             ),
             child: Builder(
@@ -248,3 +248,4 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
     );
   }
 }
+
