@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:footprint/src/app/common/colors.dart';
 import 'package:footprint/src/domain_models/exceptions.dart';
+import 'package:footprint/src/shared_components/exception_dialog.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'map_app_bar_notifier.dart';
@@ -160,7 +161,7 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
       child: ValueListenableBuilder<MapAppBarState>(
         valueListenable: _mapAppBarNotifier,
         builder: (BuildContext context, MapAppBarState state, _) {
-          return state is MapAppBarHasException && state.showExceptionIconButton
+          return state is MapAppBarUpdated && state.showExceptionIconButton
               ? IconButton(
                   onPressed: () {
                     _mapAppBarNotifier.showExceptionDialog();
@@ -180,10 +181,10 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
 
   void _handleExceptionDisplay() async {
     final appBarState = _mapAppBarNotifier.value;
-    if (appBarState is MapAppBarHasException) {
+    if (appBarState is MapAppBarUpdated) {
       if (appBarState.showExceptionDialog) {
         final appBarState = await _showExceptionDialog(context);
-        if (appBarState is MapAppBarHasException) {
+        if (appBarState is MapAppBarUpdated) {
           _mapAppBarNotifier.showExceptionIcon();
         }
       }
@@ -225,13 +226,13 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
                 final locationState = _mapLocationNotifier.value;
                 if (locationState is MapLocationUpdateFailure) {
                   if (locationState.error is PermissionDeniedException) {
-                    return _ExceptionDialog(
+                    return ExceptionDialog(
                       onTryAgain: _onTryAgain,
                       onDismiss: _onDismiss,
                       message: locationState.errorMessage,
                     );
                   } else {
-                    return _ExceptionDialog(
+                    return ExceptionDialog(
                       onDismiss: _onDismiss,
                       message: locationState.errorMessage,
                     );
@@ -244,123 +245,6 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
           ),
         );
       },
-    );
-  }
-}
-
-class _ExceptionDialog extends StatelessWidget {
-  const _ExceptionDialog({
-    VoidCallback? onTryAgain,
-    required this.onDismiss,
-    required this.message,
-  }) : _onTryAgain = onTryAgain;
-
-  final VoidCallback? _onTryAgain;
-  final VoidCallback onDismiss;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Dismissible(
-      key: const Key('exception-dialog'),
-      direction: DismissDirection.horizontal,
-      onDismissed: (action) {
-        Navigator.of(context).pop();
-        onDismiss();
-      },
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10.0),
-          shape: BoxShape.rectangle,
-          color: trueWhite,
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Align(
-                alignment: Alignment.topCenter,
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Icon(
-                    Icons.error_outlined,
-                    color: Colors.red,
-                    size: 40,
-                  ),
-                ),
-              ),
-              Align(
-                alignment: Alignment.center,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-                  child: Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Builder(
-                    builder: (BuildContext context) {
-                      if (_onTryAgain == null) {
-                        return TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            onDismiss();
-                          },
-                          child: const Text(
-                            'Hide',
-                            style: TextStyle(fontSize: 18),
-                          ),
-                        );
-                      }
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          SizedBox(
-                            width: 120,
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                onDismiss();
-                              },
-                              child: const Text(
-                                'Hide',
-                                style: TextStyle(fontSize: 18),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 120,
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                _onTryAgain();
-                              },
-                              child: const Text(
-                                'Try again',
-                                style: TextStyle(fontSize: 18),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

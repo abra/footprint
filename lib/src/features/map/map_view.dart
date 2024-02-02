@@ -11,9 +11,7 @@ import 'map_notifier_provider.dart';
 import 'map_view_notifier.dart';
 
 class MapView extends StatefulWidget {
-  const MapView({
-    super.key,
-  });
+  const MapView({super.key});
 
   @override
   State<MapView> createState() => _MapViewState();
@@ -88,12 +86,13 @@ class _MapViewState extends State<MapView>
             children: [
               // TODO: For debugging
               IconButton(
-                  icon: const Icon(
-                    Icons.zoom_in,
-                  ),
-                  onPressed: () {
-                    _viewNotifier.handleZoomedIn();
-                  }),
+                icon: const Icon(
+                  Icons.zoom_in,
+                ),
+                onPressed: () {
+                  _viewNotifier.handleZoomedIn();
+                },
+              ),
               const SizedBox(width: 20),
               // TODO: Temporary for testing
               ValueListenableBuilder<MapViewState>(
@@ -123,14 +122,6 @@ class _MapViewState extends State<MapView>
               ),
               const SizedBox(width: 20),
               // TODO: Temporary for testing
-              ElevatedButton(
-                onPressed: () {
-                  _mapLocationNotifier.init();
-                },
-                child: const Text('Start'),
-              ),
-              const SizedBox(width: 20),
-              // TODO: Temporary for testing
               IconButton(
                   icon: const Icon(
                     Icons.zoom_out,
@@ -152,21 +143,22 @@ class _MapViewState extends State<MapView>
     }
   }
 
+  // TODO: Temporary for testing
   void _handleToggleButtonSwitched(bool value) {
     _viewNotifier.handleCenterMap(value);
-    _moveToOnLocationUpdateSuccess();
+    _moveToOnLocation();
   }
 
   void _handleMapLocationChanged() {
     final mapViewState = _viewNotifier.value;
     if (mapViewState is MapViewUpdated) {
       if (mapViewState.shouldCenterMap) {
-        _moveToOnLocationUpdateSuccess();
+        _moveToOnLocation();
       }
     }
   }
 
-  void _moveToOnLocationUpdateSuccess() {
+  void _moveToOnLocation() {
     final mapLocationState = _mapLocationNotifier.value;
     if (mapLocationState is MapLocationUpdateSuccess) {
       _animatedMapController.animateTo(
@@ -188,7 +180,7 @@ class _TileLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder(
+    return ValueListenableBuilder<MapViewState>(
       valueListenable: _viewNotifier,
       builder: (BuildContext context, MapViewState state, _) {
         if (state is MapViewUpdated) {
@@ -236,20 +228,7 @@ class _MapMarker extends StatelessWidget {
               ),
             ],
           );
-        }
-        // else if (state is MapLocationServiceDisabled) {
-        //   return const Center(
-        //     child: Text('Service disabled'),
-        //   );
-        // } else if (state is MapLocationServicePermissionDenied) {
-        //   return const Center(
-        //     child: Text('Permission denied'),
-        //   );
-        // } else if (state is MapLocationServicePermissionPermanentlyDenied) {
-        //   return const Center(
-        //     child: Text('Permission Permanently denied'),
-        //   );
-        else if (state is MapInitialLocationUpdate) {
+        } else if (state is MapInitialLocationUpdate) {
           return const Center(child: CircularProgressIndicator());
         }
         return const SizedBox.shrink();

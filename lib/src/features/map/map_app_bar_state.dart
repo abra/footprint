@@ -5,24 +5,23 @@ sealed class MapAppBarState extends Equatable {
 }
 
 class MapAppBarUpdated extends MapAppBarState {
-  @override
-  List<Object?> get props => [];
-}
-
-class MapAppBarHasException extends MapAppBarState {
-  const MapAppBarHasException({
+  const MapAppBarUpdated({
+    required this.hasException,
     required this.showExceptionIconButton,
     required this.showExceptionDialog,
   });
 
+  final bool hasException;
   final bool showExceptionIconButton;
   final bool showExceptionDialog;
 
-  MapAppBarHasException copyWith({
+  MapAppBarUpdated copyWith({
+    bool? hasException,
     bool? showExceptionIconButton,
     bool? showExceptionDialog,
   }) {
-    return MapAppBarHasException(
+    return MapAppBarUpdated(
+      hasException: hasException ?? this.hasException,
       showExceptionIconButton:
           showExceptionIconButton ?? this.showExceptionIconButton,
       showExceptionDialog: showExceptionDialog ?? this.showExceptionDialog,
@@ -31,6 +30,7 @@ class MapAppBarHasException extends MapAppBarState {
 
   @override
   List<Object?> get props => [
+        hasException,
         showExceptionIconButton,
         showExceptionDialog,
       ];
