@@ -28,6 +28,7 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     final mapLocationNotifier =
         MapLocationNotifierProvider.of(context).notifier;
+    final mapAppBarNotifier = MapAppBarNotifier();
 
     return AppBar(
       title: DecoratedBox(
@@ -98,6 +99,7 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
         padding: const EdgeInsets.only(left: 8.0),
         child: _ExceptionIndicator(
           mapLocationNotifier: mapLocationNotifier,
+          mapAppBarNotifier: mapAppBarNotifier,
         ),
       ),
       actions: <Widget>[
@@ -125,9 +127,11 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
 class _ExceptionIndicator extends StatefulWidget {
   const _ExceptionIndicator({
     required this.mapLocationNotifier,
+    required this.mapAppBarNotifier,
   });
 
   final MapLocationNotifier mapLocationNotifier;
+  final MapAppBarNotifier mapAppBarNotifier;
 
   @override
   State<_ExceptionIndicator> createState() => _ExceptionIndicatorState();
@@ -141,7 +145,7 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _mapLocationNotifier = widget.mapLocationNotifier;
-    _mapAppBarNotifier = MapAppBarNotifier();
+    _mapAppBarNotifier = widget.mapAppBarNotifier;
     _mapLocationNotifier.addListener(_handleLocationUpdateException);
     _mapAppBarNotifier.addListener(_handleExceptionDisplay);
   }

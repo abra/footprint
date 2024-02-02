@@ -37,7 +37,6 @@ class _MapViewState extends State<MapView>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _mapLocationNotifier = MapLocationNotifierProvider.of(context).notifier;
-    _mapLocationNotifier.init();
     _viewNotifier.addListener(_handleZoomChanged);
     _mapLocationNotifier.addListener(_handleMapLocationChanged);
   }
