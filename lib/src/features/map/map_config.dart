@@ -1,3 +1,4 @@
+// TODO: Should be initialized in main.dart
 abstract class MapConfig {
   static const bool shouldCenterMap = true;
   static const double zoomStep = 0.5;

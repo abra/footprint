@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 class RouteListScreen extends StatelessWidget {
   const RouteListScreen({
     super.key,
-    required this.onGoToMap,
+    required this.onPressed,
   });
 
-  final VoidCallback onGoToMap;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +18,7 @@ class RouteListScreen extends StatelessWidget {
             const Text('RouteListScreen'),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => onGoToMap(),
+              onPressed: () => onPressed(),
               child: const Text('Go to MapScreen'),
             ),
           ],

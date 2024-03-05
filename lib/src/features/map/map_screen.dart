@@ -10,10 +10,10 @@ class MapScreen extends StatefulWidget {
   const MapScreen({
     super.key,
     required this.locationRepository,
-    required this.onGoToRouteList,
+    required this.onPressed,
   });
 
-  final VoidCallback onGoToRouteList;
+  final VoidCallback onPressed;
   final LocationRepository locationRepository;
 
   @override
@@ -38,7 +38,7 @@ class _MapScreenState extends State<MapScreen> {
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: MapAppBar(
-          onGoToRouteList: widget.onGoToRouteList,
+          onGoToRouteList: widget.onPressed,
         ),
         body: const MapView(),
       ),

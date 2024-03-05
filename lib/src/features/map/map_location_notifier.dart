@@ -13,7 +13,7 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   MapLocationNotifier({
     required this.locationRepository,
   }) : super(MapInitialLocationUpdate()) {
-    init();
+    _init();
   }
 
   final LocationRepository locationRepository;
@@ -21,10 +21,10 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
 
   Future<void> reInit() async {
     value = MapInitialLocationUpdate();
-    init();
+    _init();
   }
 
-  Future<void> init() async {
+  Future<void> _init() async {
     bool isStillSubscribedButPaused =
         _locationSubscription != null && _locationSubscription!.isPaused;
 
