@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 class RouteListScreen extends StatelessWidget {
   const RouteListScreen({
     super.key,
-    required this.onPressed,
+    required this.onPageChangeRequested,
   });
 
-  final VoidCallback onPressed;
+  final VoidCallback onPageChangeRequested;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +18,7 @@ class RouteListScreen extends StatelessWidget {
             const Text('RouteListScreen'),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => onPressed(),
+              onPressed: () => onPageChangeRequested(),
               child: const Text('Go to MapScreen'),
             ),
           ],

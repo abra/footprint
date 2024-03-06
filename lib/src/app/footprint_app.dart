@@ -16,12 +16,12 @@ class FootprintApp extends StatelessWidget {
         pages: [
           MapScreen(
             locationRepository: _locationRepository,
-            onPressed: () => _PageManager.goToPage(
+            onPageChangeRequested: () => _PageManager.goToPage(
               _Pages.routeList,
             ),
           ),
           RouteListScreen(
-            onPressed: () => _PageManager.goToPage(
+            onPageChangeRequested: () => _PageManager.goToPage(
               _Pages.map,
             ),
           ),
