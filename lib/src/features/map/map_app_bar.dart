@@ -3,13 +3,9 @@ import 'dart:developer';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:footprint/src/app/common/colors.dart';
-import 'package:footprint/src/domain_models/exceptions.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'exception_indicator.dart';
-import 'map_app_bar_notifier.dart';
-import 'map_location_notifier.dart';
-import 'map_notifier_provider.dart';
 
 class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
   const MapAppBar({
