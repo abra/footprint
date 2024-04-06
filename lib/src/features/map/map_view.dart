@@ -44,7 +44,7 @@ class _MapViewState extends State<MapView>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _mapLocationNotifier = MapLocationNotifierProvider.of(context).locationNotifier;
+    _mapLocationNotifier = MapLocationNotifierProvider.of(context).notifier;
     _viewNotifier.addListener(_handleZoomChanged);
     _mapLocationNotifier.addListener(_handleMapLocationChanged);
   }
@@ -209,7 +209,7 @@ class _MapMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<MapLocationState>(
-      valueListenable: MapLocationNotifierProvider.of(context).locationNotifier,
+      valueListenable: MapLocationNotifierProvider.of(context).notifier,
       builder: (BuildContext context, MapLocationState state, _) {
         // TODO: Replace
         if (state is MapLocationUpdateSuccess) {

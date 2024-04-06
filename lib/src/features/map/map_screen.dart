@@ -36,7 +36,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return MapLocationNotifierProvider(
-      locationNotifier: _mapLocationNotifier,
+      notifier: _mapLocationNotifier,
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: MapAppBar(
