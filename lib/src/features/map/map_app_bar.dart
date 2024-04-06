@@ -26,9 +26,9 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     log('>>> build $runtimeType');
 
-    final mapLocationNotifier =
-        MapLocationNotifierProvider.of(context).locationNotifier;
-    final mapAppBarNotifier = MapAppBarNotifier();
+    // final mapLocationNotifier =
+    //     MapLocationNotifierProvider.of(context).locationNotifier;
+    // final mapAppBarNotifier = MapAppBarNotifier();
 
     return AppBar(
       title: DecoratedBox(
@@ -84,12 +84,9 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       backgroundColor: appWhite.withOpacity(0.0),
       centerTitle: true,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 8.0),
-        child: _ExceptionIndicator(
-          mapLocationNotifier: mapLocationNotifier,
-          mapAppBarNotifier: mapAppBarNotifier,
-        ),
+      leading: const Padding(
+        padding: EdgeInsets.only(left: 8.0),
+        child: _ExceptionIndicator(),
       ),
       actions: <Widget>[
         Padding(
@@ -114,13 +111,7 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 class _ExceptionIndicator extends StatefulWidget {
-  const _ExceptionIndicator({
-    required this.mapLocationNotifier,
-    required this.mapAppBarNotifier,
-  });
-
-  final MapLocationNotifier mapLocationNotifier;
-  final MapAppBarNotifier mapAppBarNotifier;
+  const _ExceptionIndicator();
 
   @override
   State<_ExceptionIndicator> createState() => _ExceptionIndicatorState();
@@ -131,10 +122,16 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
   late MapAppBarNotifier _mapAppBarNotifier;
 
   @override
+  void initState() {
+    super.initState();
+    _mapAppBarNotifier = MapAppBarNotifier();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _mapLocationNotifier = widget.mapLocationNotifier;
-    _mapAppBarNotifier = widget.mapAppBarNotifier;
+    _mapLocationNotifier =
+        MapLocationNotifierProvider.of(context).locationNotifier;
     _mapLocationNotifier.addListener(_handleLocationUpdateException);
     _mapAppBarNotifier.addListener(_handleExceptionDisplay);
   }
