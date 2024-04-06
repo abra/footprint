@@ -5,6 +5,7 @@ import 'map_app_bar.dart';
 import 'map_location_notifier.dart';
 import 'map_notifier_provider.dart';
 import 'map_view.dart';
+import 'map_view_config.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({
@@ -13,8 +14,8 @@ class MapScreen extends StatefulWidget {
     required this.onPageChangeRequested,
   });
 
-  final VoidCallback onPageChangeRequested;
   final LocationRepository locationRepository;
+  final VoidCallback onPageChangeRequested;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -24,6 +25,7 @@ class _MapScreenState extends State<MapScreen> {
   late final MapLocationNotifier _mapLocationNotifier = MapLocationNotifier(
     locationRepository: widget.locationRepository,
   );
+  final MapViewConfig _config = const MapViewConfig();
 
   @override
   void dispose() {
@@ -34,13 +36,15 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return MapLocationNotifierProvider(
-      notifier: _mapLocationNotifier,
+      locationNotifier: _mapLocationNotifier,
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: MapAppBar(
-          onGoToRouteList: widget.onPageChangeRequested,
+          onPageChange: widget.onPageChangeRequested,
         ),
-        body: const MapView(),
+        body: MapView(
+          config: _config,
+        ),
       ),
     );
   }

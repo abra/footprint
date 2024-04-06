@@ -14,10 +14,10 @@ import 'map_notifier_provider.dart';
 class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
   const MapAppBar({
     super.key,
-    required this.onGoToRouteList,
+    required this.onPageChange,
   });
 
-  final VoidCallback onGoToRouteList;
+  final VoidCallback onPageChange;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -27,7 +27,7 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
     log('>>> build $runtimeType');
 
     final mapLocationNotifier =
-        MapLocationNotifierProvider.of(context).notifier;
+        MapLocationNotifierProvider.of(context).locationNotifier;
     final mapAppBarNotifier = MapAppBarNotifier();
 
     return AppBar(
@@ -51,28 +51,17 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
             right: 8,
             bottom: 4,
           ),
-          child: ValueListenableBuilder<MapLocationState>(
-            // TODO: Rewrite it
-            valueListenable: mapLocationNotifier,
-            builder: (BuildContext context, MapLocationState state, _) {
-              var currentLocation = 'Footprint';
-              if (state is MapLocationUpdateSuccess) {
-                currentLocation =
-                    '${state.location.latitude}, ${state.location.longitude}';
-              }
-              return RichText(
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                text: TextSpan(
-                  // TODO: Add address based on current location
-                  text: currentLocation,
-                  style: GoogleFonts.robotoCondensed(
-                    fontSize: 16,
-                    color: appWhite,
-                  ),
-                ),
-              );
-            },
+          child: RichText(
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            text: TextSpan(
+              // TODO: Add address based on current location
+              text: 'Address of current location',
+              style: GoogleFonts.robotoCondensed(
+                fontSize: 16,
+                color: appWhite,
+              ),
+            ),
           ),
         ),
       ),
@@ -115,7 +104,7 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
                 CupertinoIcons.square_stack_3d_down_right_fill,
                 size: 34,
               ),
-              onPressed: () => onGoToRouteList(),
+              onPressed: onPageChange,
             ),
           ),
         ),
@@ -252,4 +241,3 @@ class _ExceptionIndicatorState extends State<_ExceptionIndicator> {
     );
   }
 }
-

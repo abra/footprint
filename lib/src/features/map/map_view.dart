@@ -3,15 +3,20 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
+import 'package:footprint/src/features/map/map_view_config.dart';
 
 import 'extensions.dart';
-import 'map_config.dart';
 import 'map_location_notifier.dart';
 import 'map_notifier_provider.dart';
 import 'map_view_notifier.dart';
 
 class MapView extends StatefulWidget {
-  const MapView({super.key});
+  const MapView({
+    super.key,
+    required this.config,
+  });
+
+  final MapViewConfig config;
 
   @override
   State<MapView> createState() => _MapViewState();
@@ -19,13 +24,16 @@ class MapView extends StatefulWidget {
 
 class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
+  late final MapViewConfig _config;
   late final AnimatedMapController _animatedMapController;
   late final MapLocationNotifier _mapLocationNotifier;
-  final MapViewNotifier _viewNotifier = MapViewNotifier();
+  late final MapViewNotifier _viewNotifier;
 
   @override
   void initState() {
     super.initState();
+    _config = widget.config;
+    _viewNotifier = MapViewNotifier(config: _config);
     _animatedMapController = AnimatedMapController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -36,7 +44,7 @@ class _MapViewState extends State<MapView>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _mapLocationNotifier = MapLocationNotifierProvider.of(context).notifier;
+    _mapLocationNotifier = MapLocationNotifierProvider.of(context).locationNotifier;
     _viewNotifier.addListener(_handleZoomChanged);
     _mapLocationNotifier.addListener(_handleMapLocationChanged);
   }
@@ -59,13 +67,13 @@ class _MapViewState extends State<MapView>
       children: [
         FlutterMap(
           mapController: _animatedMapController.mapController,
-          options: const MapOptions(
-            interactionOptions: InteractionOptions(
+          options: MapOptions(
+            interactionOptions: const InteractionOptions(
               pinchZoomWinGestures: InteractiveFlag.pinchZoom,
             ),
-            initialZoom: MapConfig.defaultZoom,
-            maxZoom: MapConfig.maxZoom,
-            minZoom: MapConfig.minZoom,
+            initialZoom: _config.defaultZoom,
+            maxZoom: _config.maxZoom,
+            minZoom: _config.minZoom,
           ),
           children: [
             _TileLayer(
@@ -201,7 +209,7 @@ class _MapMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<MapLocationState>(
-      valueListenable: MapLocationNotifierProvider.of(context).notifier,
+      valueListenable: MapLocationNotifierProvider.of(context).locationNotifier,
       builder: (BuildContext context, MapLocationState state, _) {
         // TODO: Replace
         if (state is MapLocationUpdateSuccess) {
