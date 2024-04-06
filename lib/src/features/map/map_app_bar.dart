@@ -22,10 +22,6 @@ class MapAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     log('>>> build $runtimeType');
 
-    // final mapLocationNotifier =
-    //     MapLocationNotifierProvider.of(context).locationNotifier;
-    // final mapAppBarNotifier = MapAppBarNotifier();
-
     return AppBar(
       title: DecoratedBox(
         decoration: BoxDecoration(
