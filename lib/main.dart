@@ -27,6 +27,11 @@ class FootprintApp extends StatefulWidget {
   State<FootprintApp> createState() => _FootprintAppState();
 }
 
+abstract class _Pages {
+  static const int map = 0;
+  static const int routeList = 1;
+}
+
 class _FootprintAppState extends State<FootprintApp> {
   final _locationRepository = const LocationRepository();
 
@@ -90,7 +95,3 @@ class _PageManager {
   }
 }
 
-abstract class _Pages {
-  static const int map = 0;
-  static const int routeList = 1;
-}
