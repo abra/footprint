@@ -27,7 +27,5 @@ Footprint allows you to record, save and share your route
    - Features are used for files that are rarely used (screens, state managers,....)
  
  - Repository Pattern
- 
- - MVVM
 
  - [ValueNotifier](https://api.flutter.dev/flutter/foundation/ValueNotifier-class.html) + [ValueListenableBuilder](https://api.flutter.dev/flutter/widgets/ValueListenableBuilder-class.html) for a state managing
