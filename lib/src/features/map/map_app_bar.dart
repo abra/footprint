@@ -146,6 +146,9 @@ class _MapAppBarState extends State<MapAppBar> {
 
   void _onTryAgain() {
     _mapLocationNotifier.reInit();
+    setState(() {
+      _isShowExceptionDialog = true;
+    });
   }
 
   void _onDismiss() {
