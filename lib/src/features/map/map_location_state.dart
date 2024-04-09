@@ -31,7 +31,6 @@ class MapLocationUpdateFailure extends MapLocationState {
   final String errorMessage;
 
   @override
-  // TODO: implement props
   List<Object?> get props => [
         error,
         errorMessage,
