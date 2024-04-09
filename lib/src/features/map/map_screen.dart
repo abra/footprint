@@ -23,7 +23,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   late final MapLocationNotifier _mapLocationNotifier;
-  final MapViewConfig config = const MapViewConfig();
+  final MapViewConfig _config = const MapViewConfig();
 
   @override
   void initState() {
@@ -49,7 +49,7 @@ class _MapScreenState extends State<MapScreen> {
           onPageChange: widget.onPageChangeRequested,
         ),
         body: MapView(
-          config: config,
+          config: _config,
         ),
       ),
     );
