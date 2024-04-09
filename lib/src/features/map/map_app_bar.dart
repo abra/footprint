@@ -5,7 +5,7 @@ import 'package:footprint/src/domain_models/exceptions.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'map_location_notifier.dart';
-import 'map_notifier_provider.dart';
+import 'extensions.dart';
 
 class MapAppBar extends StatefulWidget implements PreferredSizeWidget {
   const MapAppBar({
@@ -30,7 +30,7 @@ class _MapAppBarState extends State<MapAppBar> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _mapLocationNotifier = MapLocationNotifierProvider.of(context).notifier;
+    _mapLocationNotifier = context.locationNotifier;
     _mapLocationNotifier.addListener(_handleLocationUpdateException);
   }
 

@@ -11,12 +11,15 @@ part 'map_location_state.dart';
 
 class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   MapLocationNotifier({
-    required this.locationRepository,
-  }) : super(MapInitialLocationUpdate()) {
+    required LocationRepository locationRepository,
+  })  : _locationRepository = locationRepository,
+        super(
+          MapInitialLocationUpdate(),
+        ) {
     _init();
   }
 
-  final LocationRepository locationRepository;
+  final LocationRepository _locationRepository;
   StreamSubscription<Location>? _locationSubscription;
 
   Future<void> reInit() async {
@@ -29,8 +32,8 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
         _locationSubscription != null && _locationSubscription!.isPaused;
 
     try {
-      await locationRepository.ensureLocationServiceEnabled();
-      await locationRepository.ensurePermissionGranted();
+      await _locationRepository.ensureLocationServiceEnabled();
+      await _locationRepository.ensurePermissionGranted();
 
       if (_locationSubscription == null) {
         await _startLocationUpdate();
@@ -43,10 +46,10 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   }
 
   Future<void> _startLocationUpdate() async {
-    final stream = locationRepository.locationUpdateStream();
+    final stream = _locationRepository.locationUpdateStream();
 
     _locationSubscription = stream.listen((location) {
-      log('--- LOCATION [$hashCode]: $location');
+      log('--- Location [$hashCode]: $location');
       value = MapLocationUpdateSuccess(location: location);
     }, onError: (e) {
       if (e is ServiceDisabledException) {

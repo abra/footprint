@@ -3,11 +3,11 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
-import 'package:footprint/src/features/map/map_view_config.dart';
 
 import 'extensions.dart';
 import 'map_location_notifier.dart';
 import 'map_notifier_provider.dart';
+import 'map_view_config.dart';
 import 'map_view_notifier.dart';
 
 class MapView extends StatefulWidget {
@@ -44,7 +44,7 @@ class _MapViewState extends State<MapView>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _mapLocationNotifier = MapLocationNotifierProvider.of(context).notifier;
+    _mapLocationNotifier = context.locationNotifier;
     _viewNotifier.addListener(_handleZoomChanged);
     _mapLocationNotifier.addListener(_handleMapLocationChanged);
   }
