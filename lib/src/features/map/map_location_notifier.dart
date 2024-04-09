@@ -46,7 +46,7 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
     final stream = locationRepository.locationUpdateStream();
 
     _locationSubscription = stream.listen((location) {
-      log('--- LOCATION: $location');
+      log('--- LOCATION [$hashCode]: $location');
       value = MapLocationUpdateSuccess(location: location);
     }, onError: (e) {
       if (e is ServiceDisabledException) {

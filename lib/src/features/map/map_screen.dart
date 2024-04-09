@@ -22,27 +22,33 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  late final MapLocationNotifier _mapLocationNotifier;
+  final MapViewConfig config = const MapViewConfig();
+
+  @override
+  void initState() {
+    super.initState();
+    _mapLocationNotifier = MapLocationNotifier(
+      locationRepository: widget.locationRepository,
+    );
+  }
 
   @override
   void dispose() {
+    _mapLocationNotifier.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final MapLocationNotifier mapLocationNotifier = MapLocationNotifier(
-      locationRepository: widget.locationRepository,
-    );
-    const MapViewConfig config = MapViewConfig();
-
     return MapLocationNotifierProvider(
-      notifier: mapLocationNotifier,
+      notifier: _mapLocationNotifier,
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: MapAppBar(
           onPageChange: widget.onPageChangeRequested,
         ),
-        body: const MapView(
+        body: MapView(
           config: config,
         ),
       ),

@@ -60,7 +60,7 @@ class _MapViewState extends State<MapView>
 
   @override
   Widget build(BuildContext context) {
-    log('>>> build $runtimeType');
+    log('>>> build $runtimeType $hashCode');
     super.build(context);
 
     return Stack(
