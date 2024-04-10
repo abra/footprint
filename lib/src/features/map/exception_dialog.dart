@@ -5,12 +5,13 @@ class ExceptionDialog extends StatelessWidget {
   const ExceptionDialog({
     super.key,
     VoidCallback? onTryAgain,
-    required this.onDismiss,
+    required void Function() onDismiss,
     required this.message,
-  }) : _onTryAgain = onTryAgain;
+  })  : _onDismiss = onDismiss,
+        _onTryAgain = onTryAgain;
 
   final VoidCallback? _onTryAgain;
-  final VoidCallback onDismiss;
+  final VoidCallback _onDismiss;
   final String message;
 
   @override
@@ -20,7 +21,7 @@ class ExceptionDialog extends StatelessWidget {
       direction: DismissDirection.horizontal,
       onDismissed: (action) {
         Navigator.of(context).pop();
-        onDismiss();
+        _onDismiss();
       },
       child: DecoratedBox(
         decoration: BoxDecoration(
@@ -89,7 +90,7 @@ class ExceptionDialog extends StatelessWidget {
                       return TextButton(
                         onPressed: () {
                           Navigator.of(context).pop();
-                          onDismiss();
+                          _onDismiss();
                         },
                         child: const Text(
                           'Hide',
@@ -108,7 +109,7 @@ class ExceptionDialog extends StatelessWidget {
                           width: 120,
                           child: TextButton(
                             onPressed: () {
-                              onDismiss();
+                              _onDismiss();
                               Navigator.of(context).pop();
                             },
                             child: const Text(
