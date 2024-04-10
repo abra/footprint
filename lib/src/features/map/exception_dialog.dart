@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:footprint/src/app/common/colors.dart';
+import 'package:footprint/src/shared_components/exception_icon.dart';
 
 class ExceptionDialog extends StatelessWidget {
   const ExceptionDialog({
@@ -59,11 +60,7 @@ class ExceptionDialog extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const Icon(
-                      Icons.location_off_outlined,
-                      color: Colors.red,
-                      size: 36,
-                    ),
+                    const ExceptionIcon(),
                   ],
                 ),
               ),

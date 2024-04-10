@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:footprint/src/app/common/colors.dart';
 import 'package:footprint/src/domain_models/exceptions.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
+import 'package:footprint/src/shared_components/exception_icon.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'exception_dialog.dart';
@@ -150,11 +151,7 @@ class _MapAppBarState extends State<_MapAppBar> {
                     });
                     await _showExceptionDialog(context);
                   },
-                  icon: const Icon(
-                    Icons.location_off_rounded,
-                    color: Colors.red,
-                    size: 36,
-                  ),
+                  icon: const ExceptionIcon(),
                   alignment: Alignment.center,
                 ),
               )
