@@ -28,6 +28,7 @@ class _MapViewState extends State<MapView>
   late final AnimatedMapController _animatedMapController;
   late final MapLocationNotifier _mapLocationNotifier;
   late final MapViewNotifier _viewNotifier;
+  final ValueNotifier<bool> _recordingNotifier = ValueNotifier(false);
 
   @override
   void initState() {
@@ -83,11 +84,12 @@ class _MapViewState extends State<MapView>
           ],
         ),
         Positioned(
-          right: 0,
-          left: 0,
-          bottom: 20,
-          child: Row(
+          right: 10,
+          top: 0,
+          bottom: 0,
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               // TODO: For debugging
               IconButton(
@@ -137,15 +139,28 @@ class _MapViewState extends State<MapView>
             ],
           ),
         ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 20,
+          child: ValueListenableBuilder<bool>(
+              valueListenable: _recordingNotifier,
+              builder: (BuildContext context, bool value, _) {
+                return Switch(
+                  value: _recordingNotifier.value,
+                  onChanged: (value) {
+                    _recordingNotifier.value = value;
+                  },
+                );
+              }),
+        ),
       ],
     );
   }
 
   void _handleZoomChanged() {
-    final mapViewState = _viewNotifier.value;
-    if (mapViewState is MapViewUpdated) {
-      _animatedMapController.animatedZoomTo(mapViewState.zoom);
-    }
+    final zoom = (_viewNotifier.value as MapViewUpdated).zoom;
+    _animatedMapController.animatedZoomTo(zoom);
   }
 
   // TODO: Temporary for testing
@@ -155,11 +170,10 @@ class _MapViewState extends State<MapView>
   }
 
   void _handleMapLocationChanged() {
-    final mapViewState = _viewNotifier.value;
-    if (mapViewState is MapViewUpdated) {
-      if (mapViewState.shouldCenterMap) {
-        _moveToOnLocation();
-      }
+    final shouldCenterMap =
+        (_viewNotifier.value as MapViewUpdated).shouldCenterMap;
+    if (shouldCenterMap) {
+      _moveToOnLocation();
     }
   }
 
