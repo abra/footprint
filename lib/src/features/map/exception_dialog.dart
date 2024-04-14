@@ -93,7 +93,7 @@ class ExceptionDialog extends StatelessWidget {
                           'Hide',
                           style: TextStyle(
                             color: AppColors.grayBlue,
-                            fontSize: 18,
+                            fontSize: 16,
                           ),
                         ),
                       );
@@ -113,7 +113,7 @@ class ExceptionDialog extends StatelessWidget {
                               'Hide',
                               style: TextStyle(
                                 color: AppColors.grayBlue,
-                                fontSize: 18,
+                                fontSize: 16,
                               ),
                             ),
                           ),
@@ -129,7 +129,7 @@ class ExceptionDialog extends StatelessWidget {
                               'Try again',
                               style: TextStyle(
                                 color: AppColors.darkPurple,
-                                fontSize: 18,
+                                fontSize: 16,
                               ),
                             ),
                           ),
