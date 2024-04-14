@@ -173,32 +173,34 @@ class _MapViewState extends State<MapView>
   }
 
   void _handleZoomChanged() {
-    final zoom = (_viewNotifier.value as MapViewUpdated).zoom;
+    final mapView = _viewNotifier.value;
+    final zoom = (mapView as MapViewUpdated).zoom;
     _animatedMapController.animatedZoomTo(zoom);
   }
 
   // TODO: Temporary for testing
   void _handleToggleButtonSwitched(bool value) {
     _viewNotifier.handleCenterMap(value);
-    _moveToLocation();
+    final mapView = _viewNotifier.value;
+    final mapLocation = _mapLocationNotifier.value;
+    if (mapView is MapViewUpdated && mapLocation is MapLocationUpdateSuccess) {
+      _moveToLocation(mapLocation.location.toLatLng());
+    }
   }
 
   void _handleMapLocationChanged() {
-    final shouldCenterMap =
-        (_viewNotifier.value as MapViewUpdated).shouldCenterMap;
-    if (shouldCenterMap) {
-      _moveToLocation();
+    final mapView = _viewNotifier.value;
+    final mapLocation = _mapLocationNotifier.value;
+    final shouldCenterMap = (mapView as MapViewUpdated).shouldCenterMap;
+    if (shouldCenterMap && mapLocation is MapLocationUpdateSuccess) {
+      _moveToLocation(mapLocation.location.toLatLng());
     }
   }
 
-  void _moveToLocation() {
-    if (_mapLocationNotifier.value is MapLocationUpdateSuccess) {
-      _animatedMapController.animateTo(
-        dest: (_mapLocationNotifier.value as MapLocationUpdateSuccess)
-            .location
-            .toLatLng(),
-      );
-    }
+  void _moveToLocation(LatLng location) {
+    _animatedMapController.animateTo(
+      dest: location,
+    );
   }
 
   @override

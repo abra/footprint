@@ -22,6 +22,9 @@ class LocationRepository {
   }
 
   Future<void> ensurePermissionGranted() async {
+    // Catch service level exceptions and
+    // throw domain exceptions
+    // that can be handled by the UI
     try {
       await _locationService.ensurePermissionGranted();
     } on PermissionDeniedLocationServiceException catch (_) {

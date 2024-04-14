@@ -51,6 +51,14 @@ class _FootprintAppState extends State<FootprintApp> {
             onPageChangeRequested: () => _PageManager.goToPage(
               _Pages.map,
             ),
+            // onRouteReviewRequested: (routeId) {
+            //   MaterialPageRoute(
+            //     builder: (context) => RouteDetailsScreen(
+            //       routeId: routeId,
+            //       routeRepository: _routeRepository,
+            //     ),
+            //   );
+            // }
           ),
         ],
       ),
