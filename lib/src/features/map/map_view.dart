@@ -3,10 +3,11 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
+import 'package:footprint/src/app/common/colors.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'extensions.dart';
 import 'map_location_notifier.dart';
-import 'map_notifier_provider.dart';
 import 'map_view_config.dart';
 import 'map_view_notifier.dart';
 
@@ -28,7 +29,8 @@ class _MapViewState extends State<MapView>
   late final AnimatedMapController _animatedMapController;
   late final MapLocationNotifier _mapLocationNotifier;
   late final MapViewNotifier _viewNotifier;
-  final ValueNotifier<bool> _recordingNotifier = ValueNotifier(false);
+  final _recordingNotifier = ValueNotifier<bool>(false);
+  final _routePoints = ValueNotifier<List<LatLng>>([]); // <>
 
   @override
   void initState() {
@@ -48,6 +50,14 @@ class _MapViewState extends State<MapView>
     _mapLocationNotifier = context.locationNotifier;
     _viewNotifier.addListener(_handleZoomChanged);
     _mapLocationNotifier.addListener(_handleMapLocationChanged);
+    _mapLocationNotifier.addListener(() {
+      if (_recordingNotifier.value) {
+        final value = _mapLocationNotifier.value;
+        if (value is MapLocationUpdateSuccess) {
+          _routePoints.value.add(value.location.toLatLng());
+        }
+      }
+    });
   }
 
   @override
@@ -77,10 +87,9 @@ class _MapViewState extends State<MapView>
             minZoom: _config.minZoom,
           ),
           children: [
-            _TileLayer(
-              viewNotifier: _viewNotifier,
-            ),
-            _MapMarker(),
+            _TileLayer(viewNotifier: _viewNotifier),
+            _PolylineLayer(routePoints: _routePoints),
+            _MapMarker(locationNotifier: _mapLocationNotifier),
           ],
         ),
         Positioned(
@@ -145,11 +154,16 @@ class _MapViewState extends State<MapView>
           bottom: 20,
           child: ValueListenableBuilder<bool>(
               valueListenable: _recordingNotifier,
-              builder: (BuildContext context, bool value, _) {
+              builder: (BuildContext context, bool isRecording, _) {
+                print('isRecording: $isRecording');
                 return Switch(
-                  value: _recordingNotifier.value,
+                  value: isRecording,
                   onChanged: (value) {
+                    print('value: $value');
                     _recordingNotifier.value = value;
+                    if (!value) {
+                      _routePoints.value.clear();
+                    }
                   },
                 );
               }),
@@ -166,28 +180,58 @@ class _MapViewState extends State<MapView>
   // TODO: Temporary for testing
   void _handleToggleButtonSwitched(bool value) {
     _viewNotifier.handleCenterMap(value);
-    _moveToOnLocation();
+    _moveToLocation();
   }
 
   void _handleMapLocationChanged() {
     final shouldCenterMap =
         (_viewNotifier.value as MapViewUpdated).shouldCenterMap;
     if (shouldCenterMap) {
-      _moveToOnLocation();
+      _moveToLocation();
     }
   }
 
-  void _moveToOnLocation() {
-    final mapLocationState = _mapLocationNotifier.value;
-    if (mapLocationState is MapLocationUpdateSuccess) {
+  void _moveToLocation() {
+    if (_mapLocationNotifier.value is MapLocationUpdateSuccess) {
       _animatedMapController.animateTo(
-        dest: mapLocationState.location.toLatLng(),
+        dest: (_mapLocationNotifier.value as MapLocationUpdateSuccess)
+            .location
+            .toLatLng(),
       );
     }
   }
 
   @override
   bool get wantKeepAlive => true;
+}
+
+class _PolylineLayer extends StatelessWidget {
+  const _PolylineLayer({
+    required ValueNotifier<List<LatLng>> routePoints,
+  }) : _routePoints = routePoints;
+
+  final ValueNotifier<List<LatLng>> _routePoints;
+
+  @override
+  Widget build(BuildContext context) {
+    log('>>>>>>>>> build $runtimeType $hashCode');
+    return ValueListenableBuilder(
+      valueListenable: _routePoints,
+      builder: (BuildContext context, List<LatLng> value, _) {
+        return PolylineLayer(
+          polylines: <Polyline>[
+            Polyline(
+              points: value,
+              color: AppColors.lightPurple,
+              strokeWidth: 4,
+              // double _routeLineWidth = ((11 * defaultZoom - 126) / 4) / 2.5;
+              // borderStrokeWidth: 2,
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _TileLayer extends StatelessWidget {
@@ -220,10 +264,16 @@ class _TileLayer extends StatelessWidget {
 }
 
 class _MapMarker extends StatelessWidget {
+  const _MapMarker({
+    required MapLocationNotifier locationNotifier,
+  }) : _mapLocationNotifier = locationNotifier;
+
+  final MapLocationNotifier _mapLocationNotifier;
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<MapLocationState>(
-      valueListenable: MapLocationNotifierProvider.of(context).notifier,
+      valueListenable: _mapLocationNotifier,
       builder: (BuildContext context, MapLocationState state, _) {
         // TODO: Replace
         if (state is MapLocationUpdateSuccess) {
