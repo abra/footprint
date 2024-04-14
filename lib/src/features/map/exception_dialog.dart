@@ -28,7 +28,7 @@ class ExceptionDialog extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(30.0),
           shape: BoxShape.rectangle,
-          color: AppColors.trueWhite,
+          color: AppColors.simpleWhite,
         ),
         child: Center(
           child: Column(

@@ -89,7 +89,7 @@ class _MapViewState extends State<MapView>
           children: [
             _TileLayer(viewNotifier: _viewNotifier),
             _PolylineLayer(routePoints: _routePoints),
-            _MapMarker(locationNotifier: _mapLocationNotifier),
+            const _MapMarker(),
           ],
         ),
         Positioned(
@@ -266,16 +266,12 @@ class _TileLayer extends StatelessWidget {
 }
 
 class _MapMarker extends StatelessWidget {
-  const _MapMarker({
-    required MapLocationNotifier locationNotifier,
-  }) : _mapLocationNotifier = locationNotifier;
-
-  final MapLocationNotifier _mapLocationNotifier;
+  const _MapMarker();
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<MapLocationState>(
-      valueListenable: _mapLocationNotifier,
+      valueListenable: context.locationNotifier,
       builder: (BuildContext context, MapLocationState state, _) {
         // TODO: Replace
         if (state is MapLocationUpdateSuccess) {

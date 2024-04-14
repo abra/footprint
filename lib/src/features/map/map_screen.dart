@@ -129,7 +129,7 @@ class _MapAppBarState extends State<_MapAppBar> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [1.0, 0.8, 0.6, 0.4, 0.2, 0.0]
-                .map((opacity) => AppColors.appWhite.withOpacity(opacity))
+                .map((opacity) => AppColors.simpleWhite.withOpacity(opacity))
                 .toList(),
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -138,7 +138,7 @@ class _MapAppBarState extends State<_MapAppBar> {
         child: const SizedBox.expand(),
       ),
       elevation: 0,
-      backgroundColor: AppColors.appWhite.withOpacity(0.0),
+      backgroundColor: AppColors.simpleWhite.withOpacity(0.0),
       centerTitle: true,
       leading: Padding(
         padding: const EdgeInsets.only(left: 8.0),
