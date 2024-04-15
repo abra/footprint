@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:footprint/src/app/common/colors.dart';
-import 'package:footprint/src/shared_components/exception_icon.dart';
+import 'package:footprint/src/component_library/exception_icon.dart';
 
 class ExceptionDialog extends StatelessWidget {
   const ExceptionDialog({
