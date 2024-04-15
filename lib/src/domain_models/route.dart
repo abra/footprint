@@ -18,6 +18,12 @@ class Route {
   final DateTime startTime;
   final DateTime endTime;
   final double distance;
-  final int status;
+  final RouteStatus status;
   final List<Location> routePoints;
+}
+
+enum RouteStatus {
+  notStarted,
+  inProgress,
+  finished,
 }
