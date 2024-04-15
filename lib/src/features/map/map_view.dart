@@ -94,18 +94,17 @@ class _MapViewState extends State<MapView>
             ValueListenableBuilder<MapViewState>(
               valueListenable: _viewNotifier,
               builder: (BuildContext context, MapViewState state, _) {
-                if (state is MapViewUpdated) {
-                  return TileLayer(
-                    retinaMode: true,
-                    userAgentPackageName: state.userAgentPackageName,
-                    urlTemplate: state.urlTemplate,
-                    fallbackUrl: state.fallbackUrl,
-                    subdomains: const ['a', 'b', 'c'],
-                    maxZoom: state.maxZoom,
-                    minZoom: state.minZoom,
-                  );
-                }
-                return TileLayer();
+                return switch (state) {
+                  MapViewUpdated() => TileLayer(
+                      retinaMode: true,
+                      userAgentPackageName: state.userAgentPackageName,
+                      urlTemplate: state.urlTemplate,
+                      fallbackUrl: state.fallbackUrl,
+                      subdomains: const ['a', 'b', 'c'],
+                      maxZoom: state.maxZoom,
+                      minZoom: state.minZoom,
+                    ),
+                };
               },
             ),
             ValueListenableBuilder<List<LatLng>>(
@@ -126,28 +125,28 @@ class _MapViewState extends State<MapView>
             ),
             ValueListenableBuilder<MapLocationState>(
               valueListenable: _mapLocationNotifier,
-              builder:
-                  (BuildContext context, MapLocationState locationState, _) {
-                // TODO: Replace
-                if (locationState is MapLocationUpdateSuccess) {
-                  return MarkerLayer(
-                    markers: [
-                      Marker(
-                        width: 30.0,
-                        height: 30.0,
-                        point: locationState.location.toLatLng(),
-                        child: const Icon(
-                          Icons.circle,
-                          size: 20.0,
-                          color: Colors.deepPurple,
+              builder: (BuildContext context, MapLocationState state, _) {
+                return switch (state) {
+                  MapLocationUpdateSuccess(location: final location) =>
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          width: 30.0,
+                          height: 30.0,
+                          point: location.toLatLng(),
+                          child: const Icon(
+                            Icons.circle,
+                            size: 20.0,
+                            color: Colors.deepPurple,
+                          ),
                         ),
-                      ),
-                    ],
-                  );
-                } else if (locationState is MapInitialLocationUpdate) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return const SizedBox.shrink();
+                      ],
+                    ),
+                  MapInitialLocationUpdate() => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  _ => const SizedBox.shrink(),
+                };
               },
             ),
           ],
@@ -229,8 +228,10 @@ class _MapViewState extends State<MapView>
   }
 
   void _handleZoomChanged() {
-    final zoom = (_viewNotifier.value as MapViewUpdated).zoom;
-    _animatedMapController.animatedZoomTo(zoom);
+    switch (_viewNotifier.value) {
+      case MapViewUpdated(zoom: final zoom):
+        _animatedMapController.animatedZoomTo(zoom);
+    }
   }
 
   // TODO: Temporary for testing
@@ -245,11 +246,19 @@ class _MapViewState extends State<MapView>
   }
 
   void _handleMapLocationChanged() {
-    final mapView = _viewNotifier.value;
-    final mapLocation = _mapLocationNotifier.value;
-    final shouldCenterMap = (mapView as MapViewUpdated).shouldCenterMap;
-    if (shouldCenterMap && mapLocation is MapLocationUpdateSuccess) {
-      _moveToLocation(mapLocation.location.toLatLng());
+    final shouldCenterMap = switch (_viewNotifier.value) {
+      MapViewUpdated(shouldCenterMap: final shouldCenterMap) => shouldCenterMap,
+    };
+
+    switch (_mapLocationNotifier.value) {
+      case MapLocationUpdateSuccess(location: final location):
+        if (shouldCenterMap) {
+          _moveToLocation(location.toLatLng());
+        }
+        break;
+
+      default:
+        break;
     }
   }
 
@@ -260,12 +269,11 @@ class _MapViewState extends State<MapView>
   }
 
   void _handleRecordRoutePoints() {
-    final isLocationUpdateSuccess =
-        _mapLocationNotifier.value is MapLocationUpdateSuccess;
-    if (isLocationUpdateSuccess) {
-      final locationState =
-          _mapLocationNotifier.value as MapLocationUpdateSuccess;
-      _routePoints.value.add(locationState.location.toLatLng());
+    switch (_mapLocationNotifier.value) {
+      case MapLocationUpdateSuccess(location: final location):
+        _routePoints.value.add(location.toLatLng());
+      default:
+        break;
     }
   }
 

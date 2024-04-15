@@ -26,31 +26,29 @@ class MapViewNotifier extends ValueNotifier<MapViewState> {
   final MapViewConfig config;
 
   Future<void> centerMap(bool newValue) async {
-    value = (value as MapViewUpdated).copyWith(
-      shouldCenterMap: newValue,
-    );
+    value = switch (value) {
+      MapViewUpdated() => (value as MapViewUpdated).copyWith(
+          shouldCenterMap: newValue,
+        ),
+    };
   }
 
   Future<void> zoomIn() async {
-    final currentState = (value as MapViewUpdated);
-    final previousZoom = currentState.zoom;
-    if (previousZoom + config.zoomStep <= config.maxZoom) {
-      final newState = currentState.copyWith(
-        zoom: previousZoom + config.zoomStep,
-      );
-      value = newState;
-    }
+    value = switch (value) {
+      MapViewUpdated(zoom: final prevZoom) => prevZoom + config.zoomStep <
+              config.maxZoom
+          ? (value as MapViewUpdated).copyWith(zoom: prevZoom + config.zoomStep)
+          : value,
+    };
   }
 
   Future<void> zoomOut() async {
-    final currentState = (value as MapViewUpdated);
-    final previousZoom = currentState.zoom;
-    if (previousZoom - config.zoomStep >= config.minZoom) {
-      final newState = currentState.copyWith(
-        zoom: previousZoom - config.zoomStep,
-      );
-      value = newState;
-    }
+    value = switch (value) {
+      MapViewUpdated(zoom: final prevZoom) => prevZoom - config.zoomStep >
+              config.minZoom
+          ? (value as MapViewUpdated).copyWith(zoom: prevZoom - config.zoomStep)
+          : value,
+    };
   }
 
   @override
