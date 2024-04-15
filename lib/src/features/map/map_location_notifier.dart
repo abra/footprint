@@ -62,6 +62,7 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
 
   @override
   void dispose() {
+    log('--- $this [$hashCode]: dispose');
     _locationSubscription?.cancel();
     super.dispose();
   }

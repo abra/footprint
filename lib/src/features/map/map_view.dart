@@ -26,10 +26,15 @@ class MapView extends StatefulWidget {
 class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final MapViewConfig _config;
+
   late final AnimatedMapController _animatedMapController;
-  late final MapLocationNotifier _mapLocationNotifier;
+
   late final MapViewNotifier _viewNotifier;
-  final _recordingNotifier = ValueNotifier<bool>(false);
+
+  MapLocationNotifier get _mapLocationNotifier => context.locationNotifier;
+
+  final _isRouteRecordingStarted = ValueNotifier<bool>(false);
+
   final _routePoints = ValueNotifier<List<LatLng>>([]); // <>
 
   @override
@@ -47,15 +52,14 @@ class _MapViewState extends State<MapView>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _mapLocationNotifier = context.locationNotifier;
-    _viewNotifier.addListener(_handleZoomChanged);
     _mapLocationNotifier.addListener(_handleMapLocationChanged);
-    _mapLocationNotifier.addListener(() {
-      if (_recordingNotifier.value) {
-        final value = _mapLocationNotifier.value;
-        if (value is MapLocationUpdateSuccess) {
-          _routePoints.value.add(value.location.toLatLng());
-        }
+    _viewNotifier.addListener(_handleZoomChanged);
+    _isRouteRecordingStarted.addListener(() {
+      if (_isRouteRecordingStarted.value) {
+        _mapLocationNotifier.addListener(_handleRecordRoutePoints);
+      } else {
+        _routePoints.value.clear();
+        _mapLocationNotifier.removeListener(_handleRecordRoutePoints);
       }
     });
   }
@@ -87,9 +91,65 @@ class _MapViewState extends State<MapView>
             minZoom: _config.minZoom,
           ),
           children: [
-            _TileLayer(viewNotifier: _viewNotifier),
-            _PolylineLayer(routePoints: _routePoints),
-            const _MapMarker(),
+            ValueListenableBuilder<MapViewState>(
+              valueListenable: _viewNotifier,
+              builder: (BuildContext context, MapViewState state, _) {
+                if (state is MapViewUpdated) {
+                  return TileLayer(
+                    retinaMode: true,
+                    userAgentPackageName: state.userAgentPackageName,
+                    urlTemplate: state.urlTemplate,
+                    fallbackUrl: state.fallbackUrl,
+                    subdomains: const ['a', 'b', 'c'],
+                    maxZoom: state.maxZoom,
+                    minZoom: state.minZoom,
+                  );
+                }
+                return TileLayer();
+              },
+            ),
+            ValueListenableBuilder<List<LatLng>>(
+              valueListenable: _routePoints,
+              builder: (BuildContext context, List<LatLng> points, _) {
+                return PolylineLayer(
+                  polylines: <Polyline>[
+                    Polyline(
+                      points: points,
+                      color: AppColors.lightPurple,
+                      strokeWidth: 4,
+                      // double _routeLineWidth = ((11 * defaultZoom - 126) / 4) / 2.5;
+                      // borderStrokeWidth: 2,
+                    ),
+                  ],
+                );
+              },
+            ),
+            ValueListenableBuilder<MapLocationState>(
+              valueListenable: _mapLocationNotifier,
+              builder:
+                  (BuildContext context, MapLocationState locationState, _) {
+                // TODO: Replace
+                if (locationState is MapLocationUpdateSuccess) {
+                  return MarkerLayer(
+                    markers: [
+                      Marker(
+                        width: 30.0,
+                        height: 30.0,
+                        point: locationState.location.toLatLng(),
+                        child: const Icon(
+                          Icons.circle,
+                          size: 20.0,
+                          color: Colors.deepPurple,
+                        ),
+                      ),
+                    ],
+                  );
+                } else if (locationState is MapInitialLocationUpdate) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ],
         ),
         Positioned(
@@ -106,7 +166,7 @@ class _MapViewState extends State<MapView>
                   Icons.zoom_in,
                 ),
                 onPressed: () {
-                  _viewNotifier.handleZoomedIn();
+                  _viewNotifier.zoomIn();
                 },
               ),
               const SizedBox(width: 20),
@@ -139,12 +199,13 @@ class _MapViewState extends State<MapView>
               const SizedBox(width: 20),
               // TODO: Temporary for testing
               IconButton(
-                  icon: const Icon(
-                    Icons.zoom_out,
-                  ),
-                  onPressed: () {
-                    _viewNotifier.handleZoomedOut();
-                  }),
+                icon: const Icon(
+                  Icons.zoom_out,
+                ),
+                onPressed: () {
+                  _viewNotifier.zoomOut();
+                },
+              ),
             ],
           ),
         ),
@@ -153,17 +214,12 @@ class _MapViewState extends State<MapView>
           right: 0,
           bottom: 20,
           child: ValueListenableBuilder<bool>(
-              valueListenable: _recordingNotifier,
+              valueListenable: _isRouteRecordingStarted,
               builder: (BuildContext context, bool isRecording, _) {
-                print('isRecording: $isRecording');
                 return Switch(
                   value: isRecording,
                   onChanged: (value) {
-                    print('value: $value');
-                    _recordingNotifier.value = value;
-                    if (!value) {
-                      _routePoints.value.clear();
-                    }
+                    _isRouteRecordingStarted.value = value;
                   },
                 );
               }),
@@ -173,17 +229,17 @@ class _MapViewState extends State<MapView>
   }
 
   void _handleZoomChanged() {
-    final mapView = _viewNotifier.value;
-    final zoom = (mapView as MapViewUpdated).zoom;
+    final zoom = (_viewNotifier.value as MapViewUpdated).zoom;
     _animatedMapController.animatedZoomTo(zoom);
   }
 
   // TODO: Temporary for testing
   void _handleToggleButtonSwitched(bool value) {
-    _viewNotifier.handleCenterMap(value);
-    final mapView = _viewNotifier.value;
+    _viewNotifier.centerMap(value);
+    final shouldCenterMap =
+        (_viewNotifier.value as MapViewUpdated).shouldCenterMap;
     final mapLocation = _mapLocationNotifier.value;
-    if (mapView is MapViewUpdated && mapLocation is MapLocationUpdateSuccess) {
+    if (shouldCenterMap && mapLocation is MapLocationUpdateSuccess) {
       _moveToLocation(mapLocation.location.toLatLng());
     }
   }
@@ -203,97 +259,16 @@ class _MapViewState extends State<MapView>
     );
   }
 
+  void _handleRecordRoutePoints() {
+    final isLocationUpdateSuccess =
+        _mapLocationNotifier.value is MapLocationUpdateSuccess;
+    if (isLocationUpdateSuccess) {
+      final locationState =
+          _mapLocationNotifier.value as MapLocationUpdateSuccess;
+      _routePoints.value.add(locationState.location.toLatLng());
+    }
+  }
+
   @override
   bool get wantKeepAlive => true;
-}
-
-class _PolylineLayer extends StatelessWidget {
-  const _PolylineLayer({
-    required ValueNotifier<List<LatLng>> routePoints,
-  }) : _routePoints = routePoints;
-
-  final ValueNotifier<List<LatLng>> _routePoints;
-
-  @override
-  Widget build(BuildContext context) {
-    log('>>>>>>>>> build $runtimeType $hashCode');
-    return ValueListenableBuilder(
-      valueListenable: _routePoints,
-      builder: (BuildContext context, List<LatLng> value, _) {
-        return PolylineLayer(
-          polylines: <Polyline>[
-            Polyline(
-              points: value,
-              color: AppColors.lightPurple,
-              strokeWidth: 4,
-              // double _routeLineWidth = ((11 * defaultZoom - 126) / 4) / 2.5;
-              // borderStrokeWidth: 2,
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _TileLayer extends StatelessWidget {
-  const _TileLayer({
-    required MapViewNotifier viewNotifier,
-  }) : _viewNotifier = viewNotifier;
-
-  final MapViewNotifier _viewNotifier;
-
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<MapViewState>(
-      valueListenable: _viewNotifier,
-      builder: (BuildContext context, MapViewState state, _) {
-        if (state is MapViewUpdated) {
-          return TileLayer(
-            retinaMode: true,
-            userAgentPackageName: state.userAgentPackageName,
-            urlTemplate: state.urlTemplate,
-            fallbackUrl: state.fallbackUrl,
-            subdomains: const ['a', 'b', 'c'],
-            maxZoom: state.maxZoom,
-            minZoom: state.minZoom,
-          );
-        }
-        return TileLayer();
-      },
-    );
-  }
-}
-
-class _MapMarker extends StatelessWidget {
-  const _MapMarker();
-
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<MapLocationState>(
-      valueListenable: context.locationNotifier,
-      builder: (BuildContext context, MapLocationState state, _) {
-        // TODO: Replace
-        if (state is MapLocationUpdateSuccess) {
-          return MarkerLayer(
-            markers: [
-              Marker(
-                width: 30.0,
-                height: 30.0,
-                point: state.location.toLatLng(),
-                child: const Icon(
-                  Icons.circle,
-                  size: 20.0,
-                  color: Colors.deepPurple,
-                ),
-              ),
-            ],
-          );
-        } else if (state is MapInitialLocationUpdate) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        return const SizedBox.shrink();
-      },
-    );
-  }
 }

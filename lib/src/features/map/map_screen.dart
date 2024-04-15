@@ -77,14 +77,15 @@ class _MapAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _MapAppBarState extends State<_MapAppBar> {
-  late MapLocationNotifier _mapLocationNotifier;
+  MapLocationNotifier get _mapLocationNotifier => context.locationNotifier;
+
   bool _hasError = false;
+
   bool _isShowExceptionDialog = true;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _mapLocationNotifier = context.locationNotifier;
     _mapLocationNotifier.addListener(_handleLocationUpdateException);
   }
 

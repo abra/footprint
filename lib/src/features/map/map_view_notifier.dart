@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
@@ -23,39 +25,37 @@ class MapViewNotifier extends ValueNotifier<MapViewState> {
 
   final MapViewConfig config;
 
-  void handleCenterMap(bool newValue) async {
-    final currentState = value;
-    if (currentState is MapViewUpdated) {
+  Future<void> centerMap(bool newValue) async {
+    value = (value as MapViewUpdated).copyWith(
+      shouldCenterMap: newValue,
+    );
+  }
+
+  Future<void> zoomIn() async {
+    final currentState = (value as MapViewUpdated);
+    final previousZoom = currentState.zoom;
+    if (previousZoom + config.zoomStep <= config.maxZoom) {
       final newState = currentState.copyWith(
-        shouldCenterMap: newValue,
+        zoom: previousZoom + config.zoomStep,
       );
       value = newState;
     }
   }
 
-  void handleZoomedIn() async {
-    final currentState = value;
-    if (currentState is MapViewUpdated) {
-      final previousZoom = currentState.zoom;
-      if (previousZoom + config.zoomStep <= config.maxZoom) {
-        final newState = currentState.copyWith(
-          zoom: previousZoom + config.zoomStep,
-        );
-        value = newState;
-      }
+  Future<void> zoomOut() async {
+    final currentState = (value as MapViewUpdated);
+    final previousZoom = currentState.zoom;
+    if (previousZoom - config.zoomStep >= config.minZoom) {
+      final newState = currentState.copyWith(
+        zoom: previousZoom - config.zoomStep,
+      );
+      value = newState;
     }
   }
 
-  void handleZoomedOut() async {
-    final currentState = value;
-    if (currentState is MapViewUpdated) {
-      final previousZoom = currentState.zoom;
-      if (previousZoom - config.zoomStep >= config.minZoom) {
-        final newState = currentState.copyWith(
-          zoom: previousZoom - config.zoomStep,
-        );
-        value = newState;
-      }
-    }
+  @override
+  void dispose() {
+    log('--- $this [$hashCode]: dispose');
+    super.dispose();
   }
 }
