@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:footprint/src/app/common/colors.dart';
+import 'package:footprint/src/component_library/exception_icon.dart';
 import 'package:footprint/src/domain_models/exceptions.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
-import 'package:footprint/src/component_library/exception_icon.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'exception_dialog.dart';
