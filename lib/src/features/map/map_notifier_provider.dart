@@ -17,7 +17,6 @@ class MapLocationNotifierProvider extends InheritedWidget {
   }
 
   @override
-  bool updateShouldNotify(MapLocationNotifierProvider oldWidget) {
-    return oldWidget.notifier != notifier;
-  }
+  bool updateShouldNotify(MapLocationNotifierProvider oldWidget) =>
+      oldWidget.notifier != notifier;
 }

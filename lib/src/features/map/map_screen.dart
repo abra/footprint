@@ -92,6 +92,7 @@ class _MapAppBarState extends State<_MapAppBar> {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      surfaceTintColor: Colors.transparent,
       title: DecoratedBox(
         decoration: BoxDecoration(
           color: AppColors.grayBlue.withOpacity(0.8),
@@ -156,7 +157,11 @@ class _MapAppBarState extends State<_MapAppBar> {
                   alignment: Alignment.center,
                 ),
               )
-            : const SizedBox.shrink(),
+            : const Icon(
+                Icons.location_on,
+                color: Colors.green,
+                size: 36,
+              ),
       ),
       actions: <Widget>[
         Padding(
