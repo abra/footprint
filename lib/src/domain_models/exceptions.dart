@@ -5,7 +5,7 @@ class ServiceDisabledException implements Exception {
   }
 }
 
-class PermissionDeniedException implements Exception {
+class ServicePermissionDeniedException implements Exception {
   @override
   String toString() {
     return 'Permission to access the device\'s location is denied.';
@@ -20,10 +20,19 @@ class PermissionsPermanentlyDeniedException implements Exception {
   }
 }
 
-class PermissionRequestInProgressException implements Exception {
+class RequestForPermissionInProgressException implements Exception {
   @override
   String toString() {
     return 'A request for location permissions is already running, please '
         'wait for it to complete before doing another request.';
   }
 }
+
+class DefinitionsForPermissionNotFoundException implements Exception {
+  @override
+  String toString() {
+    return 'Configuration is missing (e.g. in the AndroidManifest.xml'
+        ' on Android or the Info.plist on iOS)';
+  }
+}
+

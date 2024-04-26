@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:footprint/src/features/map/map_screen.dart';
-import 'package:footprint/src/features/route_list/route_list_screen.dart';
+import 'package:footprint/src/map/map_screen.dart';
+import 'package:footprint/src/route_list/route_list_screen.dart';
 import 'package:footprint/src/location_repository/location_repository.dart';
 
 void main() {
@@ -24,7 +24,7 @@ class FootprintApp extends StatefulWidget {
   });
 
   @override
-  State<FootprintApp> createState() => _FootprintAppState();
+  State<FootprintApp> createState() => FootprintAppState();
 }
 
 abstract class _Pages {
@@ -32,14 +32,14 @@ abstract class _Pages {
   static const int routeList = 1;
 }
 
-class _FootprintAppState extends State<FootprintApp> {
+class FootprintAppState extends State<FootprintApp> {
   final _locationRepository = const LocationRepository();
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: _HomeScreen(
+      home: HomeScreen(
         pages: [
           MapScreen(
             locationRepository: _locationRepository,
@@ -67,8 +67,9 @@ class _FootprintAppState extends State<FootprintApp> {
   }
 }
 
-class _HomeScreen extends StatelessWidget {
-  const _HomeScreen({
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({
+    super.key,
     required this.pages,
   });
 
@@ -103,4 +104,3 @@ class _PageManager {
     );
   }
 }
-

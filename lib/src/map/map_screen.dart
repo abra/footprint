@@ -90,6 +90,12 @@ class _MapAppBarState extends State<_MapAppBar> {
   }
 
   @override
+  void dispose() {
+    _mapLocationNotifier.removeListener(_handleLocationUpdateException);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AppBar(
       surfaceTintColor: Colors.transparent,
@@ -229,7 +235,7 @@ class _MapAppBarState extends State<_MapAppBar> {
               builder: (BuildContext context) {
                 final locationState = _mapLocationNotifier.value;
                 if (locationState is MapLocationUpdateFailure) {
-                  if (locationState.error is PermissionDeniedException) {
+                  if (locationState.error is ServicePermissionDeniedException) {
                     return ExceptionDialog(
                       onTryAgain: _onTryAgain,
                       onDismiss: _onDismiss,

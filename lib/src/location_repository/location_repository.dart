@@ -1,10 +1,11 @@
 import 'package:footprint/src/domain_models/exceptions.dart';
 import 'package:footprint/src/domain_models/location.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:meta/meta.dart';
 
 import 'location_service.dart';
 import 'mappers/position_to_domain.dart';
-import 'models/exceptions.dart';
+import 'permissions.dart';
 
 class LocationRepository {
   const LocationRepository({
@@ -14,25 +15,30 @@ class LocationRepository {
   final LocationService _locationService;
 
   Future<void> ensureLocationServiceEnabled() async {
-    try {
-      await _locationService.ensureLocationServiceEnabled();
-    } on ServiceDisabledLocationServiceException catch (_) {
+    final isEnabled = await _locationService.ensureLocationServiceEnabled();
+
+    if (!isEnabled) {
       throw ServiceDisabledException();
     }
   }
 
   Future<void> ensurePermissionGranted() async {
-    // Catch service level exceptions and
-    // throw domain exceptions
-    // that can be handled by the UI
+    Permission? permission;
+
     try {
-      await _locationService.ensurePermissionGranted();
-    } on PermissionDeniedLocationServiceException catch (_) {
-      throw PermissionDeniedException();
-    } on PermissionsPermanentlyDeniedLocationServiceException catch (_) {
+      permission = await _locationService.ensurePermissionGranted();
+    } on PermissionRequestInProgressException catch (_) {
+      throw RequestForPermissionInProgressException();
+    } on PermissionDefinitionsNotFoundException catch (_) {
+      throw DefinitionsForPermissionNotFoundException();
+    } on ServiceDisabledException catch (_) {
+      throw ServiceDisabledException();
+    }
+
+    if (permission == Permission.denied) {
+      throw ServicePermissionDeniedException();
+    } else if (permission == Permission.deniedForever) {
       throw PermissionsPermanentlyDeniedException();
-    } on PermissionRequestInProgressLocationServiceException catch (_) {
-      throw PermissionRequestInProgressException();
     }
   }
 
@@ -44,7 +50,7 @@ class LocationRepository {
         yield position.toDomainModel();
       }
     } catch (e) {
-      if (e is ServiceDisabledLocationServiceException) {
+      if (e is LocationServiceDisabledException) {
         throw ServiceDisabledException();
       }
     }
@@ -54,7 +60,7 @@ class LocationRepository {
     try {
       final position = await _locationService.determinePosition();
       return position.toDomainModel();
-    } on ServiceDisabledLocationServiceException catch (_) {
+    } on LocationServiceDisabledException catch (_) {
       throw ServiceDisabledException();
     }
   }

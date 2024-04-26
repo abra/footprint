@@ -2,56 +2,45 @@ import 'dart:async';
 
 import 'package:geolocator/geolocator.dart';
 
-import 'models/exceptions.dart';
+import 'permissions.dart';
 
-/// Provides access to the device's location.
+/// Provides access to the device's location
 class LocationService {
   const LocationService({
     int? distanceFilter,
   }) : _distanceFilter = distanceFilter ?? 5;
 
-  /// Whether location service is enabled on the device.
-  static bool _serviceEnabled = false;
-
-  /// The current location permission status.
-  static LocationPermission _permission = LocationPermission.denied;
-
-  /// The distance between each location update.
+  /// The distance between each location update
   final int _distanceFilter;
 
   /// Checks if location service is enabled
-  Future<void> ensureLocationServiceEnabled() async {
-    // throw ServiceDisabledLocationServiceException();
-    _serviceEnabled = await Geolocator.isLocationServiceEnabled();
-
-    if (!_serviceEnabled) {
-      throw ServiceDisabledLocationServiceException();
-    }
+  Future<bool> ensureLocationServiceEnabled() async {
+    return await Geolocator.isLocationServiceEnabled();
   }
 
-  /// Checks if location service permission is granted.
-  Future<void> ensurePermissionGranted() async {
-    if (_serviceEnabled) {
-      _permission = await Geolocator.checkPermission();
+  /// Checks if location service permission is granted
+  Future<Permission> ensurePermissionGranted() async {
+    final serviceEnabled = await ensureLocationServiceEnabled();
 
-      if (_permission == LocationPermission.denied) {
-        try {
-          _permission = await Geolocator.requestPermission();
-        } on PermissionRequestInProgressException catch (_) {
-          throw PermissionRequestInProgressLocationServiceException();
-        }
+    if (serviceEnabled) {
+      var permission = await Geolocator.checkPermission();
 
-        if (_permission == LocationPermission.denied) {
-          throw PermissionDeniedLocationServiceException();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+
+        if (permission == LocationPermission.denied) {
+          return Permission.denied;
         }
       }
 
-      if (_permission == LocationPermission.deniedForever) {
+      if (permission == LocationPermission.deniedForever) {
         // Permissions are denied forever, handle appropriately,
-        // until the user updates the permission in the App settings.
-        throw PermissionsPermanentlyDeniedLocationServiceException();
+        // until the user updates the permission in the App settings
+        return Permission.deniedForever;
       }
     }
+
+    return Permission.granted;
   }
 
   /// Gets a stream of location updates
@@ -72,18 +61,14 @@ class LocationService {
       }
     } catch (e) {
       if (e is LocationServiceDisabledException) {
-        throw ServiceDisabledLocationServiceException();
+        rethrow;
       }
     }
   }
 
   /// Gets the current location of the device.
   Future<Position> determinePosition() async {
-    try {
-      return await Geolocator.getCurrentPosition();
-    } on LocationServiceDisabledException catch (_) {
-      throw ServiceDisabledLocationServiceException();
-    }
+    return await Geolocator.getCurrentPosition();
   }
 
   /// Calculates the distance between two locations in meters.
