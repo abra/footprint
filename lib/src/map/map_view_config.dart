@@ -2,7 +2,7 @@
 class MapViewConfig {
   const MapViewConfig();
 
-  final bool shouldCenterMap = true;
+  final bool isCentered = true;
   final double zoomStep = 0.5;
   final double defaultZoom = 16;
   final double maxZoom = 18;

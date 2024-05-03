@@ -20,24 +20,20 @@ class LocationService {
 
   /// Checks if location service permission is granted
   Future<Permission> ensurePermissionGranted() async {
-    final serviceEnabled = await ensureLocationServiceEnabled();
+    var permission = await Geolocator.checkPermission();
 
-    if (serviceEnabled) {
-      var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
 
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-
-        if (permission == LocationPermission.denied) {
-          return Permission.denied;
-        }
+        return Permission.denied;
       }
+    }
 
-      if (permission == LocationPermission.deniedForever) {
-        // Permissions are denied forever, handle appropriately,
-        // until the user updates the permission in the App settings
-        return Permission.deniedForever;
-      }
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately,
+      // until the user updates the permission in the App settings
+      return Permission.deniedForever;
     }
 
     return Permission.granted;
@@ -49,20 +45,14 @@ class LocationService {
       distanceFilter: _distanceFilter,
     );
 
-    try {
-      final positionStream = Geolocator.getPositionStream(
-        locationSettings: locationSettings,
-      );
+    final positionStream = Geolocator.getPositionStream(
+      locationSettings: locationSettings,
+    );
 
-      await for (Position position in positionStream) {
-        yield position;
-        // TODO: Remove it
-        // throw const LocationServiceDisabledException();
-      }
-    } catch (e) {
-      if (e is LocationServiceDisabledException) {
-        rethrow;
-      }
+    await for (Position position in positionStream) {
+      yield position;
+      // TODO: Remove it
+      // throw const LocationServiceDisabledException();
     }
   }
 

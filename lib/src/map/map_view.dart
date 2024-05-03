@@ -95,7 +95,7 @@ class _MapViewState extends State<MapView>
               valueListenable: _viewNotifier,
               builder: (BuildContext context, MapViewState state, _) {
                 return switch (state) {
-                  MapViewUpdated() => TileLayer(
+                  MapViewState() => TileLayer(
                       retinaMode: true,
                       userAgentPackageName: state.userAgentPackageName,
                       urlTemplate: state.urlTemplate,
@@ -173,11 +173,9 @@ class _MapViewState extends State<MapView>
               ValueListenableBuilder<MapViewState>(
                 valueListenable: _viewNotifier,
                 builder: (BuildContext context, MapViewState state, _) {
-                  if (state is MapViewUpdated) {
-                    return Text(
-                      '${state.zoom}',
-                    );
-                  }
+                  return Text(
+                    '${state.zoom}',
+                  );
                   return const SizedBox.shrink();
                 },
               ),
@@ -186,13 +184,10 @@ class _MapViewState extends State<MapView>
               ValueListenableBuilder<MapViewState>(
                 valueListenable: _viewNotifier,
                 builder: (BuildContext context, MapViewState state, _) {
-                  if (state is MapViewUpdated) {
-                    return Switch(
-                      value: state.shouldCenterMap,
-                      onChanged: _handleToggleButtonSwitched,
-                    );
-                  }
-                  return const SizedBox.shrink();
+                  return Switch(
+                    value: state.isCentered,
+                    onChanged: _handleToggleButtonSwitched,
+                  );
                 },
               ),
               const SizedBox(width: 20),
@@ -229,7 +224,7 @@ class _MapViewState extends State<MapView>
 
   void _handleZoomChanged() {
     switch (_viewNotifier.value) {
-      case MapViewUpdated(zoom: final zoom):
+      case MapViewState(zoom: final zoom):
         _animatedMapController.animatedZoomTo(zoom);
     }
   }
@@ -237,23 +232,22 @@ class _MapViewState extends State<MapView>
   // TODO: Temporary for testing
   void _handleToggleButtonSwitched(bool value) {
     _viewNotifier.centerMap(value);
-    final shouldCenterMap =
-        (_viewNotifier.value as MapViewUpdated).shouldCenterMap;
+    final isCentered = _viewNotifier.value.isCentered;
     final mapLocation = _mapLocationNotifier.value;
-    if (shouldCenterMap && mapLocation is MapLocationUpdateSuccess) {
-      _moveToLocation(mapLocation.location.toLatLng());
+    if (isCentered && mapLocation is MapLocationUpdateSuccess) {
+      _centerMapViewToCurrentLocation(mapLocation.location.toLatLng());
     }
   }
 
   void _handleMapLocationChanged() {
-    final shouldCenterMap = switch (_viewNotifier.value) {
-      MapViewUpdated(shouldCenterMap: final shouldCenterMap) => shouldCenterMap,
+    final mapViewIsCentered = switch (_viewNotifier.value) {
+      MapViewState(isCentered: final isCentered) => isCentered,
     };
 
     switch (_mapLocationNotifier.value) {
       case MapLocationUpdateSuccess(location: final location):
-        if (shouldCenterMap) {
-          _moveToLocation(location.toLatLng());
+        if (mapViewIsCentered) {
+          _centerMapViewToCurrentLocation(location.toLatLng());
         }
         break;
 
@@ -262,7 +256,7 @@ class _MapViewState extends State<MapView>
     }
   }
 
-  void _moveToLocation(LatLng location) {
+  void _centerMapViewToCurrentLocation(LatLng location) {
     _animatedMapController.animateTo(
       dest: location,
     );

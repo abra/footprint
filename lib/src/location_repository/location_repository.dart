@@ -31,8 +31,6 @@ class LocationRepository {
       throw RequestForPermissionInProgressException();
     } on PermissionDefinitionsNotFoundException catch (_) {
       throw DefinitionsForPermissionNotFoundException();
-    } on ServiceDisabledException catch (_) {
-      throw ServiceDisabledException();
     }
 
     if (permission == Permission.denied) {

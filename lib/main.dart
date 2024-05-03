@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:footprint/src/location_repository/location_repository.dart';
 import 'package:footprint/src/map/map_screen.dart';
 import 'package:footprint/src/route_list/route_list_screen.dart';
-import 'package:footprint/src/location_repository/location_repository.dart';
 
 void main() {
   runZonedGuarded<Future<void>>(
@@ -18,21 +18,16 @@ void main() {
   );
 }
 
-class FootprintApp extends StatefulWidget {
-  const FootprintApp({
-    super.key,
-  });
-
-  @override
-  State<FootprintApp> createState() => FootprintAppState();
-}
-
 abstract class _Pages {
   static const int map = 0;
   static const int routeList = 1;
 }
 
-class FootprintAppState extends State<FootprintApp> {
+class FootprintApp extends StatelessWidget {
+  const FootprintApp({
+    super.key,
+  });
+
   final _locationRepository = const LocationRepository();
 
   @override
@@ -67,7 +62,7 @@ class FootprintAppState extends State<FootprintApp> {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     required this.pages,
@@ -76,15 +71,26 @@ class HomeScreen extends StatelessWidget {
   final List<Widget> pages;
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: PageView(
         allowImplicitScrolling: true,
         physics: const NeverScrollableScrollPhysics(),
         controller: _PageManager.pageController,
-        children: pages,
+        children: widget.pages,
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _PageManager.pageController.dispose();
+    super.dispose();
   }
 }
 

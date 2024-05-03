@@ -11,8 +11,8 @@ class MapViewNotifier extends ValueNotifier<MapViewState> {
   MapViewNotifier({
     required this.config,
   }) : super(
-          MapViewUpdated(
-            shouldCenterMap: config.shouldCenterMap,
+          MapViewState(
+            isCentered: config.isCentered,
             zoomStep: config.zoomStep,
             zoom: config.defaultZoom,
             maxZoom: config.maxZoom,
@@ -27,27 +27,26 @@ class MapViewNotifier extends ValueNotifier<MapViewState> {
 
   Future<void> centerMap(bool newValue) async {
     value = switch (value) {
-      MapViewUpdated() => (value as MapViewUpdated).copyWith(
-          shouldCenterMap: newValue,
-        ),
+      MapViewState(isCentered: final prevValue) =>
+        prevValue != newValue ? value.copyWith(isCentered: newValue) : value,
     };
   }
 
   Future<void> zoomIn() async {
     value = switch (value) {
-      MapViewUpdated(zoom: final prevZoom) => prevZoom + config.zoomStep <
-              config.maxZoom
-          ? (value as MapViewUpdated).copyWith(zoom: prevZoom + config.zoomStep)
-          : value,
+      MapViewState(zoom: final prevZoom) =>
+        prevZoom + config.zoomStep < config.maxZoom
+            ? value.copyWith(zoom: prevZoom + config.zoomStep)
+            : value,
     };
   }
 
   Future<void> zoomOut() async {
     value = switch (value) {
-      MapViewUpdated(zoom: final prevZoom) => prevZoom - config.zoomStep >
-              config.minZoom
-          ? (value as MapViewUpdated).copyWith(zoom: prevZoom - config.zoomStep)
-          : value,
+      MapViewState(zoom: final prevZoom) =>
+        prevZoom - config.zoomStep > config.minZoom
+            ? value.copyWith(zoom: prevZoom - config.zoomStep)
+            : value,
     };
   }
 

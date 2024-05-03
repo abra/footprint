@@ -1,12 +1,8 @@
 part of 'map_view_notifier.dart';
 
-sealed class MapViewState extends Equatable {
-  const MapViewState();
-}
-
-class MapViewUpdated extends MapViewState {
-  const MapViewUpdated({
-    required this.shouldCenterMap,
+class MapViewState extends Equatable {
+  const MapViewState({
+    required this.isCentered,
     required this.zoomStep,
     required this.zoom,
     required this.maxZoom,
@@ -16,7 +12,7 @@ class MapViewUpdated extends MapViewState {
     required this.userAgentPackageName,
   });
 
-  final bool shouldCenterMap;
+  final bool isCentered;
   final double zoomStep;
   final double zoom;
   final double maxZoom;
@@ -25,8 +21,8 @@ class MapViewUpdated extends MapViewState {
   final String fallbackUrl;
   final String userAgentPackageName;
 
-  MapViewUpdated copyWith({
-    bool? shouldCenterMap,
+  MapViewState copyWith({
+    bool? isCentered,
     double? zoomStep,
     double? zoom,
     double? maxZoom,
@@ -35,8 +31,8 @@ class MapViewUpdated extends MapViewState {
     String? fallbackUrl,
     String? userAgentPackageName,
   }) {
-    return MapViewUpdated(
-      shouldCenterMap: shouldCenterMap ?? this.shouldCenterMap,
+    return MapViewState(
+      isCentered: isCentered ?? this.isCentered,
       zoomStep: zoomStep ?? this.zoomStep,
       zoom: zoom ?? this.zoom,
       maxZoom: maxZoom ?? this.maxZoom,
@@ -49,7 +45,7 @@ class MapViewUpdated extends MapViewState {
 
   @override
   List<Object?> get props => [
-        shouldCenterMap,
+        isCentered,
         zoomStep,
         zoom,
         maxZoom,
