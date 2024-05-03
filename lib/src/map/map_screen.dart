@@ -163,11 +163,7 @@ class _MapAppBarState extends State<_MapAppBar> {
                   alignment: Alignment.center,
                 ),
               )
-            : const Icon(
-                Icons.location_on,
-                color: Colors.green,
-                size: 36,
-              ),
+            : const SizedBox.shrink(),
       ),
       actions: <Widget>[
         Padding(
