@@ -4,21 +4,17 @@ import 'package:geolocator/geolocator.dart';
 
 import 'permissions.dart';
 
-/// Provides access to the device's location
 class LocationService {
   const LocationService({
     int? distanceFilter,
   }) : _distanceFilter = distanceFilter ?? 5;
 
-  /// The distance between each location update
   final int _distanceFilter;
 
-  /// Checks if location service is enabled
   Future<bool> ensureLocationServiceEnabled() async {
     return await Geolocator.isLocationServiceEnabled();
   }
 
-  /// Checks if location service permission is granted
   Future<Permission> ensurePermissionGranted() async {
     var permission = await Geolocator.checkPermission();
 
@@ -39,7 +35,6 @@ class LocationService {
     return Permission.granted;
   }
 
-  /// Gets a stream of location updates
   Stream<Position> positionUpdateStream() async* {
     final locationSettings = LocationSettings(
       distanceFilter: _distanceFilter,
@@ -56,12 +51,10 @@ class LocationService {
     }
   }
 
-  /// Gets the current location of the device.
   Future<Position> determinePosition() async {
     return await Geolocator.getCurrentPosition();
   }
 
-  /// Calculates the distance between two locations in meters.
   Future<double> calculateDistance({
     required double startLatitude,
     required double startLongitude,
