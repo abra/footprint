@@ -1,18 +1,24 @@
-import 'package:footprint/src/domain_models/location.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../../domain_models/location.dart';
 import '../local_storage.dart';
 import 'exceptions.dart';
 
+/// SQLite implementation of [LocalStorage]
 class SqliteStorage implements LocalStorage {
+  /// constructor
   const SqliteStorage();
 
   static Database? _database;
 
   @override
   Future<void> init() async {
-    String path = join(await getDatabasesPath(), 'footprint.db');
+    final String path = join(
+      await getDatabasesPath(),
+      'footprint.db',
+    );
+
     try {
       _database = await openDatabase(
         path,
@@ -40,11 +46,14 @@ class SqliteStorage implements LocalStorage {
     }
 
     try {
-      final routeId = await _database!.insert(_Routes.tableName, {
-        'start_point': location.id,
-        'start_time': location.timestamp.toIso8601String(),
-        'status': 0,
-      });
+      final int routeId = await _database!.insert(
+        _Routes.tableName,
+        <String, dynamic>{
+          'start_point': location.id,
+          'start_time': location.timestamp.toIso8601String(),
+          'status': 0,
+        },
+      );
 
       await _database!.insert(_RoutePoints.tableName, {
         'route_id': routeId,
@@ -69,12 +78,15 @@ class SqliteStorage implements LocalStorage {
     }
 
     try {
-      await _database!.insert(_RoutePoints.tableName, {
-        'route_id': routeId,
-        'latitude': location.latitude,
-        'longitude': location.longitude,
-        'timestamp': location.timestamp.toIso8601String(),
-      });
+      await _database!.insert(
+        _RoutePoints.tableName,
+        <String, dynamic>{
+          'route_id': routeId,
+          'latitude': location.latitude,
+          'longitude': location.longitude,
+          'timestamp': location.timestamp.toIso8601String(),
+        },
+      );
     } on DatabaseException catch (_) {
       throw UnableInsertDatabaseException();
     }
@@ -87,16 +99,16 @@ class SqliteStorage implements LocalStorage {
     }
 
     try {
-      List<Map<String, dynamic>> result = await _database!.query(
+      final List<Map<String, dynamic>> result = await _database!.query(
         _RoutePoints.tableName,
         where: 'route_id = ?',
         whereArgs: [routeId],
         orderBy: 'id ASC',
       );
 
-      return List.generate(
+      return List<Location>.generate(
         result.length,
-        (index) => Location.fromMap(result[index]),
+        (int index) => Location.fromMap(result[index]),
       );
     } on DatabaseException catch (_) {
       throw UnableExecuteQueryDatabaseException();
@@ -110,7 +122,7 @@ class SqliteStorage implements LocalStorage {
     }
 
     try {
-      await _database!.transaction((txn) async {
+      await _database!.transaction((Transaction txn) async {
         await txn.delete(
           _RoutePoints.tableName,
           where: 'route_id = ?',
@@ -135,9 +147,12 @@ class SqliteStorage implements LocalStorage {
     }
 
     try {
-      final result = await _database!.update(_Routes.tableName, {
-        'status': status,
-      });
+      final int result = await _database!.update(
+        _Routes.tableName,
+        <String, dynamic>{
+          'status': status,
+        },
+      );
 
       return result;
     } on DatabaseException catch (_) {

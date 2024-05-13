@@ -3,9 +3,10 @@ import 'dart:developer';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
-import 'package:footprint/src/domain_models/exceptions.dart';
-import 'package:footprint/src/domain_models/location.dart';
-import 'package:footprint/src/location_repository/location_repository.dart';
+
+import '../domain_models/exceptions.dart';
+import '../domain_models/location.dart';
+import '../location_repository/location_repository.dart';
 
 part 'map_location_state.dart';
 
@@ -24,11 +25,11 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
 
   Future<void> reInit() async {
     value = MapInitialLocationUpdate();
-    _init();
+    await _init();
   }
 
   Future<void> _init() async {
-    bool isStillSubscribedButPaused =
+    final bool isStillSubscribedButPaused =
         _locationSubscription != null && _locationSubscription!.isPaused;
 
     try {
@@ -46,12 +47,12 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   }
 
   Future<void> _startLocationUpdate() async {
-    final stream = _locationRepository.locationUpdateStream();
+    final Stream<Location> stream = _locationRepository.locationUpdateStream();
 
-    _locationSubscription = stream.listen((location) {
+    _locationSubscription = stream.listen((Location location) {
       log('--- Location [$hashCode]: $location');
       value = MapLocationUpdateSuccess(location: location);
-    }, onError: (error) {
+    }, onError: (dynamic error) {
       if (error is ServiceDisabledException) {
         value = MapLocationUpdateFailure(error: error);
         _locationSubscription?.cancel();

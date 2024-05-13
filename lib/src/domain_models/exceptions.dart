@@ -8,7 +8,7 @@ class ServiceDisabledException implements Exception {
 class ServicePermissionDeniedException implements Exception {
   @override
   String toString() {
-    return 'Permission to access the device\'s location is denied.';
+    return "Permission to access the device's location is denied.";
   }
 }
 
@@ -35,4 +35,3 @@ class DefinitionsForPermissionNotFoundException implements Exception {
         ' on Android or the Info.plist on iOS)';
   }
 }
-

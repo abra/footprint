@@ -2,12 +2,13 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:footprint/src/location_repository/location_repository.dart';
-import 'package:footprint/src/map/map_screen.dart';
-import 'package:footprint/src/route_list/route_list_screen.dart';
 
-void main() {
-  runZonedGuarded<Future<void>>(
+import 'src/location_repository/location_repository.dart';
+import 'src/map/map_screen.dart';
+import 'src/route_list/route_list_screen.dart';
+
+Future<void> main() async {
+  await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
       runApp(const FootprintApp());
@@ -23,45 +24,45 @@ abstract class _Pages {
   static const int routeList = 1;
 }
 
+/// The main application widget
 class FootprintApp extends StatelessWidget {
   const FootprintApp({
     super.key,
   });
 
-  final _locationRepository = const LocationRepository();
+  LocationRepository get _locationRepository => const LocationRepository();
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: HomeScreen(
-        pages: [
-          MapScreen(
-            locationRepository: _locationRepository,
-            onPageChangeRequested: () => _PageManager.goToPage(
-              _Pages.routeList,
+  Widget build(BuildContext context) => MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: HomeScreen(
+          pages: [
+            MapScreen(
+              locationRepository: _locationRepository,
+              onPageChangeRequested: () => _PageManager.goToPage(
+                _Pages.routeList,
+              ),
             ),
-          ),
-          RouteListScreen(
-            onPageChangeRequested: () => _PageManager.goToPage(
-              _Pages.map,
+            RouteListScreen(
+              onPageChangeRequested: () => _PageManager.goToPage(
+                _Pages.map,
+              ),
+              // onRouteSelected: (routeId) {
+              //   MaterialPage(
+              //     name: 'route-details',
+              //     child: RouteDetailsScreen(
+              //       routeId: routeId,
+              //       routeRepository: _routeRepository,
+              //     ),
+              //   );
+              // }
             ),
-            // onRouteSelected: (routeId) {
-            //   MaterialPage(
-            //     name: 'route-details',
-            //     child: RouteDetailsScreen(
-            //       routeId: routeId,
-            //       routeRepository: _routeRepository,
-            //     ),
-            //   );
-            // }
-          ),
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+      );
 }
 
+/// Home screen of FootprintApp
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
@@ -102,8 +103,8 @@ class _PageManager {
 
   static PageController get pageController => _pageController;
 
-  static void goToPage(int pageIndex) {
-    _pageController.animateToPage(
+  static Future<void> goToPage(int pageIndex) async {
+    await _pageController.animateToPage(
       pageIndex,
       duration: const Duration(milliseconds: 300),
       curve: Curves.linearToEaseOut,

@@ -15,7 +15,7 @@ class Location extends Equatable {
   final double longitude;
   final DateTime timestamp;
 
-  static fromMap(Map<String, dynamic> map) {
+  static Location fromMap(Map<String, dynamic> map) {
     return Location(
       id: map['id'] as String,
       latitude: map['latitude'] as double,

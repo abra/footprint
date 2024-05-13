@@ -11,10 +11,8 @@ class MapLocationNotifierProvider extends InheritedWidget {
 
   final MapLocationNotifier notifier;
 
-  static MapLocationNotifierProvider of(BuildContext context) {
-    return context
-        .dependOnInheritedWidgetOfExactType<MapLocationNotifierProvider>()!;
-  }
+  static MapLocationNotifierProvider of(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<MapLocationNotifierProvider>()!;
 
   @override
   bool updateShouldNotify(MapLocationNotifierProvider oldWidget) => false;

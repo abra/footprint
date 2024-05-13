@@ -3,9 +3,9 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
-import 'package:footprint/src/app/common/colors.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../app/common/colors.dart';
 import 'extensions.dart';
 import 'map_location_notifier.dart';
 import 'map_view_config.dart';
@@ -207,15 +207,16 @@ class _MapViewState extends State<MapView>
           right: 0,
           bottom: 20,
           child: ValueListenableBuilder<bool>(
-              valueListenable: _isRouteRecordingStarted,
-              builder: (BuildContext context, bool isRecording, _) {
-                return Switch(
-                  value: isRecording,
-                  onChanged: (value) {
-                    _isRouteRecordingStarted.value = value;
-                  },
-                );
-              }),
+            valueListenable: _isRouteRecordingStarted,
+            builder: (BuildContext context, bool isRecording, _) {
+              return Switch(
+                value: isRecording,
+                onChanged: (value) {
+                  _isRouteRecordingStarted.value = value;
+                },
+              );
+            },
+          ),
         ),
       ],
     );

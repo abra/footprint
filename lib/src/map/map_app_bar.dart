@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:footprint/src/app/common/colors.dart';
-import 'package:footprint/src/component_library/exception_icon.dart';
-import 'package:footprint/src/domain_models/exceptions.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../app/common/colors.dart';
+import '../component_library/exception_icon.dart';
+import '../domain_models/exceptions.dart';
 import 'exception_dialog.dart';
 import 'extensions.dart';
 import 'map_location_notifier.dart';
@@ -51,7 +51,7 @@ class _MapAppBarState extends State<MapAppBar> {
         decoration: BoxDecoration(
           color: AppColors.grayBlue.withOpacity(0.8),
           borderRadius: BorderRadius.circular(25),
-          boxShadow: [
+          boxShadow: <BoxShadow>[
             BoxShadow(
               color: AppColors.grayBlue.withOpacity(0.3),
               spreadRadius: 0,
@@ -71,7 +71,7 @@ class _MapAppBarState extends State<MapAppBar> {
             textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
             text: TextSpan(
-              // TODO: Add address based on current location
+              // TODO(abra): Add address based on current location
               text: 'Address of current location',
               style: GoogleFonts.robotoCondensed(
                 fontSize: 16,
@@ -84,8 +84,9 @@ class _MapAppBarState extends State<MapAppBar> {
       flexibleSpace: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [1.0, 0.8, 0.6, 0.4, 0.2, 0.0]
-                .map((opacity) => AppColors.simpleWhite.withOpacity(opacity))
+            colors: <double>[1.0, 0.8, 0.6, 0.4, 0.2, 0.0]
+                .map((double opacity) =>
+                    AppColors.simpleWhite.withOpacity(opacity))
                 .toList(),
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -134,7 +135,7 @@ class _MapAppBarState extends State<MapAppBar> {
     );
   }
 
-  void _handleLocationUpdateException() async {
+  Future<void> _handleLocationUpdateException() async {
     if (_mapLocationNotifier.value is MapLocationUpdateFailure) {
       setState(() {
         _hasError = true;
@@ -150,8 +151,8 @@ class _MapAppBarState extends State<MapAppBar> {
     }
   }
 
-  void _onTryAgain() {
-    _mapLocationNotifier.reInit();
+  Future<void> _onTryAgain() async {
+    await _mapLocationNotifier.reInit();
     setState(() {
       _isShowExceptionDialog = true;
     });
@@ -164,7 +165,7 @@ class _MapAppBarState extends State<MapAppBar> {
   }
 
   Future<void> _showExceptionDialog(BuildContext context) async {
-    return await showDialog<void>(
+    return showDialog<void>(
       barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
@@ -177,7 +178,8 @@ class _MapAppBarState extends State<MapAppBar> {
             ),
             child: Builder(
               builder: (BuildContext context) {
-                final locationState = _mapLocationNotifier.value;
+                final MapLocationState locationState =
+                    _mapLocationNotifier.value;
                 if (locationState is MapLocationUpdateFailure) {
                   if (locationState.error is ServicePermissionDeniedException) {
                     return ExceptionDialog(

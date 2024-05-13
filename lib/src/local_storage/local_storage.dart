@@ -1,4 +1,4 @@
-import 'package:footprint/src/domain_models/location.dart';
+import '../domain_models/location.dart';
 
 abstract interface class LocalStorage {
   Future<void> init();

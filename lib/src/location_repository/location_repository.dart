@@ -1,8 +1,8 @@
-import 'package:footprint/src/domain_models/exceptions.dart';
-import 'package:footprint/src/domain_models/location.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:meta/meta.dart';
 
+import '../domain_models/exceptions.dart';
+import '../domain_models/location.dart';
 import 'location_service.dart';
 import 'mappers/position_to_domain.dart';
 import 'permissions.dart';
@@ -66,8 +66,8 @@ class LocationRepository {
   Future<double> calculateDistance({
     required Location from,
     required Location to,
-  }) {
-    return _locationService.calculateDistance(
+  }) async {
+    return await _locationService.calculateDistance(
       startLatitude: from.latitude,
       startLongitude: from.longitude,
       endLatitude: to.latitude,

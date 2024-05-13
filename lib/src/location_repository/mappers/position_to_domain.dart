@@ -1,6 +1,7 @@
-import 'package:footprint/src/domain_models/location.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:uuid/uuid.dart';
+
+import '../../domain_models/location.dart';
 
 extension PositionToDomain on Position {
   Location toDomainModel() {

@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
@@ -48,11 +46,5 @@ class MapViewNotifier extends ValueNotifier<MapViewState> {
             ? value.copyWith(zoom: prevZoom - config.zoomStep)
             : value,
     };
-  }
-
-  @override
-  void dispose() {
-    log('--- $this [$hashCode]: dispose');
-    super.dispose();
   }
 }
