@@ -176,7 +176,6 @@ class _MapViewState extends State<MapView>
                   return Text(
                     '${state.zoom}',
                   );
-                  return const SizedBox.shrink();
                 },
               ),
               const SizedBox(width: 20),
