@@ -1,4 +1,4 @@
-enum  Permission {
+enum Permission {
   granted,
   denied,
   deniedForever,
