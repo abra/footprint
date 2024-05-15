@@ -9,21 +9,19 @@ class RouteListScreen extends StatelessWidget {
   final VoidCallback onPageChangeRequested;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('RouteListScreen'),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: onPageChangeRequested,
-              child: const Text('Go to MapScreen'),
-            ),
-          ],
+  Widget build(BuildContext context) => Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('RouteListScreen'),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: onPageChangeRequested,
+                child: const Text('Go to MapScreen'),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
+      );
 }

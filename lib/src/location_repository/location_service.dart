@@ -11,9 +11,8 @@ class LocationService {
 
   final int _distanceFilter;
 
-  Future<bool> ensureLocationServiceEnabled() async {
-    return await Geolocator.isLocationServiceEnabled();
-  }
+  Future<bool> ensureLocationServiceEnabled() async =>
+      await Geolocator.isLocationServiceEnabled();
 
   Future<Permission> ensurePermissionGranted() async {
     var permission = await Geolocator.checkPermission();
@@ -51,21 +50,19 @@ class LocationService {
     }
   }
 
-  Future<Position> determinePosition() async {
-    return await Geolocator.getCurrentPosition();
-  }
+  Future<Position> determinePosition() async =>
+      await Geolocator.getCurrentPosition();
 
   Future<double> calculateDistance({
     required double startLatitude,
     required double startLongitude,
     required double endLatitude,
     required double endLongitude,
-  }) async {
-    return Geolocator.distanceBetween(
-      startLatitude,
-      startLongitude,
-      endLatitude,
-      endLongitude,
-    );
-  }
+  }) async =>
+      Geolocator.distanceBetween(
+        startLatitude,
+        startLongitude,
+        endLatitude,
+        endLongitude,
+      );
 }

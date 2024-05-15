@@ -11,11 +11,9 @@ class ExceptionIcon extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(BuildContext context) {
-    return Icon(
-      Icons.location_off_rounded,
-      color: color,
-      size: size,
-    );
-  }
+  Widget build(BuildContext context) => Icon(
+        Icons.location_off_rounded,
+        color: color,
+        size: size,
+      );
 }

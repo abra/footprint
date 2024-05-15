@@ -66,14 +66,13 @@ class LocationRepository {
   Future<double> calculateDistance({
     required Location from,
     required Location to,
-  }) async {
-    return await _locationService.calculateDistance(
-      startLatitude: from.latitude,
-      startLongitude: from.longitude,
-      endLatitude: to.latitude,
-      endLongitude: to.longitude,
-    );
-  }
+  }) async =>
+      await _locationService.calculateDistance(
+        startLatitude: from.latitude,
+        startLongitude: from.longitude,
+        endLatitude: to.latitude,
+        endLongitude: to.longitude,
+      );
 
   Future<double> calculateSpeed({
     required Location from,

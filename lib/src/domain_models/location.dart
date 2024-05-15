@@ -15,14 +15,12 @@ class Location extends Equatable {
   final double longitude;
   final DateTime timestamp;
 
-  static Location fromMap(Map<String, dynamic> map) {
-    return Location(
-      id: map['id'] as String,
-      latitude: map['latitude'] as double,
-      longitude: map['longitude'] as double,
-      timestamp: DateTime.parse(map['timestamp'] as String),
-    );
-  }
+  static Location fromMap(Map<String, dynamic> map) => Location(
+        id: map['id'] as String,
+        latitude: map['latitude'] as double,
+        longitude: map['longitude'] as double,
+        timestamp: DateTime.parse(map['timestamp'] as String),
+      );
 
   @override
   List<Object?> get props => [

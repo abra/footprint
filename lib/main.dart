@@ -77,16 +77,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: PageView(
-        allowImplicitScrolling: true,
-        physics: const NeverScrollableScrollPhysics(),
-        controller: _PageManager.pageController,
-        children: widget.pages,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Scaffold(
+        body: PageView(
+          allowImplicitScrolling: true,
+          physics: const NeverScrollableScrollPhysics(),
+          controller: _PageManager.pageController,
+          children: widget.pages,
+        ),
+      );
 
   @override
   void dispose() {

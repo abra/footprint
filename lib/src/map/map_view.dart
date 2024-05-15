@@ -93,60 +93,57 @@ class _MapViewState extends State<MapView>
           children: [
             ValueListenableBuilder<MapViewState>(
               valueListenable: _viewNotifier,
-              builder: (BuildContext context, MapViewState state, _) {
-                return switch (state) {
-                  MapViewState() => TileLayer(
-                      retinaMode: true,
-                      userAgentPackageName: state.userAgentPackageName,
-                      urlTemplate: state.urlTemplate,
-                      fallbackUrl: state.fallbackUrl,
-                      subdomains: const ['a', 'b', 'c'],
-                      maxZoom: state.maxZoom,
-                      minZoom: state.minZoom,
-                    ),
-                };
+              builder: (BuildContext context, MapViewState state, _) =>
+                  switch (state) {
+                MapViewState() => TileLayer(
+                    retinaMode: true,
+                    userAgentPackageName: state.userAgentPackageName,
+                    urlTemplate: state.urlTemplate,
+                    fallbackUrl: state.fallbackUrl,
+                    subdomains: const ['a', 'b', 'c'],
+                    maxZoom: state.maxZoom,
+                    minZoom: state.minZoom,
+                  ),
               },
             ),
             ValueListenableBuilder<List<LatLng>>(
               valueListenable: _routePoints,
-              builder: (BuildContext context, List<LatLng> points, _) {
-                return PolylineLayer(
-                  polylines: <Polyline>[
-                    Polyline(
-                      points: points,
-                      color: AppColors.lightPurple,
-                      strokeWidth: 4,
-                      // double _routeLineWidth = ((11 * defaultZoom - 126) / 4) / 2.5;
-                      // borderStrokeWidth: 2,
-                    ),
-                  ],
-                );
-              },
+              builder: (BuildContext context, List<LatLng> points, _) =>
+                  PolylineLayer(
+                polylines: <Polyline>[
+                  Polyline(
+                    points: points,
+                    color: AppColors.lightPurple,
+                    strokeWidth: 4,
+                    // double _routeLineWidth = ((11 * defaultZoom - 126) / 4) / 2.5;
+                    // borderStrokeWidth: 2,
+                  ),
+                ],
+              ),
             ),
             ValueListenableBuilder<MapLocationState>(
               valueListenable: _mapLocationNotifier,
-              builder: (BuildContext context, MapLocationState state, _) {
-                return switch (state) {
-                  MapLocationUpdateSuccess(location: final location) =>
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          width: 30.0,
-                          height: 30.0,
-                          point: location.toLatLng(),
-                          child: const Icon(
-                            Icons.circle,
-                            size: 20.0,
-                            color: Colors.deepPurple,
-                          ),
+              builder: (BuildContext context, MapLocationState state, _) =>
+                  switch (state) {
+                MapLocationUpdateSuccess(location: final location) =>
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        width: 30.0,
+                        height: 30.0,
+                        point: location.toLatLng(),
+                        child: const Icon(
+                          Icons.circle,
+                          size: 20.0,
+                          color: Colors.deepPurple,
                         ),
-                      ],
-                    ),
-                  MapInitialLocationUpdate() => const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  _ => const SizedBox.shrink(),
-                };
+                      ),
+                    ],
+                  ),
+                MapInitialLocationUpdate() => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                _ => const SizedBox.shrink(),
               },
             ),
           ],
@@ -172,22 +169,19 @@ class _MapViewState extends State<MapView>
               // TODO: Temporary for testing
               ValueListenableBuilder<MapViewState>(
                 valueListenable: _viewNotifier,
-                builder: (BuildContext context, MapViewState state, _) {
-                  return Text(
-                    '${state.zoom}',
-                  );
-                },
+                builder: (BuildContext context, MapViewState state, _) => Text(
+                  '${state.zoom}',
+                ),
               ),
               const SizedBox(width: 20),
               // TODO: Temporary for testing
               ValueListenableBuilder<MapViewState>(
                 valueListenable: _viewNotifier,
-                builder: (BuildContext context, MapViewState state, _) {
-                  return Switch(
-                    value: state.isCentered,
-                    onChanged: _handleToggleButtonSwitched,
-                  );
-                },
+                builder: (BuildContext context, MapViewState state, _) =>
+                    Switch(
+                  value: state.isCentered,
+                  onChanged: _handleToggleButtonSwitched,
+                ),
               ),
               const SizedBox(width: 20),
               // TODO: Temporary for testing
@@ -208,14 +202,12 @@ class _MapViewState extends State<MapView>
           bottom: 20,
           child: ValueListenableBuilder<bool>(
             valueListenable: _isRouteRecordingStarted,
-            builder: (BuildContext context, bool isRecording, _) {
-              return Switch(
-                value: isRecording,
-                onChanged: (value) {
-                  _isRouteRecordingStarted.value = value;
-                },
-              );
-            },
+            builder: (BuildContext context, bool isRecording, _) => Switch(
+              value: isRecording,
+              onChanged: (value) {
+                _isRouteRecordingStarted.value = value;
+              },
+            ),
           ),
         ),
       ],

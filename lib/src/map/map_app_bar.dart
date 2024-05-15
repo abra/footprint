@@ -44,96 +44,94 @@ class _MapAppBarState extends State<MapAppBar> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AppBar(
-      surfaceTintColor: Colors.transparent,
-      title: DecoratedBox(
-        decoration: BoxDecoration(
-          color: AppColors.grayBlue.withOpacity(0.8),
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: AppColors.grayBlue.withOpacity(0.3),
-              spreadRadius: 0,
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.only(
-            left: 8,
-            top: 4,
-            right: 8,
-            bottom: 4,
-          ),
-          child: RichText(
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
-            text: TextSpan(
-              // TODO(abra): Add address based on current location
-              text: 'Address of current location',
-              style: GoogleFonts.robotoCondensed(
-                fontSize: 16,
-                color: AppColors.appWhite,
+  Widget build(BuildContext context) => AppBar(
+        surfaceTintColor: Colors.transparent,
+        title: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.grayBlue.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: AppColors.grayBlue.withOpacity(0.3),
+                spreadRadius: 0,
+                blurRadius: 5,
+                offset: const Offset(0, 2),
               ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: 8,
+              top: 4,
+              right: 8,
+              bottom: 4,
             ),
-          ),
-        ),
-      ),
-      flexibleSpace: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: <double>[1.0, 0.8, 0.6, 0.4, 0.2, 0.0]
-                .map((double opacity) =>
-                    AppColors.simpleWhite.withOpacity(opacity))
-                .toList(),
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: const SizedBox.expand(),
-      ),
-      elevation: 0,
-      backgroundColor: AppColors.simpleWhite.withOpacity(0.0),
-      centerTitle: true,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 8.0),
-        child: _hasError && !_isShowExceptionDialog
-            ? FittedBox(
-                child: IconButton(
-                  onPressed: () async {
-                    setState(() {
-                      _isShowExceptionDialog = true;
-                    });
-                    await _showExceptionDialog(context);
-                  },
-                  icon: const ExceptionIcon(),
-                  alignment: Alignment.center,
+            child: RichText(
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              text: TextSpan(
+                // TODO(abra): Add address based on current location
+                text: 'Address of current location',
+                style: GoogleFonts.robotoCondensed(
+                  fontSize: 16,
+                  color: AppColors.appWhite,
                 ),
-              )
-            : const SizedBox.shrink(),
-      ),
-      actions: <Widget>[
-        Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: FittedBox(
-            alignment: Alignment.center,
-            fit: BoxFit.fitWidth,
-            child: IconButton(
-              color: AppColors.grayBlue,
-              alignment: Alignment.center,
-              icon: const Icon(
-                CupertinoIcons.square_stack_3d_down_right_fill,
-                size: 34,
               ),
-              onPressed: widget.onPageChange,
             ),
           ),
         ),
-      ],
-    );
-  }
+        flexibleSpace: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: <double>[1.0, 0.8, 0.6, 0.4, 0.2, 0.0]
+                  .map((double opacity) =>
+                      AppColors.simpleWhite.withOpacity(opacity))
+                  .toList(),
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: const SizedBox.expand(),
+        ),
+        elevation: 0,
+        backgroundColor: AppColors.simpleWhite.withOpacity(0.0),
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8.0),
+          child: _hasError && !_isShowExceptionDialog
+              ? FittedBox(
+                  child: IconButton(
+                    onPressed: () async {
+                      setState(() {
+                        _isShowExceptionDialog = true;
+                      });
+                      await _showExceptionDialog(context);
+                    },
+                    icon: const ExceptionIcon(),
+                    alignment: Alignment.center,
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+        actions: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: FittedBox(
+              alignment: Alignment.center,
+              fit: BoxFit.fitWidth,
+              child: IconButton(
+                color: AppColors.grayBlue,
+                alignment: Alignment.center,
+                icon: const Icon(
+                  CupertinoIcons.square_stack_3d_down_right_fill,
+                  size: 34,
+                ),
+                onPressed: widget.onPageChange,
+              ),
+            ),
+          ),
+        ],
+      );
 
   Future<void> _handleLocationUpdateException() async {
     if (_mapLocationNotifier.value is MapLocationUpdateFailure) {
@@ -164,12 +162,11 @@ class _MapAppBarState extends State<MapAppBar> {
     });
   }
 
-  Future<void> _showExceptionDialog(BuildContext context) async {
-    return showDialog<void>(
-      barrierDismissible: false,
-      context: context,
-      builder: (BuildContext context) {
-        return Center(
+  Future<void> _showExceptionDialog(BuildContext context) async =>
+      showDialog<void>(
+        barrierDismissible: false,
+        context: context,
+        builder: (BuildContext context) => Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width - 96,
@@ -199,8 +196,6 @@ class _MapAppBarState extends State<MapAppBar> {
               },
             ),
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
 }

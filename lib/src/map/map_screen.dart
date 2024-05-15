@@ -40,18 +40,16 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return MapLocationNotifierProvider(
-      notifier: _mapLocationNotifier,
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: MapAppBar(
-          onPageChange: widget.onPageChangeRequested,
+  Widget build(BuildContext context) => MapLocationNotifierProvider(
+        notifier: _mapLocationNotifier,
+        child: Scaffold(
+          extendBodyBehindAppBar: true,
+          appBar: MapAppBar(
+            onPageChange: widget.onPageChangeRequested,
+          ),
+          body: MapView(
+            config: _config,
+          ),
         ),
-        body: MapView(
-          config: _config,
-        ),
-      ),
-    );
-  }
+      );
 }
