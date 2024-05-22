@@ -1,10 +1,10 @@
 <p align="center">
-  <img width="200" height="200" src="https://github.com/abra/footprint/assets/55690/ffc51268-b16c-4160-88ec-7645ef3ccbf9">
-  <br/>
   🚧 Currently under development 🚧
 </p>
-
-# Footprint
+<h1 align="center">
+  <img width="200" height="200" src="https://github.com/abra/footprint/assets/55690/ffc51268-b16c-4160-88ec-7645ef3ccbf9">
+  <br/>Footprint
+</h1>
 
 Footprint allows you to record, save and share your route
 
