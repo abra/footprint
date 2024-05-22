@@ -1,7 +1,5 @@
+import 'package:component_library/component_library.dart';
 import 'package:flutter/material.dart';
-
-import '../app/common/colors.dart';
-import '../component_library/exception_icon.dart';
 
 class ExceptionDialog extends StatelessWidget {
   const ExceptionDialog({
@@ -28,7 +26,7 @@ class ExceptionDialog extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(30.0),
             shape: BoxShape.rectangle,
-            color: AppColors.simpleWhite,
+            color: context.appColors.simpleWhite,
           ),
           child: Center(
             child: Column(
@@ -68,12 +66,13 @@ class ExceptionDialog extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: Center(
+                      // TODO: Move to component library
                       child: Text(
                         message,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
-                          color: AppColors.grayBlue,
+                          color: context.appColors.grayBlue,
                         ),
                       ),
                     ),
@@ -89,10 +88,11 @@ class ExceptionDialog extends StatelessWidget {
                             Navigator.of(context).pop();
                             _onDismiss();
                           },
-                          child: const Text(
+                          // TODO: Move to component library
+                          child: Text(
                             'Hide',
                             style: TextStyle(
-                              color: AppColors.grayBlue,
+                              color: context.appColors.grayBlue,
                               fontSize: 16,
                             ),
                           ),
@@ -109,10 +109,11 @@ class ExceptionDialog extends StatelessWidget {
                                 _onDismiss();
                                 Navigator.of(context).pop();
                               },
-                              child: const Text(
+                              // TODO: Move to component library
+                              child: Text(
                                 'Hide',
                                 style: TextStyle(
-                                  color: AppColors.grayBlue,
+                                  color: context.appColors.grayBlue,
                                   fontSize: 16,
                                 ),
                               ),
@@ -125,10 +126,11 @@ class ExceptionDialog extends StatelessWidget {
                                 Navigator.of(context).pop();
                                 _onTryAgain();
                               },
-                              child: const Text(
+                              // TODO: Move to component library
+                              child: Text(
                                 'Try again',
                                 style: TextStyle(
-                                  color: AppColors.darkPurple,
+                                  color: context.appColors.darkPurple,
                                   fontSize: 16,
                                 ),
                               ),

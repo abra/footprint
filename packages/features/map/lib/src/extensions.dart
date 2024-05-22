@@ -1,7 +1,7 @@
+import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../domain_models/location.dart';
 import 'map_location_notifier.dart';
 import 'map_notifier_provider.dart';
 

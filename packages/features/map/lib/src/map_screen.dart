@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:location_repository/location_repository.dart';
 
-import '../data/location_repository/location_repository.dart';
 import 'map_app_bar.dart';
 import 'map_location_notifier.dart';
 import 'map_notifier_provider.dart';

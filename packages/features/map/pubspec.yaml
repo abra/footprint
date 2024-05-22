@@ -1,0 +1,32 @@
+name: map
+publish_to: none
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  equatable: ^2.0.3
+  cupertino_icons: ^1.0.2
+  flutter_svg: ^2.0.9
+  flutter_map: ^6.1.0
+  google_fonts: ^6.1.0
+  latlong2: ^0.9.0
+  flutter_map_animations: ^0.5.3
+  meta: ^1.10.0
+  domain_models:
+    path: ../../domain_models
+  location_repository:
+    path: ../../location_repository
+  component_library:
+    path: ../../component_library
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:

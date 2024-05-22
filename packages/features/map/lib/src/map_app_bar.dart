@@ -1,10 +1,9 @@
+import 'package:component_library/component_library.dart';
+import 'package:domain_models/domain_models.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../app/common/colors.dart';
-import '../component_library/exception_icon.dart';
-import '../domain_models/exceptions.dart';
 import 'exception_dialog.dart';
 import 'extensions.dart';
 import 'map_location_notifier.dart';
@@ -48,11 +47,11 @@ class _MapAppBarState extends State<MapAppBar> {
         surfaceTintColor: Colors.transparent,
         title: DecoratedBox(
           decoration: BoxDecoration(
-            color: AppColors.grayBlue.withOpacity(0.8),
+            color: context.appColors.grayBlue.withOpacity(0.8),
             borderRadius: BorderRadius.circular(25),
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: AppColors.grayBlue.withOpacity(0.3),
+                color: context.appColors.grayBlue.withOpacity(0.3),
                 spreadRadius: 0,
                 blurRadius: 5,
                 offset: const Offset(0, 2),
@@ -74,7 +73,7 @@ class _MapAppBarState extends State<MapAppBar> {
                 text: 'Address of current location',
                 style: GoogleFonts.robotoCondensed(
                   fontSize: 16,
-                  color: AppColors.appWhite,
+                  color: context.appColors.appWhite,
                 ),
               ),
             ),
@@ -85,7 +84,7 @@ class _MapAppBarState extends State<MapAppBar> {
             gradient: LinearGradient(
               colors: <double>[1.0, 0.8, 0.6, 0.4, 0.2, 0.0]
                   .map((double opacity) =>
-                      AppColors.simpleWhite.withOpacity(opacity))
+                      context.appColors.simpleWhite.withOpacity(opacity))
                   .toList(),
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -94,7 +93,7 @@ class _MapAppBarState extends State<MapAppBar> {
           child: const SizedBox.expand(),
         ),
         elevation: 0,
-        backgroundColor: AppColors.simpleWhite.withOpacity(0.0),
+        backgroundColor: context.appColors.simpleWhite.withOpacity(0.0),
         centerTitle: true,
         leading: Padding(
           padding: const EdgeInsets.only(left: 8.0),
@@ -120,7 +119,7 @@ class _MapAppBarState extends State<MapAppBar> {
               alignment: Alignment.center,
               fit: BoxFit.fitWidth,
               child: IconButton(
-                color: AppColors.grayBlue,
+                color: context.appColors.grayBlue,
                 alignment: Alignment.center,
                 icon: const Icon(
                   CupertinoIcons.square_stack_3d_down_right_fill,
@@ -173,26 +172,25 @@ class _MapAppBarState extends State<MapAppBar> {
               maxHeight: 250,
               minHeight: 150,
             ),
-            child: Builder(
-              builder: (BuildContext context) {
+            child: ValueListenableBuilder(
+              valueListenable: _mapLocationNotifier,
+              builder: (BuildContext context, MapLocationState state, _) {
                 final MapLocationState locationState =
                     _mapLocationNotifier.value;
-                if (locationState is MapLocationUpdateFailure) {
-                  if (locationState.error is ServicePermissionDeniedException) {
-                    return ExceptionDialog(
-                      onTryAgain: _onTryAgain,
-                      onDismiss: _onDismiss,
-                      message: locationState.errorMessage,
-                    );
-                  } else {
-                    return ExceptionDialog(
-                      onDismiss: _onDismiss,
-                      message: locationState.errorMessage,
-                    );
-                  }
-                } else {
-                  return const SizedBox.shrink();
-                }
+                return switch (locationState) {
+                  MapLocationUpdateFailure(error: final error) =>
+                    error is ServicePermissionDeniedException
+                        ? ExceptionDialog(
+                            onTryAgain: _onTryAgain,
+                            onDismiss: _onDismiss,
+                            message: error.toString(),
+                          )
+                        : ExceptionDialog(
+                            onDismiss: _onDismiss,
+                            message: error.toString(),
+                          ),
+                  _ => const SizedBox.shrink(),
+                };
               },
             ),
           ),

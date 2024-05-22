@@ -2,10 +2,9 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-
-import 'src/location_repository/location_repository.dart';
-import 'src/map/map_screen.dart';
-import 'src/route_list/route_list_screen.dart';
+import 'package:location_repository/location_repository.dart';
+import 'package:component_library/component_library.dart';
+import 'package:map/map.dart';
 
 Future<void> main() async {
   await runZonedGuarded<Future<void>>(
@@ -24,7 +23,6 @@ abstract class _Pages {
   static const int routeList = 1;
 }
 
-/// The main application widget
 class FootprintApp extends StatelessWidget {
   const FootprintApp({
     super.key,
@@ -35,6 +33,7 @@ class FootprintApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
         home: HomeScreen(
           pages: [
             MapScreen(
@@ -43,10 +42,10 @@ class FootprintApp extends StatelessWidget {
                 _Pages.routeList,
               ),
             ),
-            RouteListScreen(
-              onPageChangeRequested: () => _PageManager.goToPage(
-                _Pages.map,
-              ),
+            // RouteListScreen(
+            //   onPageChangeRequested: () => _PageManager.goToPage(
+            //     _Pages.map,
+            //   ),
               // onRouteSelected: (routeId) {
               //   MaterialPage(
               //     name: 'route-details',
@@ -56,7 +55,7 @@ class FootprintApp extends StatelessWidget {
               //     ),
               //   );
               // }
-            ),
+            // ),
           ],
         ),
       );

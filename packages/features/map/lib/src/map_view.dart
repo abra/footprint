@@ -1,11 +1,11 @@
 import 'dart:developer';
 
+import 'package:component_library/component_library.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../app/common/colors.dart';
 import 'extensions.dart';
 import 'map_location_notifier.dart';
 import 'map_view_config.dart';
@@ -114,7 +114,7 @@ class _MapViewState extends State<MapView>
                 polylines: <Polyline>[
                   Polyline(
                     points: points,
-                    color: AppColors.lightPurple,
+                    color: context.appColors.lightPurple,
                     strokeWidth: 4,
                     // double _routeLineWidth = ((11 * defaultZoom - 126) / 4) / 2.5;
                     // borderStrokeWidth: 2,
