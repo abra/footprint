@@ -1,4 +1,4 @@
-name: domain_models
+name: local_storage
 publish_to: none
 
 environment:
@@ -6,8 +6,10 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
-  equatable: ^2.0.3
-  meta: ^1.10.0
+  sqflite: ^2.3.0
+  path: ^1.8.3
+  domain_models:
+    path: ../domain_models
 
 dev_dependencies:
   lints: ^3.0.0

@@ -1,6 +1,5 @@
 name: location_repository
-version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+publish_to: none
 
 environment:
   sdk: ^3.4.0
