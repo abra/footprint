@@ -106,6 +106,7 @@ class _MapViewState extends State<MapView>
                   ),
               },
             ),
+            // define typedef for builder with convenient type
             ValueListenableBuilder<List<LatLng>>(
               valueListenable: _routePoints,
               builder: (BuildContext context, List<LatLng> points, _) =>

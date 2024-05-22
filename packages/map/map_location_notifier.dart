@@ -4,9 +4,9 @@ import 'dart:developer';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
+import '../data/location_repository/location_repository.dart';
 import '../domain_models/exceptions.dart';
 import '../domain_models/location.dart';
-import '../location_repository/location_repository.dart';
 
 part 'map_location_state.dart';
 
