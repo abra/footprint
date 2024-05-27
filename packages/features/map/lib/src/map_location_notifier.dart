@@ -27,7 +27,7 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   }
 
   Future<void> _init() async {
-    final bool isStillSubscribedButPaused =
+    final bool isSubscribedButPaused =
         _locationSubscription != null && _locationSubscription!.isPaused;
 
     try {
@@ -36,7 +36,7 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
 
       if (_locationSubscription == null) {
         await _startLocationUpdate();
-      } else if (isStillSubscribedButPaused) {
+      } else if (isSubscribedButPaused) {
         _locationSubscription?.resume();
       }
     } catch (e) {
