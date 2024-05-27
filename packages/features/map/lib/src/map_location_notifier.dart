@@ -51,6 +51,7 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
       log('--- Location [$hashCode]: $location');
       value = MapLocationUpdateSuccess(location: location);
     }, onError: (dynamic error) {
+      // TODO: Add error handling for another exceptions
       if (error is ServiceDisabledException) {
         value = MapLocationUpdateFailure(error: error);
         _locationSubscription?.cancel();
