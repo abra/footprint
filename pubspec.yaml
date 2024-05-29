@@ -19,6 +19,8 @@ dependencies:
     path: packages/component_library
   map:
     path: packages/features/map
+  route_list:
+    path: packages/features/route_list
 
 dev_dependencies:
   flutter_test:

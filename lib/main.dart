@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:location_repository/location_repository.dart';
 import 'package:component_library/component_library.dart';
 import 'package:map/map.dart';
+import 'package:route_list/route_list.dart';
 
 Future<void> main() async {
   await runZonedGuarded<Future<void>>(
@@ -42,10 +43,10 @@ class FootprintApp extends StatelessWidget {
                 _Pages.routeList,
               ),
             ),
-            // RouteListScreen(
-            //   onPageChangeRequested: () => _PageManager.goToPage(
-            //     _Pages.map,
-            //   ),
+            RouteListScreen(
+              onPageChangeRequested: () => _PageManager.goToPage(
+                _Pages.map,
+              ),
               // onRouteSelected: (routeId) {
               //   MaterialPage(
               //     name: 'route-details',
@@ -55,7 +56,7 @@ class FootprintApp extends StatelessWidget {
               //     ),
               //   );
               // }
-            // ),
+            ),
           ],
         ),
       );
