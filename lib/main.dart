@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:component_library/component_library.dart';
 import 'package:flutter/material.dart';
 import 'package:location_repository/location_repository.dart';
-import 'package:component_library/component_library.dart';
 import 'package:map/map.dart';
 import 'package:route_list/route_list.dart';
 
@@ -17,11 +17,6 @@ Future<void> main() async {
       log('ZONED ERROR: $error\n$stack');
     },
   );
-}
-
-abstract class _Pages {
-  static const int map = 0;
-  static const int routeList = 1;
 }
 
 class FootprintApp extends StatelessWidget {
@@ -91,6 +86,11 @@ class _HomeScreenState extends State<HomeScreen> {
     _PageManager.pageController.dispose();
     super.dispose();
   }
+}
+
+abstract class _Pages {
+  static const int map = 0;
+  static const int routeList = 1;
 }
 
 /// Page controller for switching between pages at _HomeScreen of FootprintApp
