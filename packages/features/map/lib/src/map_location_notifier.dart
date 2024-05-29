@@ -19,7 +19,7 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   }
 
   final LocationRepository _locationRepository;
-  StreamSubscription<Location>? _locationSubscription;
+  StreamSubscription<Location>? _locationUpdateSubscription;
 
   Future<void> reInit() async {
     value = MapInitialLocationUpdate();
@@ -27,19 +27,31 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   }
 
   Future<void> _init() async {
-    final bool isSubscribedButPaused =
-        _locationSubscription != null && _locationSubscription!.isPaused;
+    final bool isSubscribedButPaused = _locationUpdateSubscription != null &&
+        _locationUpdateSubscription!.isPaused;
 
     try {
       await _locationRepository.ensureLocationServiceEnabled();
       await _locationRepository.ensurePermissionGranted();
 
-      if (_locationSubscription == null) {
+      if (_locationUpdateSubscription == null) {
         await _startLocationUpdate();
       } else if (isSubscribedButPaused) {
-        _locationSubscription?.resume();
+        _locationUpdateSubscription?.resume();
       }
     } catch (e) {
+      // TODO: Replace with the following error handling
+      // if an exception occurred and it is necessary to show an error message
+      // without changing the current screen to the error screen, then take
+      // the previous successful state + error message
+
+      // final prevState = value;
+      // if (value is MapLocationUpdateSuccess) {
+      //   value = MapLocationUpdateSuccess(
+      //     location: prevState.location,
+      //     locationUpdateError: e,
+      //   );
+      // }
       value = MapLocationUpdateFailure(error: e);
     }
   }
@@ -47,15 +59,15 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   Future<void> _startLocationUpdate() async {
     final Stream<Location> stream = _locationRepository.locationUpdateStream();
 
-    _locationSubscription = stream.listen((Location location) {
+    _locationUpdateSubscription = stream.listen((Location location) {
       log('--- Location [$hashCode]: $location');
       value = MapLocationUpdateSuccess(location: location);
     }, onError: (dynamic error) {
       // TODO: Add error handling for another exceptions
       if (error is ServiceDisabledException) {
         value = MapLocationUpdateFailure(error: error);
-        _locationSubscription?.cancel();
-        _locationSubscription = null;
+        _locationUpdateSubscription?.cancel();
+        _locationUpdateSubscription = null;
       }
     });
   }
@@ -63,7 +75,7 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   @override
   void dispose() {
     log('--- $this [$hashCode]: dispose');
-    _locationSubscription?.cancel();
+    _locationUpdateSubscription?.cancel();
     super.dispose();
   }
 }

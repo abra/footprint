@@ -12,13 +12,16 @@ class MapInitialLocationUpdate extends MapLocationState {
 class MapLocationUpdateSuccess extends MapLocationState {
   const MapLocationUpdateSuccess({
     required this.location,
+    this.locationUpdateError,
   });
 
   final Location location;
+  final dynamic locationUpdateError;
 
   @override
   List<Object?> get props => [
         location,
+        locationUpdateError,
       ];
 }
 
