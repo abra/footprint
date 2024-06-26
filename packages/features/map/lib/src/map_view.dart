@@ -31,7 +31,7 @@ class _MapViewState extends State<MapView>
 
   late final MapViewNotifier _viewNotifier;
 
-  MapLocationNotifier get _mapLocationNotifier => context.locationNotifier;
+  late MapLocationNotifier _mapLocationNotifier;
 
   final _isRouteRecordingStarted = ValueNotifier<bool>(false);
 
@@ -52,6 +52,7 @@ class _MapViewState extends State<MapView>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _mapLocationNotifier = context.locationNotifier;
     _mapLocationNotifier.addListener(_handleMapLocationChanged);
     _viewNotifier.addListener(_handleZoomChanged);
     _isRouteRecordingStarted.addListener(() {
