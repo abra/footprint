@@ -4,9 +4,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:location_repository/location_repository.dart';
-import 'package:map/src/extensions.dart';
 
 import 'exception_dialog.dart';
+import 'extensions.dart';
 import 'map_location_notifier.dart';
 import 'map_location_notifier_provider.dart';
 import 'map_view.dart';
