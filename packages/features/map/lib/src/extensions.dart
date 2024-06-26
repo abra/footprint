@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'map_location_notifier.dart';
-import 'map_notifier_provider.dart';
+import 'map_location_notifier_provider.dart';
 
 extension LocationToLatLng on Location {
   LatLng toLatLng() => LatLng(latitude, longitude);

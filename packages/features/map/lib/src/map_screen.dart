@@ -3,7 +3,7 @@ import 'package:location_repository/location_repository.dart';
 
 import 'map_app_bar.dart';
 import 'map_location_notifier.dart';
-import 'map_notifier_provider.dart';
+import 'map_location_notifier_provider.dart';
 import 'map_view.dart';
 import 'map_view_config.dart';
 
