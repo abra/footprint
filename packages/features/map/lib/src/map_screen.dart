@@ -62,7 +62,6 @@ class _MapScreenState extends State<MapScreen> {
 
 class _MapAppBar extends StatefulWidget implements PreferredSizeWidget {
   const _MapAppBar({
-    super.key,
     required this.onPageChange,
   });
 
