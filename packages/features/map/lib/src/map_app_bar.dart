@@ -31,15 +31,9 @@ class _MapAppBarState extends State<MapAppBar> {
   bool _isShowExceptionDialog = true;
 
   @override
-  void initState() {
-    super.initState();
-    _mapLocationNotifier = context.locationNotifier;
-    _mapLocationNotifier.addListener(_handleLocationUpdateException);
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _mapLocationNotifier = context.locationNotifier;
     _mapLocationNotifier.addListener(_handleLocationUpdateException);
   }
 
