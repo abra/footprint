@@ -23,7 +23,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   late MapLocationNotifier _mapLocationNotifier;
-  final MapViewConfig _config = const MapViewConfig();
+  MapViewConfig get _config => const MapViewConfig();
 
   @override
   void initState() {
