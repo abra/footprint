@@ -13,7 +13,7 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
     required LocationRepository locationRepository,
   })  : _locationRepository = locationRepository,
         super(
-          MapInitialLocationUpdate(),
+          MapInitialLocationLoading(),
         ) {
     _init();
   }
@@ -22,7 +22,7 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   StreamSubscription<Location>? _locationUpdateSubscription;
 
   Future<void> reInit() async {
-    value = MapInitialLocationUpdate();
+    value = MapInitialLocationLoading();
     await _init();
   }
 

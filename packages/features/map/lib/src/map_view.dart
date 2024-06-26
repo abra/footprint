@@ -141,7 +141,7 @@ class _MapViewState extends State<MapView>
                       ),
                     ],
                   ),
-                MapInitialLocationUpdate() => const Center(
+                MapInitialLocationLoading() => const Center(
                     child: CircularProgressIndicator(),
                   ),
                 _ => const SizedBox.shrink(),
