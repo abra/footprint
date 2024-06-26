@@ -26,15 +26,11 @@ class MapView extends StatefulWidget {
 class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final MapViewConfig _config;
-
   late final AnimatedMapController _animatedMapController;
-
   late final MapViewNotifier _viewNotifier;
-
   late MapLocationNotifier _mapLocationNotifier;
 
   final _isRouteRecordingStarted = ValueNotifier<bool>(false);
-
   final _routePoints = ValueNotifier<List<LatLng>>([]); // <>
 
   @override

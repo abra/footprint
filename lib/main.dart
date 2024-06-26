@@ -24,7 +24,7 @@ class FootprintApp extends StatelessWidget {
     super.key,
   });
 
-  LocationRepository get _locationRepository => const LocationRepository();
+  final LocationRepository _locationRepository = const LocationRepository();
 
   @override
   Widget build(BuildContext context) => MaterialApp(
