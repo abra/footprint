@@ -28,8 +28,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   late MapLocationNotifier _mapLocationNotifier;
-
-  MapViewConfig get _config => const MapViewConfig();
+  late MapViewConfig _config;
 
   @override
   void initState() {
@@ -37,6 +36,7 @@ class _MapScreenState extends State<MapScreen> {
     _mapLocationNotifier = MapLocationNotifier(
       locationRepository: widget.locationRepository,
     );
+    _config = const MapViewConfig();
   }
 
   @override
