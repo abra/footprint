@@ -10,6 +10,8 @@ class MapViewNotifier extends ValueNotifier<MapViewState> {
     required this.config,
   }) : super(
           MapViewState(
+            markerSize: config.markerSize,
+            polylineStrokeWidth: config.polylineStrokeWidth,
             isCentered: config.isCentered,
             zoomStep: config.zoomStep,
             zoom: config.defaultZoom,

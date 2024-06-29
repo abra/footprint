@@ -2,6 +2,8 @@ part of 'map_view_notifier.dart';
 
 class MapViewState extends Equatable {
   const MapViewState({
+    required this.markerSize,
+    required this.polylineStrokeWidth,
     required this.isCentered,
     required this.zoomStep,
     required this.zoom,
@@ -12,6 +14,8 @@ class MapViewState extends Equatable {
     required this.userAgentPackageName,
   });
 
+  final double markerSize;
+  final double polylineStrokeWidth;
   final bool isCentered;
   final double zoomStep;
   final double zoom;
@@ -22,6 +26,8 @@ class MapViewState extends Equatable {
   final String userAgentPackageName;
 
   MapViewState copyWith({
+    double? markerSize,
+    double? polylineStrokeWidth,
     bool? isCentered,
     double? zoomStep,
     double? zoom,
@@ -32,6 +38,8 @@ class MapViewState extends Equatable {
     String? userAgentPackageName,
   }) {
     return MapViewState(
+      markerSize: markerSize ?? this.markerSize,
+      polylineStrokeWidth: polylineStrokeWidth ?? this.polylineStrokeWidth,
       isCentered: isCentered ?? this.isCentered,
       zoomStep: zoomStep ?? this.zoomStep,
       zoom: zoom ?? this.zoom,
@@ -45,6 +53,8 @@ class MapViewState extends Equatable {
 
   @override
   List<Object?> get props => [
+        markerSize,
+        polylineStrokeWidth,
         isCentered,
         zoomStep,
         zoom,
