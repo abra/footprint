@@ -27,7 +27,7 @@ class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final MapViewConfig _config;
   late final AnimatedMapController _animatedMapController;
-  late final MapViewNotifier _viewNotifier;
+  late final MapViewNotifier _mapViewNotifier;
   late MapLocationNotifier _mapLocationNotifier;
 
   final _isRouteRecordingStarted = ValueNotifier<bool>(false);
@@ -37,7 +37,7 @@ class _MapViewState extends State<MapView>
   void initState() {
     super.initState();
     _config = widget.config;
-    _viewNotifier = MapViewNotifier(config: _config);
+    _mapViewNotifier = MapViewNotifier(config: _config);
     _animatedMapController = AnimatedMapController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -50,7 +50,7 @@ class _MapViewState extends State<MapView>
     super.didChangeDependencies();
     _mapLocationNotifier = context.locationNotifier;
     _mapLocationNotifier.addListener(_handleMapLocationChanged);
-    _viewNotifier.addListener(_handleZoomChanged);
+    _mapViewNotifier.addListener(_handleZoomChanged);
     _isRouteRecordingStarted.addListener(() {
       if (_isRouteRecordingStarted.value) {
         _mapLocationNotifier.addListener(_handleRecordRoutePoints);
@@ -64,8 +64,8 @@ class _MapViewState extends State<MapView>
   @override
   void dispose() {
     _animatedMapController.dispose();
-    _viewNotifier.removeListener(_handleZoomChanged);
-    _viewNotifier.dispose();
+    _mapViewNotifier.removeListener(_handleZoomChanged);
+    _mapViewNotifier.dispose();
     _mapLocationNotifier.removeListener(_handleMapLocationChanged);
     super.dispose();
   }
@@ -89,7 +89,7 @@ class _MapViewState extends State<MapView>
           ),
           children: [
             ValueListenableBuilder<MapViewState>(
-              valueListenable: _viewNotifier,
+              valueListenable: _mapViewNotifier,
               builder: (BuildContext context, MapViewState state, _) =>
                   switch (state) {
                 MapViewState() => TileLayer(
@@ -124,19 +124,26 @@ class _MapViewState extends State<MapView>
               builder: (BuildContext context, MapLocationState state, _) =>
                   switch (state) {
                 MapLocationUpdateSuccess(location: final location) =>
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        width: 30.0,
-                        height: 30.0,
-                        point: location.toLatLng(),
-                        child: const Icon(
-                          Icons.circle,
-                          size: 20.0,
-                          color: Colors.deepPurple,
-                        ),
-                      ),
-                    ],
+                  ValueListenableBuilder<MapViewState>(
+                    valueListenable: _mapViewNotifier,
+                    builder: (BuildContext context, MapViewState viewState, _) {
+                      return switch (viewState) {
+                        MapViewState() => MarkerLayer(
+                            markers: [
+                              Marker(
+                                width: viewState.markerSize,
+                                height: viewState.markerSize,
+                                point: location.toLatLng(),
+                                child: Icon(
+                                  Icons.circle,
+                                  size: viewState.markerSize,
+                                  color: Colors.deepPurple.withOpacity(0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                      };
+                    },
                   ),
                 MapInitialLocationLoading() => const Center(
                     child: CircularProgressIndicator(),
@@ -160,13 +167,13 @@ class _MapViewState extends State<MapView>
                   Icons.zoom_in,
                 ),
                 onPressed: () {
-                  _viewNotifier.zoomIn();
+                  _mapViewNotifier.zoomIn();
                 },
               ),
               const SizedBox(width: 20),
               // TODO: Temporary for testing
               ValueListenableBuilder<MapViewState>(
-                valueListenable: _viewNotifier,
+                valueListenable: _mapViewNotifier,
                 builder: (BuildContext context, MapViewState state, _) => Text(
                   '${state.zoom}',
                 ),
@@ -174,7 +181,7 @@ class _MapViewState extends State<MapView>
               const SizedBox(width: 20),
               // TODO: Temporary for testing
               ValueListenableBuilder<MapViewState>(
-                valueListenable: _viewNotifier,
+                valueListenable: _mapViewNotifier,
                 builder: (BuildContext context, MapViewState state, _) =>
                     Switch(
                   value: state.isCentered,
@@ -188,7 +195,7 @@ class _MapViewState extends State<MapView>
                   Icons.zoom_out,
                 ),
                 onPressed: () {
-                  _viewNotifier.zoomOut();
+                  _mapViewNotifier.zoomOut();
                 },
               ),
             ],
@@ -213,7 +220,7 @@ class _MapViewState extends State<MapView>
   }
 
   void _handleZoomChanged() {
-    switch (_viewNotifier.value) {
+    switch (_mapViewNotifier.value) {
       case MapViewState(zoom: final zoom):
         _animatedMapController.animatedZoomTo(zoom);
     }
@@ -221,8 +228,8 @@ class _MapViewState extends State<MapView>
 
   // TODO: Temporary for testing
   void _handleToggleButtonSwitched(bool value) {
-    _viewNotifier.centerMap(value);
-    final isCentered = _viewNotifier.value.isCentered;
+    _mapViewNotifier.centerMap(value);
+    final isCentered = _mapViewNotifier.value.isCentered;
     final mapLocation = _mapLocationNotifier.value;
     if (isCentered && mapLocation is MapLocationUpdateSuccess) {
       _centerMapViewToCurrentLocation(mapLocation.location.toLatLng());
@@ -230,7 +237,7 @@ class _MapViewState extends State<MapView>
   }
 
   void _handleMapLocationChanged() {
-    final mapViewIsCentered = switch (_viewNotifier.value) {
+    final mapViewIsCentered = switch (_mapViewNotifier.value) {
       MapViewState(isCentered: final isCentered) => isCentered,
     };
 
