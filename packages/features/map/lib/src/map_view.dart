@@ -51,6 +51,7 @@ class _MapViewState extends State<MapView>
     _mapLocationNotifier = context.locationNotifier;
     _mapLocationNotifier.addListener(_handleMapLocationChanged);
     _mapViewNotifier.addListener(_handleZoomChanged);
+    // TODO: Fix it
     _isRouteRecordingStarted.addListener(() {
       if (_isRouteRecordingStarted.value) {
         _mapLocationNotifier.addListener(_handleRecordRoutePoints);
@@ -228,13 +229,13 @@ class _MapViewState extends State<MapView>
   }
 
   void _handleZoomChanged() {
-    final viewState = _mapViewNotifier.value;
-    switch (viewState) {
-      case MapViewState(zoom: final zoom):
-        _animatedMapController.animatedZoomTo(zoom);
-        _mapViewNotifier.changeMarkerSize(zoom);
-        _mapViewNotifier.changePolylineStrokeWidth(zoom);
-    }
+    final zoom = switch (_mapViewNotifier.value) {
+      MapViewState(zoom: final zoom) => zoom,
+    };
+
+    _animatedMapController.animatedZoomTo(zoom);
+    _mapViewNotifier.changeMarkerSize(zoom);
+    _mapViewNotifier.changePolylineStrokeWidth(zoom);
   }
 
   // TODO: Temporary for testing
