@@ -249,14 +249,12 @@ class _MapViewState extends State<MapView>
   }
 
   void _handleMapLocationChanged() {
-    final viewState = _mapViewNotifier.value;
-    final locationState = _mapLocationNotifier.value;
-
-    final mapViewIsCentered = switch (viewState) {
+    final mapViewCentered = switch (_mapViewNotifier.value) {
       MapViewState(isCentered: final isCentered) => isCentered,
     };
 
-    if (locationState is MapLocationUpdateSuccess && mapViewIsCentered) {
+    final locationState = _mapLocationNotifier.value;
+    if (locationState is MapLocationUpdateSuccess && mapViewCentered) {
       _centerMapViewToCurrentLocation(locationState.location.toLatLng());
     }
   }
