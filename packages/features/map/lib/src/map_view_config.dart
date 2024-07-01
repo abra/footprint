@@ -3,8 +3,8 @@ class MapViewConfig {
   const MapViewConfig();
 
   final double markerSize = 17.3;
-  final double maxMarkerSize = 22.0;
-  final double minMarkerSize = 8.0;
+  final double markerMaxSize = 22.0;
+  final double markerMinSize = 8.0;
   final double polylineStrokeWidth = 4.0;
   final double polylineStrokeMinWidth = 2.0;
   final double polylineStrokeMaxWidth = 8.0;

@@ -11,8 +11,8 @@ class MapViewNotifier extends ValueNotifier<MapViewState> {
   }) : super(
           MapViewState(
             markerSize: config.markerSize,
-            maxMarkerSize: config.maxMarkerSize,
-            minMarkerSize: config.minMarkerSize,
+            maxMarkerSize: config.markerMaxSize,
+            minMarkerSize: config.markerMinSize,
             polylineStrokeWidth: config.polylineStrokeWidth,
             polylineStrokeMinWidth: config.polylineStrokeMinWidth,
             polylineStrokeMaxWidth: config.polylineStrokeMaxWidth,
@@ -43,8 +43,8 @@ class MapViewNotifier extends ValueNotifier<MapViewState> {
   Future<void> changeMarkerSize(double zoom) async {
     await _updateMapParameter(
       zoom: zoom,
-      minValue: config.minMarkerSize,
-      maxValue: config.maxMarkerSize,
+      minValue: config.markerMinSize,
+      maxValue: config.markerMaxSize,
       getCurrentValue: (state) => state.markerSize,
       updateState: (state, newValue) => state.copyWith(markerSize: newValue),
     );
