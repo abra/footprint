@@ -11,6 +11,9 @@ import 'map_location_notifier.dart';
 import 'map_view_config.dart';
 import 'map_view_notifier.dart';
 
+typedef MapLocationBuilder = ValueListenableBuilder<MapLocationState>;
+typedef MapViewBuilder = ValueListenableBuilder<MapViewState>;
+
 class MapView extends StatefulWidget {
   const MapView({
     super.key,
@@ -43,8 +46,6 @@ class _MapViewState extends State<MapView>
       duration: const Duration(milliseconds: 500),
       curve: Curves.fastOutSlowIn,
     );
-    _mapLocationNotifier.addListener(_handleMapLocationChanged);
-    _mapViewNotifier.addListener(_handleZoomChanged);
     _isRouteRecordingStarted.addListener(_handleRouteRecordingStarted);
   }
 
@@ -52,15 +53,17 @@ class _MapViewState extends State<MapView>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _mapLocationNotifier = context.locationNotifier;
+    _mapLocationNotifier.addListener(_handleMapLocationChanged);
+    _mapViewNotifier.addListener(_handleZoomChanged);
   }
 
   @override
   void dispose() {
     _mapViewNotifier.removeListener(_handleZoomChanged);
-    _mapViewNotifier.dispose();
     _mapLocationNotifier.removeListener(_handleMapLocationChanged);
     _isRouteRecordingStarted.removeListener(_handleRouteRecordingStarted);
     _animatedMapController.dispose();
+    _mapViewNotifier.dispose();
     super.dispose();
   }
 
@@ -82,7 +85,7 @@ class _MapViewState extends State<MapView>
             minZoom: _config.minZoom,
           ),
           children: [
-            ValueListenableBuilder<MapViewState>(
+            MapViewBuilder(
               valueListenable: _mapViewNotifier,
               builder: (BuildContext context, MapViewState state, _) =>
                   switch (state) {
@@ -101,7 +104,7 @@ class _MapViewState extends State<MapView>
             ValueListenableBuilder<List<LatLng>>(
               valueListenable: _routePoints,
               builder: (BuildContext context, List<LatLng> points, _) {
-                return ValueListenableBuilder<MapViewState>(
+                return MapViewBuilder(
                   valueListenable: _mapViewNotifier,
                   builder: (BuildContext context, MapViewState viewState, _) {
                     return PolylineLayer(
@@ -117,10 +120,10 @@ class _MapViewState extends State<MapView>
                 );
               },
             ),
-            ValueListenableBuilder<MapLocationState>(
+            MapLocationBuilder(
               valueListenable: _mapLocationNotifier,
               builder: (BuildContext ctx, MapLocationState locationState, _) {
-                return ValueListenableBuilder<MapViewState>(
+                return MapViewBuilder(
                   valueListenable: _mapViewNotifier,
                   builder: (BuildContext context, MapViewState viewState, _) {
                     return _LocationMarker(
@@ -152,7 +155,7 @@ class _MapViewState extends State<MapView>
               ),
               const SizedBox(width: 20),
               // TODO: Temporary for testing
-              ValueListenableBuilder<MapViewState>(
+              MapViewBuilder(
                 valueListenable: _mapViewNotifier,
                 builder: (BuildContext context, MapViewState state, _) => Text(
                   '${state.zoom}',
@@ -160,7 +163,7 @@ class _MapViewState extends State<MapView>
               ),
               const SizedBox(width: 20),
               // TODO: Temporary for testing
-              ValueListenableBuilder<MapViewState>(
+              MapViewBuilder(
                 valueListenable: _mapViewNotifier,
                 builder: (BuildContext context, MapViewState state, _) =>
                     Switch(
