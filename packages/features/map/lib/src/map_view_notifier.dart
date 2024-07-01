@@ -30,31 +30,55 @@ class MapViewNotifier extends ValueNotifier<MapViewState> {
   final MapViewConfig config;
 
   Future<void> changePolylineStrokeWidth(double zoom) async {
-    final double newPolylineStrokeWidth = config.polylineStrokeMinWidth +
-        (zoom - config.minZoom) *
-            (config.polylineStrokeMaxWidth - config.polylineStrokeMinWidth) /
-            (config.maxZoom - config.minZoom);
-
-    value = switch (value) {
-      MapViewState(polylineStrokeWidth: final prevPolylineStrokeWidth) =>
-        prevPolylineStrokeWidth != newPolylineStrokeWidth
-            ? value.copyWith(polylineStrokeWidth: newPolylineStrokeWidth)
-            : value,
-    };
+    await _updateMapParameter(
+      zoom: zoom,
+      minValue: config.polylineStrokeMinWidth,
+      maxValue: config.polylineStrokeMaxWidth,
+      getCurrentValue: (state) => state.polylineStrokeWidth,
+      updateState: (state, newValue) =>
+          state.copyWith(polylineStrokeWidth: newValue),
+    );
   }
 
   Future<void> changeMarkerSize(double zoom) async {
-    final double newMarkerSize = config.minMarkerSize +
-        (zoom - config.minZoom) *
-            (config.maxMarkerSize - config.minMarkerSize) /
-            (config.maxZoom - config.minZoom);
+    await _updateMapParameter(
+      zoom: zoom,
+      minValue: config.minMarkerSize,
+      maxValue: config.maxMarkerSize,
+      getCurrentValue: (state) => state.markerSize,
+      updateState: (state, newValue) => state.copyWith(markerSize: newValue),
+    );
+  }
+
+  Future<void> _updateMapParameter({
+    required double zoom,
+    required double minValue,
+    required double maxValue,
+    required double Function(MapViewState) getCurrentValue,
+    required MapViewState Function(MapViewState, double) updateState,
+  }) async {
+    final double newValue = _interpolateValue(
+      zoom: zoom,
+      minValue: minValue,
+      maxValue: maxValue,
+    );
 
     value = switch (value) {
-      MapViewState(markerSize: final prevMarkerSize) =>
-        prevMarkerSize != newMarkerSize
-            ? value.copyWith(markerSize: newMarkerSize)
-            : value,
+      MapViewState() when getCurrentValue(value) != newValue =>
+        updateState(value, newValue),
+      _ => value,
     };
+  }
+
+  double _interpolateValue({
+    required double zoom,
+    required double minValue,
+    required double maxValue,
+  }) {
+    return minValue +
+        (zoom - config.minZoom) *
+            (maxValue - minValue) /
+            (config.maxZoom - config.minZoom);
   }
 
   Future<void> centerMap(bool newValue) async {
