@@ -11,8 +11,8 @@ class MapViewNotifier extends ValueNotifier<MapViewState> {
   }) : super(
           MapViewState(
             markerSize: config.markerSize,
-            maxMarkerSize: config.markerMaxSize,
-            minMarkerSize: config.markerMinSize,
+            markerMaxSize: config.markerMaxSize,
+            markerMinSize: config.markerMinSize,
             polylineStrokeWidth: config.polylineStrokeWidth,
             polylineStrokeMinWidth: config.polylineStrokeMinWidth,
             polylineStrokeMaxWidth: config.polylineStrokeMaxWidth,

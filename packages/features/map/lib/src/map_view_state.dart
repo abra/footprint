@@ -3,8 +3,8 @@ part of 'map_view_notifier.dart';
 class MapViewState extends Equatable {
   const MapViewState({
     required this.markerSize,
-    required this.maxMarkerSize,
-    required this.minMarkerSize,
+    required this.markerMaxSize,
+    required this.markerMinSize,
     required this.polylineStrokeWidth,
     required this.polylineStrokeMinWidth,
     required this.polylineStrokeMaxWidth,
@@ -19,8 +19,8 @@ class MapViewState extends Equatable {
   });
 
   final double markerSize;
-  final double maxMarkerSize;
-  final double minMarkerSize;
+  final double markerMaxSize;
+  final double markerMinSize;
   final double polylineStrokeWidth;
   final double polylineStrokeMinWidth;
   final double polylineStrokeMaxWidth;
@@ -51,8 +51,8 @@ class MapViewState extends Equatable {
   }) {
     return MapViewState(
       markerSize: markerSize ?? this.markerSize,
-      maxMarkerSize: maxMarkerSize ?? this.maxMarkerSize,
-      minMarkerSize: minMarkerSize ?? this.minMarkerSize,
+      markerMaxSize: maxMarkerSize ?? this.markerMaxSize,
+      markerMinSize: minMarkerSize ?? this.markerMinSize,
       polylineStrokeWidth: polylineStrokeWidth ?? this.polylineStrokeWidth,
       polylineStrokeMinWidth: polylineStrokeMinWidth ?? this.polylineStrokeMinWidth,
       polylineStrokeMaxWidth: polylineStrokeMaxWidth ?? this.polylineStrokeMaxWidth,
@@ -70,8 +70,8 @@ class MapViewState extends Equatable {
   @override
   List<Object?> get props => [
         markerSize,
-        maxMarkerSize,
-        minMarkerSize,
+        markerMaxSize,
+        markerMinSize,
         polylineStrokeWidth,
         polylineStrokeMinWidth,
         polylineStrokeMaxWidth,
