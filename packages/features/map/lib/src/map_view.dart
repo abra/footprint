@@ -43,23 +43,15 @@ class _MapViewState extends State<MapView>
       duration: const Duration(milliseconds: 500),
       curve: Curves.fastOutSlowIn,
     );
+    _mapLocationNotifier.addListener(_handleMapLocationChanged);
+    _mapViewNotifier.addListener(_handleZoomChanged);
+    _isRouteRecordingStarted.addListener(_handleRouteRecordingStarted);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _mapLocationNotifier = context.locationNotifier;
-    _mapLocationNotifier.addListener(_handleMapLocationChanged);
-    _mapViewNotifier.addListener(_handleZoomChanged);
-    // TODO: Fix it
-    _isRouteRecordingStarted.addListener(() {
-      if (_isRouteRecordingStarted.value) {
-        _mapLocationNotifier.addListener(_handleRecordRoutePoints);
-      } else {
-        _routePoints.value.clear();
-        _mapLocationNotifier.removeListener(_handleRecordRoutePoints);
-      }
-    });
   }
 
   @override
@@ -67,6 +59,7 @@ class _MapViewState extends State<MapView>
     _mapViewNotifier.removeListener(_handleZoomChanged);
     _mapViewNotifier.dispose();
     _mapLocationNotifier.removeListener(_handleMapLocationChanged);
+    _isRouteRecordingStarted.removeListener(_handleRouteRecordingStarted);
     _animatedMapController.dispose();
     super.dispose();
   }
@@ -117,8 +110,6 @@ class _MapViewState extends State<MapView>
                           points: points,
                           color: context.appColors.lightPurple,
                           strokeWidth: viewState.polylineStrokeWidth,
-                          // double _routeLineWidth = ((11 * defaultZoom - 126) / 4) / 2.5;
-                          // borderStrokeWidth: 2,
                         ),
                       ],
                     );
@@ -129,35 +120,15 @@ class _MapViewState extends State<MapView>
             ValueListenableBuilder<MapLocationState>(
               valueListenable: _mapLocationNotifier,
               builder: (BuildContext ctx, MapLocationState locationState, _) {
-                return switch (locationState) {
-                  MapLocationUpdateSuccess(location: final location) =>
-                    ValueListenableBuilder<MapViewState>(
-                      valueListenable: _mapViewNotifier,
-                      builder: (BuildContext ctx, MapViewState viewState, _) {
-                        return switch (viewState) {
-                          MapViewState(markerSize: final markerSize) =>
-                            MarkerLayer(
-                              markers: [
-                                Marker(
-                                  width: markerSize,
-                                  height: markerSize,
-                                  point: location.toLatLng(),
-                                  child: Icon(
-                                    Icons.circle,
-                                    size: markerSize,
-                                    color: Colors.deepPurple.withOpacity(0.8),
-                                  ),
-                                ),
-                              ],
-                            ),
-                        };
-                      },
-                    ),
-                  MapInitialLocationLoading() => const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  _ => const SizedBox.shrink(),
-                };
+                return ValueListenableBuilder<MapViewState>(
+                  valueListenable: _mapViewNotifier,
+                  builder: (BuildContext context, MapViewState viewState, _) {
+                    return _LocationMarker(
+                      locationState: locationState,
+                      viewState: viewState,
+                    );
+                  },
+                );
               },
             ),
           ],
@@ -265,6 +236,15 @@ class _MapViewState extends State<MapView>
     );
   }
 
+  void _handleRouteRecordingStarted() {
+    if (_isRouteRecordingStarted.value) {
+      _mapLocationNotifier.addListener(_handleRecordRoutePoints);
+    } else {
+      _routePoints.value = [];
+      _mapLocationNotifier.removeListener(_handleRecordRoutePoints);
+    }
+  }
+
   void _handleRecordRoutePoints() {
     final locationState = _mapLocationNotifier.value;
     if (locationState is MapLocationUpdateSuccess) {
@@ -274,4 +254,38 @@ class _MapViewState extends State<MapView>
 
   @override
   bool get wantKeepAlive => true;
+}
+
+class _LocationMarker extends StatelessWidget {
+  final MapLocationState locationState;
+  final MapViewState viewState;
+
+  const _LocationMarker({
+    required this.locationState,
+    required this.viewState,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (locationState) {
+      MapLocationUpdateSuccess(location: final location) => MarkerLayer(
+          markers: [
+            Marker(
+              width: viewState.markerSize,
+              height: viewState.markerSize,
+              point: location.toLatLng(),
+              child: Icon(
+                Icons.circle,
+                size: viewState.markerSize,
+                color: Colors.deepPurple.withOpacity(0.8),
+              ),
+            ),
+          ],
+        ),
+      MapInitialLocationLoading() => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      _ => const SizedBox.shrink(),
+    };
+  }
 }
