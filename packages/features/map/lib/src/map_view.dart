@@ -121,6 +121,33 @@ class _MapViewState extends State<MapView>
             _LocationMarkerBuilder<MapLocationState, MapViewState>(
               locationState: _mapLocationNotifier,
               viewState: _mapViewNotifier,
+              builder: (
+                BuildContext context,
+                MapLocationState locationState,
+                MapViewState viewState,
+              ) {
+                return switch (locationState) {
+                  MapLocationUpdateSuccess(location: final location) =>
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          width: viewState.markerSize,
+                          height: viewState.markerSize,
+                          point: location.toLatLng(),
+                          child: Icon(
+                            Icons.circle,
+                            size: viewState.markerSize,
+                            color: Colors.deepPurple.withOpacity(0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  MapInitialLocationLoading() => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  _ => const SizedBox.shrink(),
+                };
+              },
             ),
           ],
         ),
@@ -253,10 +280,16 @@ class _LocationMarkerBuilder<L extends MapLocationState, V extends MapViewState>
     super.key,
     required this.locationState,
     required this.viewState,
+    required this.builder,
   });
 
   final ValueListenable<L> locationState;
   final ValueListenable<V> viewState;
+  final Widget Function(
+    BuildContext context,
+    L locationState,
+    V viewState,
+  ) builder;
 
   @override
   Widget build(BuildContext context) {
@@ -266,26 +299,7 @@ class _LocationMarkerBuilder<L extends MapLocationState, V extends MapViewState>
         return ValueListenableBuilder<V>(
           valueListenable: viewState,
           builder: (BuildContext context, V viewState, __) {
-            return switch (locationState) {
-              MapLocationUpdateSuccess(location: final location) => MarkerLayer(
-                  markers: [
-                    Marker(
-                      width: viewState.markerSize,
-                      height: viewState.markerSize,
-                      point: location.toLatLng(),
-                      child: Icon(
-                        Icons.circle,
-                        size: viewState.markerSize,
-                        color: Colors.deepPurple.withOpacity(0.8),
-                      ),
-                    ),
-                  ],
-                ),
-              MapInitialLocationLoading() => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-              _ => const SizedBox.shrink(),
-            };
+            return builder(context, locationState, viewState);
           },
         );
       },
