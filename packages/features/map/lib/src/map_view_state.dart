@@ -35,8 +35,8 @@ class MapViewState extends Equatable {
 
   MapViewState copyWith({
     double? markerSize,
-    double? maxMarkerSize,
-    double? minMarkerSize,
+    double? markerMaxSize,
+    double? markerMinSize,
     double? polylineStrokeWidth,
     double? polylineStrokeMinWidth,
     double? polylineStrokeMaxWidth,
@@ -51,8 +51,8 @@ class MapViewState extends Equatable {
   }) {
     return MapViewState(
       markerSize: markerSize ?? this.markerSize,
-      markerMaxSize: maxMarkerSize ?? this.markerMaxSize,
-      markerMinSize: minMarkerSize ?? this.markerMinSize,
+      markerMaxSize: markerMaxSize ?? this.markerMaxSize,
+      markerMinSize: markerMinSize ?? this.markerMinSize,
       polylineStrokeWidth: polylineStrokeWidth ?? this.polylineStrokeWidth,
       polylineStrokeMinWidth: polylineStrokeMinWidth ?? this.polylineStrokeMinWidth,
       polylineStrokeMaxWidth: polylineStrokeMaxWidth ?? this.polylineStrokeMaxWidth,
