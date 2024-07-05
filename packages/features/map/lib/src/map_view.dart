@@ -119,8 +119,8 @@ class _MapViewState extends State<MapView>
               },
             ),
             _LocationMarkerBuilder<MapLocationState, MapViewState>(
-              locationState: _mapLocationNotifier,
-              viewState: _mapViewNotifier,
+              locationNotifier: _mapLocationNotifier,
+              viewNotifier: _mapViewNotifier,
               builder: (
                 BuildContext context,
                 MapLocationState locationState,
@@ -278,13 +278,13 @@ class _LocationMarkerBuilder<L extends MapLocationState, V extends MapViewState>
     extends StatelessWidget {
   const _LocationMarkerBuilder({
     super.key,
-    required this.locationState,
-    required this.viewState,
+    required this.locationNotifier,
+    required this.viewNotifier,
     required this.builder,
   });
 
-  final ValueListenable<L> locationState;
-  final ValueListenable<V> viewState;
+  final ValueListenable<L> locationNotifier;
+  final ValueListenable<V> viewNotifier;
   final Widget Function(
     BuildContext context,
     L locationState,
@@ -294,10 +294,10 @@ class _LocationMarkerBuilder<L extends MapLocationState, V extends MapViewState>
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<L>(
-      valueListenable: locationState,
+      valueListenable: locationNotifier,
       builder: (_, L locationState, __) {
         return ValueListenableBuilder<V>(
-          valueListenable: viewState,
+          valueListenable: viewNotifier,
           builder: (BuildContext context, V viewState, __) {
             return builder(context, locationState, viewState);
           },
