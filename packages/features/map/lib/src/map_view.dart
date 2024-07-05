@@ -118,7 +118,7 @@ class _MapViewState extends State<MapView>
                 );
               },
             ),
-            _LocationMarkerBuilder<MapLocationState, MapViewState>(
+            _MarkerBuilder<MapLocationState, MapViewState>(
               locationNotifier: _mapLocationNotifier,
               viewNotifier: _mapViewNotifier,
               builder: (
@@ -274,9 +274,9 @@ class _MapViewState extends State<MapView>
   bool get wantKeepAlive => true;
 }
 
-class _LocationMarkerBuilder<L extends MapLocationState, V extends MapViewState>
+class _MarkerBuilder<L extends MapLocationState, V extends MapViewState>
     extends StatelessWidget {
-  const _LocationMarkerBuilder({
+  const _MarkerBuilder({
     super.key,
     required this.locationNotifier,
     required this.viewNotifier,
