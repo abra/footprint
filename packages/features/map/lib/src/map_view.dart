@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:component_library/component_library.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
@@ -10,9 +11,6 @@ import 'extensions.dart';
 import 'map_location_notifier.dart';
 import 'map_view_config.dart';
 import 'map_view_notifier.dart';
-
-typedef MapLocationBuilder = ValueListenableBuilder<MapLocationState>;
-typedef MapViewBuilder = ValueListenableBuilder<MapViewState>;
 
 class MapView extends StatefulWidget {
   const MapView({
@@ -85,26 +83,26 @@ class _MapViewState extends State<MapView>
             minZoom: _config.minZoom,
           ),
           children: [
-            MapViewBuilder(
+            ValueListenableBuilder<MapViewState>(
               valueListenable: _mapViewNotifier,
-              builder: (BuildContext context, MapViewState state, _) =>
-                  switch (state) {
-                MapViewState() => TileLayer(
-                    retinaMode: true,
-                    userAgentPackageName: state.userAgentPackageName,
-                    urlTemplate: state.urlTemplate,
-                    fallbackUrl: state.fallbackUrl,
-                    subdomains: const ['a', 'b', 'c'],
-                    maxZoom: state.maxZoom,
-                    minZoom: state.minZoom,
-                  ),
+              builder: (BuildContext context, MapViewState state, _) {
+                return switch (state) {
+                  MapViewState() => TileLayer(
+                      retinaMode: true,
+                      userAgentPackageName: state.userAgentPackageName,
+                      urlTemplate: state.urlTemplate,
+                      fallbackUrl: state.fallbackUrl,
+                      subdomains: const ['a', 'b', 'c'],
+                      maxZoom: state.maxZoom,
+                      minZoom: state.minZoom,
+                    ),
+                };
               },
             ),
-            // define typedef for builder with convenient type
             ValueListenableBuilder<List<LatLng>>(
               valueListenable: _routePoints,
               builder: (BuildContext context, List<LatLng> points, _) {
-                return MapViewBuilder(
+                return ValueListenableBuilder<MapViewState>(
                   valueListenable: _mapViewNotifier,
                   builder: (BuildContext context, MapViewState viewState, _) {
                     return PolylineLayer(
@@ -120,18 +118,36 @@ class _MapViewState extends State<MapView>
                 );
               },
             ),
-            MapLocationBuilder(
-              valueListenable: _mapLocationNotifier,
-              builder: (BuildContext ctx, MapLocationState locationState, _) {
-                return MapViewBuilder(
-                  valueListenable: _mapViewNotifier,
-                  builder: (BuildContext context, MapViewState viewState, _) {
-                    return _LocationMarker(
-                      locationState: locationState,
-                      viewState: viewState,
-                    );
-                  },
-                );
+            _LocationMarkerBuilder<MapLocationState, MapViewState>(
+              locationState: _mapLocationNotifier,
+              viewState: _mapViewNotifier,
+              builder: (
+                BuildContext context,
+                MapLocationState locationState,
+                MapViewState viewState,
+                _,
+              ) {
+                return switch (locationState) {
+                  MapLocationUpdateSuccess(location: final location) =>
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          width: viewState.markerSize,
+                          height: viewState.markerSize,
+                          point: location.toLatLng(),
+                          child: Icon(
+                            Icons.circle,
+                            size: viewState.markerSize,
+                            color: Colors.deepPurple.withOpacity(0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  MapInitialLocationLoading() => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  _ => const SizedBox.shrink(),
+                };
               },
             ),
           ],
@@ -155,7 +171,7 @@ class _MapViewState extends State<MapView>
               ),
               const SizedBox(width: 20),
               // TODO: Temporary for testing
-              MapViewBuilder(
+              ValueListenableBuilder<MapViewState>(
                 valueListenable: _mapViewNotifier,
                 builder: (BuildContext context, MapViewState state, _) => Text(
                   '${state.zoom}',
@@ -163,7 +179,7 @@ class _MapViewState extends State<MapView>
               ),
               const SizedBox(width: 20),
               // TODO: Temporary for testing
-              MapViewBuilder(
+              ValueListenableBuilder<MapViewState>(
                 valueListenable: _mapViewNotifier,
                 builder: (BuildContext context, MapViewState state, _) =>
                     Switch(
@@ -259,36 +275,38 @@ class _MapViewState extends State<MapView>
   bool get wantKeepAlive => true;
 }
 
-class _LocationMarker extends StatelessWidget {
-  final MapLocationState locationState;
-  final MapViewState viewState;
-
-  const _LocationMarker({
+class _LocationMarkerBuilder<L extends MapLocationState, V extends MapViewState>
+    extends StatelessWidget {
+  const _LocationMarkerBuilder({
+    super.key,
     required this.locationState,
     required this.viewState,
+    required this.builder,
+    this.child,
   });
+
+  final ValueListenable<L> locationState;
+  final ValueListenable<V> viewState;
+  final Widget Function(
+    BuildContext context,
+    L locationState,
+    V viewState,
+    Widget? child,
+  ) builder;
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
-    return switch (locationState) {
-      MapLocationUpdateSuccess(location: final location) => MarkerLayer(
-          markers: [
-            Marker(
-              width: viewState.markerSize,
-              height: viewState.markerSize,
-              point: location.toLatLng(),
-              child: Icon(
-                Icons.circle,
-                size: viewState.markerSize,
-                color: Colors.deepPurple.withOpacity(0.8),
-              ),
-            ),
-          ],
-        ),
-      MapInitialLocationLoading() => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      _ => const SizedBox.shrink(),
-    };
+    return ValueListenableBuilder<L>(
+      valueListenable: locationState,
+      builder: (_, L locationState, __) {
+        return ValueListenableBuilder<V>(
+          valueListenable: viewState,
+          builder: (BuildContext context, V viewState, __) {
+            return builder(context, locationState, viewState, child);
+          },
+        );
+      },
+    );
   }
 }
