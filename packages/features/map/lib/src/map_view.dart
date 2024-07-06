@@ -257,6 +257,10 @@ class _MapViewState extends State<MapView>
   void _handleRouteRecordingStarted() {
     if (_isRouteRecordingStarted.value) {
       _mapLocationNotifier.addListener(_handleRecordRoutePoints);
+      final locationState = _mapLocationNotifier.value;
+      if (locationState is MapLocationUpdateSuccess) {
+        _routePoints.value.add(locationState.location.toLatLng());
+      }
     } else {
       _routePoints.value = [];
       _mapLocationNotifier.removeListener(_handleRecordRoutePoints);
