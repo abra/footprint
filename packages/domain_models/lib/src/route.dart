@@ -23,7 +23,6 @@ class Route {
 }
 
 enum RouteStatus {
-  notStarted,
-  inProgress,
-  finished,
+  active,
+  completed,
 }
