@@ -85,16 +85,16 @@ class _MapViewState extends State<MapView>
           children: [
             ValueListenableBuilder<MapViewState>(
               valueListenable: _mapViewNotifier,
-              builder: (BuildContext context, MapViewState state, _) {
-                return switch (state) {
+              builder: (BuildContext context, MapViewState viewState, _) {
+                return switch (viewState) {
                   MapViewState() => TileLayer(
                       retinaMode: true,
-                      userAgentPackageName: state.userAgentPackageName,
-                      urlTemplate: state.urlTemplate,
-                      fallbackUrl: state.fallbackUrl,
+                      userAgentPackageName: viewState.userAgentPackageName,
+                      urlTemplate: viewState.urlTemplate,
+                      fallbackUrl: viewState.fallbackUrl,
                       subdomains: const ['a', 'b', 'c'],
-                      maxZoom: state.maxZoom,
-                      minZoom: state.minZoom,
+                      maxZoom: viewState.maxZoom,
+                      minZoom: viewState.minZoom,
                     ),
                 };
               },
