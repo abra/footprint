@@ -2,17 +2,13 @@ import 'package:domain_models/domain_models.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../local_storage_interface.dart';
 import 'exceptions.dart';
 
-/// SQLite implementation of [LocalStorageInterface]
-class SqliteStorage implements LocalStorageInterface {
-  /// constructor
-  const SqliteStorage();
+class LocalStorage {
+  const LocalStorage();
 
   static Database? _database;
 
-  @override
   Future<void> init() async {
     final String path = join(
       await getDatabasesPath(),
@@ -39,7 +35,6 @@ class SqliteStorage implements LocalStorageInterface {
     }
   }
 
-  @override
   Future<int> createRoute(Location location) async {
     if (_database == null) {
       await init();
@@ -68,7 +63,6 @@ class SqliteStorage implements LocalStorageInterface {
     }
   }
 
-  @override
   Future<void> addRoutePoints(
     int routeId,
     Location location,
@@ -92,7 +86,6 @@ class SqliteStorage implements LocalStorageInterface {
     }
   }
 
-  @override
   Future<List<Location>> getRoutePoints(int routeId) async {
     if (_database == null) {
       await init();
@@ -115,7 +108,6 @@ class SqliteStorage implements LocalStorageInterface {
     }
   }
 
-  @override
   Future<void> deleteRoute(int routeId) async {
     if (_database == null) {
       await init();
@@ -140,7 +132,6 @@ class SqliteStorage implements LocalStorageInterface {
     }
   }
 
-  @override
   Future<int> changeRouteStatus(int routeId, int status) async {
     if (_database == null) {
       await init();

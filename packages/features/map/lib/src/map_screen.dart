@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:location_repository/location_repository.dart';
+import 'package:routes_repository/routes_repository.dart';
 
 import 'exception_dialog.dart';
 import 'extensions.dart';
@@ -16,10 +17,12 @@ class MapScreen extends StatefulWidget {
   const MapScreen({
     super.key,
     required this.locationRepository,
+    required this.routesRepository,
     required this.onPageChangeRequested,
   });
 
   final LocationRepository locationRepository;
+  final RoutesRepository routesRepository;
   final VoidCallback onPageChangeRequested;
 
   @override
@@ -35,6 +38,7 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     _mapLocationNotifier = MapLocationNotifier(
       locationRepository: widget.locationRepository,
+      routesRepository: widget.routesRepository,
     );
     _config = const MapViewConfig();
   }

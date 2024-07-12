@@ -21,6 +21,8 @@ dependencies:
     path: ../../domain_models
   location_repository:
     path: ../../location_repository
+  routes_repository:
+    path: ../../routes_repository
   component_library:
     path: ../../component_library
 

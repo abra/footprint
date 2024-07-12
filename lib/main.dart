@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:location_repository/location_repository.dart';
 import 'package:map/map.dart';
 import 'package:route_list/route_list.dart';
+import 'package:routes_repository/routes_repository.dart';
 
 Future<void> main() async {
   await runZonedGuarded<Future<void>>(
@@ -25,6 +26,7 @@ class FootprintApp extends StatelessWidget {
   });
 
   final LocationRepository _locationRepository = const LocationRepository();
+  final RoutesRepository _routesRepository = const RoutesRepository();
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -34,6 +36,7 @@ class FootprintApp extends StatelessWidget {
           pages: [
             MapScreen(
               locationRepository: _locationRepository,
+              routesRepository: _routesRepository,
               onPageChangeRequested: () => _PageManager.goToPage(
                 _Pages.routeList,
               ),

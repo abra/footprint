@@ -1,1 +1,2 @@
-export 'src/sqlite_storage/sqlite_storage.dart';
+export 'src/exceptions.dart';
+export 'src/local_storage.dart';
