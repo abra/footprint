@@ -1,4 +1,3 @@
-// TODO: Should be initialized in main.dart
 class MapViewConfig {
   const MapViewConfig();
 

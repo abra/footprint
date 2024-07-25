@@ -9,16 +9,12 @@ import 'package:latlong2/latlong.dart';
 
 import 'extensions.dart';
 import 'map_location_notifier.dart';
-import 'map_view_config.dart';
 import 'map_view_notifier.dart';
 
 class MapView extends StatefulWidget {
   const MapView({
     super.key,
-    required this.config,
   });
-
-  final MapViewConfig config;
 
   @override
   State<MapView> createState() => _MapViewState();
@@ -26,9 +22,8 @@ class MapView extends StatefulWidget {
 
 class _MapViewState extends State<MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
-  late final MapViewConfig _config;
-  late final AnimatedMapController _animatedMapController;
-  late final MapViewNotifier _mapViewNotifier;
+  late AnimatedMapController _animatedMapController;
+  late MapViewNotifier _mapViewNotifier;
   late MapLocationNotifier _mapLocationNotifier;
 
   final _isRouteRecordingStarted = ValueNotifier<bool>(false);
@@ -37,20 +32,19 @@ class _MapViewState extends State<MapView>
   @override
   void initState() {
     super.initState();
-    _config = widget.config;
-    _mapViewNotifier = MapViewNotifier(config: _config);
+    _isRouteRecordingStarted.addListener(_handleRouteRecordingStarted);
     _animatedMapController = AnimatedMapController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
       curve: Curves.fastOutSlowIn,
     );
-    _isRouteRecordingStarted.addListener(_handleRouteRecordingStarted);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _mapLocationNotifier = context.locationNotifier;
+    _mapViewNotifier = context.viewNotifier;
     _mapLocationNotifier.addListener(_handleMapLocationChanged);
     _mapViewNotifier.addListener(_handleZoomChanged);
   }
@@ -78,9 +72,9 @@ class _MapViewState extends State<MapView>
             interactionOptions: const InteractionOptions(
               pinchZoomWinGestures: InteractiveFlag.pinchZoom,
             ),
-            initialZoom: _config.defaultZoom,
-            maxZoom: _config.maxZoom,
-            minZoom: _config.minZoom,
+            initialZoom: _mapViewNotifier.config.defaultZoom,
+            maxZoom: _mapViewNotifier.config.maxZoom,
+            minZoom: _mapViewNotifier.config.minZoom,
           ),
           children: [
             ValueListenableBuilder<MapViewState>(
