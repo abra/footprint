@@ -5,16 +5,13 @@ import 'package:domain_models/domain_models.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:location_repository/location_repository.dart';
-import 'package:routes_repository/routes_repository.dart';
 
 part 'map_location_state.dart';
 
 class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   MapLocationNotifier({
     required LocationRepository locationRepository,
-    required RoutesRepository routesRepository,
   })  : _locationRepository = locationRepository,
-        _routesRepository = routesRepository,
         super(
           MapInitialLocationLoading(),
         ) {
@@ -22,7 +19,6 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
   }
 
   final LocationRepository _locationRepository;
-  final RoutesRepository _routesRepository;
   StreamSubscription<Location>? _locationUpdateSubscription;
 
   Future<void> reInit() async {
@@ -44,18 +40,6 @@ class MapLocationNotifier extends ValueNotifier<MapLocationState> {
         _locationUpdateSubscription?.resume();
       }
     } catch (e) {
-      // TODO: Replace with the following error handling
-      // if an exception occurred and it is necessary to show an error message
-      // without changing the current screen to the error screen, then take
-      // the previous successful state + error message
-
-      // final prevState = value;
-      // if (value is MapLocationUpdateSuccess) {
-      //   value = MapLocationUpdateSuccess(
-      //     location: prevState.location,
-      //     locationUpdateError: e,
-      //   );
-      // }
       value = MapLocationUpdateFailure(error: e);
     }
   }
