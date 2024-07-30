@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:routes_repository/routes_repository.dart';
 
 class RouteListScreen extends StatelessWidget {
   const RouteListScreen({
     super.key,
+    required this.routesRepository,
     required this.onPageChangeRequested,
   });
 
+  final RoutesRepository routesRepository;
   final VoidCallback onPageChangeRequested;
 
   @override

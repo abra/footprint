@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  routes_repository:
+    path: ../../routes_repository
 
 dev_dependencies:
   flutter_test:
