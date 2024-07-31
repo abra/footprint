@@ -4,9 +4,9 @@ class MapViewConfig {
   final double markerSize = 17.3;
   final double markerMaxSize = 22.0;
   final double markerMinSize = 8.0;
-  final double polylineStrokeWidth = 4.0;
-  final double polylineStrokeMinWidth = 2.0;
-  final double polylineStrokeMaxWidth = 8.0;
+  final double polylineWidth = 4.0;
+  final double polylineMinWidth = 2.0;
+  final double polylineMaxWidth = 8.0;
   final bool isCentered = true;
   final double zoomStep = 0.5;
   final double defaultZoom = 16;
