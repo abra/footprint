@@ -15,7 +15,7 @@ import 'exception_dialog.dart';
 import 'extensions.dart';
 import 'map_notifier.dart';
 import 'map_notifier_provider.dart';
-import 'map_config.dart';
+import 'map_view_config.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({
@@ -49,25 +49,24 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) => MapNotifierProvider(
         notifier: _mapNotifier,
-        child: MapView(
+        child: _MapView(
           onPageChange: widget.onPageChangeRequested,
         ),
       );
 }
 
-class MapView extends StatefulWidget {
-  const MapView({
-    super.key,
+class _MapView extends StatefulWidget {
+  const _MapView({
     required this.onPageChange,
   });
 
   final VoidCallback onPageChange;
 
   @override
-  State<MapView> createState() => _MapViewState();
+  State<_MapView> createState() => _MapViewState();
 }
 
-class _MapViewState extends State<MapView>
+class _MapViewState extends State<_MapView>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late AnimatedMapController _animatedMapController;
   late MapNotifier _mapNotifier;
@@ -96,6 +95,7 @@ class _MapViewState extends State<MapView>
   @override
   void dispose() {
     _animatedMapController.dispose();
+    _mapNotifier.dispose();
     super.dispose();
   }
 
@@ -117,19 +117,20 @@ class _MapViewState extends State<MapView>
               interactionOptions: const InteractionOptions(
                 pinchZoomWinGestures: InteractiveFlag.pinchZoom,
               ),
-              initialZoom: _mapNotifier.defaultZoom,
-              maxZoom: _mapNotifier.maxZoom,
-              minZoom: _mapNotifier.minZoom,
+              initialZoom: _mapNotifier.viewConfig.defaultZoom,
+              maxZoom: _mapNotifier.viewConfig.maxZoom,
+              minZoom: _mapNotifier.viewConfig.minZoom,
             ),
             children: [
               TileLayer(
                 retinaMode: true,
-                userAgentPackageName: _mapNotifier.userAgentPackageName,
-                urlTemplate: _mapNotifier.urlTemplate,
-                fallbackUrl: _mapNotifier.fallbackUrl,
+                userAgentPackageName:
+                    _mapNotifier.viewConfig.userAgentPackageName,
+                urlTemplate: _mapNotifier.viewConfig.urlTemplate,
+                fallbackUrl: _mapNotifier.viewConfig.fallbackUrl,
                 subdomains: const ['a', 'b', 'c'],
-                maxZoom: _mapNotifier.maxZoom,
-                minZoom: _mapNotifier.minZoom,
+                maxZoom: _mapNotifier.viewConfig.maxZoom,
+                minZoom: _mapNotifier.viewConfig.minZoom,
               ),
               ValueListenableBuilder<List<LatLng>>(
                 valueListenable: _mapNotifier.routePoints,
@@ -150,14 +151,14 @@ class _MapViewState extends State<MapView>
                   );
                 },
               ),
-              ValueListenableBuilder<MapState>(
-                valueListenable: _mapNotifier,
-                builder: (_, MapState mapState, __) {
+              ValueListenableBuilder<LocationState>(
+                valueListenable: _mapNotifier.locationState,
+                builder: (_, LocationState mapState, __) {
                   return ValueListenableBuilder<double>(
                     valueListenable: _mapNotifier.markerSize,
                     builder: (BuildContext context, double markerSize, __) {
                       return switch (mapState) {
-                        MapLocationUpdateSuccess(location: final location) =>
+                        LocationUpdateSuccess(location: final location) =>
                           MarkerLayer(
                             markers: [
                               Marker(
@@ -172,7 +173,7 @@ class _MapViewState extends State<MapView>
                               ),
                             ],
                           ),
-                        MapInitialLocationLoading() => const Center(
+                        LocationLoading() => const Center(
                             child: CircularProgressIndicator(),
                           ),
                         _ => const SizedBox.shrink(),
@@ -218,8 +219,8 @@ class _MapViewState extends State<MapView>
                     value: isCentered,
                     onChanged: (value) {
                       _mapNotifier.isCentered.value = value;
-                      final mapState = _mapNotifier.value;
-                      if (mapState is MapLocationUpdateSuccess) {
+                      final mapState = _mapNotifier.locationState.value;
+                      if (mapState is LocationUpdateSuccess) {
                         _animatedMapController.animateTo(
                           dest: mapState.location.toLatLng(),
                         );
@@ -265,33 +266,6 @@ class _MapViewState extends State<MapView>
     );
   }
 
-  // void _handleToggleButtonSwitched(value) {
-  //   if (value) {
-  //     _mapNotifier.isCentered.value = true;
-  //     final mapState = _mapNotifier.value;
-  //     if (mapState is MapLocationUpdateSuccess) {
-  //       _centerMapViewToCurrentLocation(mapState.location.toLatLng());
-  //     }
-  //   } else {
-  //     _mapNotifier.isCentered.value = false;
-  //   }
-  // }
-  //
-  // void _handleMapLocationChanged() {
-  //   final mapViewCentered = _mapNotifier.isCentered.value;
-  //   final mapState = _mapNotifier.value;
-  //
-  //   if (mapState is MapLocationUpdateSuccess && mapViewCentered) {
-  //     _centerMapViewToCurrentLocation(mapState.location.toLatLng());
-  //   }
-  // }
-  //
-  // void _centerMapViewToCurrentLocation(LatLng location) {
-  //   _animatedMapController.animateTo(
-  //     dest: location,
-  //   );
-  // }
-
   @override
   bool get wantKeepAlive => true;
 }
@@ -311,7 +285,7 @@ class _MapAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _MapAppBarState extends State<_MapAppBar> {
-  late MapNotifier _mapLocationNotifier;
+  late MapNotifier _mapNotifier;
 
   bool _hasError = false;
 
@@ -320,13 +294,17 @@ class _MapAppBarState extends State<_MapAppBar> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _mapLocationNotifier = context.notifier;
-    _mapLocationNotifier.addListener(_handleLocationUpdateException);
+    _mapNotifier = context.notifier;
+    _mapNotifier.locationState.addListener(
+      _handleLocationUpdateException,
+    );
   }
 
   @override
   void dispose() {
-    _mapLocationNotifier.removeListener(_handleLocationUpdateException);
+    _mapNotifier.locationState.removeListener(
+      _handleLocationUpdateException,
+    );
     super.dispose();
   }
 
@@ -424,7 +402,7 @@ class _MapAppBarState extends State<_MapAppBar> {
 
   // TODO: Ugly code, refactor
   Future<void> _handleLocationUpdateException() async {
-    if (_mapLocationNotifier.value is MapLocationUpdateFailure) {
+    if (_mapNotifier.locationState.value is LocationUpdateFailure) {
       setState(() {
         _hasError = true;
       });
@@ -440,7 +418,7 @@ class _MapAppBarState extends State<_MapAppBar> {
   }
 
   Future<void> _onTryAgain() async {
-    await _mapLocationNotifier.reInit();
+    await _mapNotifier.reInit();
     setState(() {
       _isShowExceptionDialog = true;
     });
@@ -463,11 +441,11 @@ class _MapAppBarState extends State<_MapAppBar> {
               maxHeight: 250,
               minHeight: 150,
             ),
-            child: ValueListenableBuilder<MapState>(
-              valueListenable: _mapLocationNotifier,
-              builder: (BuildContext context, MapState state, _) {
+            child: ValueListenableBuilder<LocationState>(
+              valueListenable: _mapNotifier.locationState,
+              builder: (BuildContext context, LocationState state, _) {
                 return switch (state) {
-                  MapLocationUpdateFailure(error: final error) =>
+                  LocationUpdateFailure(error: final error) =>
                     error is ServicePermissionDeniedException
                         ? ExceptionDialog(
                             onTryAgain: _onTryAgain,
