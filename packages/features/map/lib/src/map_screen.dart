@@ -4,7 +4,7 @@ import 'package:location_repository/location_repository.dart';
 import 'package:map/src/map_view_notifier.dart';
 import 'package:routes_repository/routes_repository.dart';
 
-import 'map_location_notifier.dart';
+import 'map_notifier.dart';
 import 'map_notifier_provider.dart';
 import 'map_view.dart';
 import 'map_view_config.dart';
@@ -26,31 +26,27 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
-  late MapLocationNotifier _mapLocationNotifier;
-  late MapViewNotifier _mapViewNotifier;
+  late MapNotifier _mapNotifier;
 
   @override
   void initState() {
     super.initState();
-    _mapLocationNotifier = MapLocationNotifier(
+    _mapNotifier = MapNotifier(
       locationRepository: widget.locationRepository,
-    );
-    _mapViewNotifier = MapViewNotifier(
-      config: const MapViewConfig(),
+      routesRepository: widget.routesRepository,
+      viewConfig: const MapViewConfig(),
     );
   }
 
   @override
   void dispose() {
-    _mapViewNotifier.dispose();
-    _mapLocationNotifier.dispose();
+    _mapNotifier.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => MapNotifierProvider(
-        locationNotifier: _mapLocationNotifier,
-        viewNotifier: _mapViewNotifier,
+        notifier: _mapNotifier,
         child: MapView(
           onPageChange: widget.onPageChangeRequested,
         ),
