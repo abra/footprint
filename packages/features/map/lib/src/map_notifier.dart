@@ -39,10 +39,10 @@ class MapNotifier {
   final routePoints = ValueNotifier<List<LatLng>>([]);
 
   // map view notifiers
-  late final zoom = ValueNotifier<double>(_config.defaultZoom);
+  late final zoomValue = ValueNotifier<double>(_config.defaultZoom);
   late final markerSize = ValueNotifier<double>(_config.markerSize);
   late final polylineWidth = ValueNotifier<double>(_config.polylineWidth);
-  late final isCentered = ValueNotifier<bool>(_config.isCentered);
+  late final mapCentered = ValueNotifier<bool>(_config.mapCentered);
 
   void Function(LatLng)? onMapLocationChanged;
 
@@ -73,7 +73,7 @@ class MapNotifier {
       locationState.value = LocationUpdateSuccess(location: location);
 
       /// Center the map on the current location
-      if (isCentered.value && onMapLocationChanged != null) {
+      if (mapCentered.value && onMapLocationChanged != null) {
         onMapLocationChanged!(location.toLatLng());
       }
 
@@ -119,21 +119,21 @@ class MapNotifier {
   }
 
   Future<void> zoomIn(Function(double) callback) =>
-      _updateZoom(zoom.value + _config.zoomStep, callback);
+      _updateZoom(zoomValue.value + _config.zoomStep, callback);
 
   Future<void> zoomOut(Function(double) callback) =>
-      _updateZoom(zoom.value - _config.zoomStep, callback);
+      _updateZoom(zoomValue.value - _config.zoomStep, callback);
 
   Future<void> _updateZoom(double newZoom, Function(double) callback) async {
     if (newZoom >= _config.minZoom && newZoom <= _config.maxZoom) {
-      zoom.value = newZoom;
-      callback(zoom.value);
-      await updateMarkerSize(zoom.value);
-      await updatePolylineWidth(zoom.value);
+      zoomValue.value = newZoom;
+      callback(zoomValue.value);
+      await _updateMarkerSize(zoomValue.value);
+      await _updatePolylineWidth(zoomValue.value);
     }
   }
 
-  Future<void> updatePolylineWidth(double zoom) async {
+  Future<void> _updatePolylineWidth(double zoom) async {
     polylineWidth.value = await _updateMapParameter(
       zoom: zoom,
       minValue: _config.polylineMinWidth,
@@ -141,7 +141,7 @@ class MapNotifier {
     );
   }
 
-  Future<void> updateMarkerSize(double zoom) async {
+  Future<void> _updateMarkerSize(double zoom) async {
     markerSize.value = await _updateMapParameter(
       zoom: zoom,
       minValue: _config.markerMinSize,

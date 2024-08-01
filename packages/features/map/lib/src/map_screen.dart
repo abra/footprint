@@ -142,7 +142,7 @@ class _MapViewState extends State<_MapView>
                 const SizedBox(width: 20),
                 // TODO: Temporary for testing
                 ValueListenableBuilder<double>(
-                  valueListenable: _mapNotifier.zoom,
+                  valueListenable: _mapNotifier.zoomValue,
                   builder: (BuildContext context, double zoom, _) => Text(
                     '[$zoom]',
                   ),
@@ -150,11 +150,11 @@ class _MapViewState extends State<_MapView>
                 const SizedBox(width: 20),
                 // TODO: Temporary for testing
                 ValueListenableBuilder<bool>(
-                  valueListenable: _mapNotifier.isCentered,
+                  valueListenable: _mapNotifier.mapCentered,
                   builder: (BuildContext context, bool isCentered, _) => Switch(
                     value: isCentered,
                     onChanged: (value) {
-                      _mapNotifier.isCentered.value = value;
+                      _mapNotifier.mapCentered.value = value;
                       final mapState = _mapNotifier.locationState.value;
                       if (mapState is LocationUpdateSuccess) {
                         _animatedMapController.animateTo(

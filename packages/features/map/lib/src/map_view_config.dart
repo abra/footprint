@@ -7,7 +7,7 @@ class MapViewConfig {
   final double polylineWidth = 4.0;
   final double polylineMinWidth = 2.0;
   final double polylineMaxWidth = 8.0;
-  final bool isCentered = true;
+  final bool mapCentered = true;
   final double zoomStep = 0.5;
   final double defaultZoom = 16;
   final double maxZoom = 17;
