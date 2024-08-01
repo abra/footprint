@@ -47,6 +47,12 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
   @override
+  void dispose() {
+    _mapNotifier.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => MapNotifierProvider(
         notifier: _mapNotifier,
         child: _MapView(
@@ -95,7 +101,6 @@ class _MapViewState extends State<_MapView>
   @override
   void dispose() {
     _animatedMapController.dispose();
-    _mapNotifier.dispose();
     super.dispose();
   }
 
@@ -111,78 +116,9 @@ class _MapViewState extends State<_MapView>
       ),
       body: Stack(
         children: [
-          FlutterMap(
-            mapController: _animatedMapController.mapController,
-            options: MapOptions(
-              interactionOptions: const InteractionOptions(
-                pinchZoomWinGestures: InteractiveFlag.pinchZoom,
-              ),
-              initialZoom: _mapNotifier.viewConfig.defaultZoom,
-              maxZoom: _mapNotifier.viewConfig.maxZoom,
-              minZoom: _mapNotifier.viewConfig.minZoom,
-            ),
-            children: [
-              TileLayer(
-                retinaMode: true,
-                userAgentPackageName:
-                    _mapNotifier.viewConfig.userAgentPackageName,
-                urlTemplate: _mapNotifier.viewConfig.urlTemplate,
-                fallbackUrl: _mapNotifier.viewConfig.fallbackUrl,
-                subdomains: const ['a', 'b', 'c'],
-                maxZoom: _mapNotifier.viewConfig.maxZoom,
-                minZoom: _mapNotifier.viewConfig.minZoom,
-              ),
-              ValueListenableBuilder<List<LatLng>>(
-                valueListenable: _mapNotifier.routePoints,
-                builder: (BuildContext context, List<LatLng> routePoints, _) {
-                  return ValueListenableBuilder<double>(
-                    valueListenable: _mapNotifier.polylineWidth,
-                    builder: (BuildContext context, double width, _) {
-                      return PolylineLayer(
-                        polylines: <Polyline>[
-                          Polyline(
-                            points: routePoints,
-                            color: context.appColors.lightPurple,
-                            strokeWidth: width,
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              ),
-              ValueListenableBuilder<LocationState>(
-                valueListenable: _mapNotifier.locationState,
-                builder: (_, LocationState mapState, __) {
-                  return ValueListenableBuilder<double>(
-                    valueListenable: _mapNotifier.markerSize,
-                    builder: (BuildContext context, double markerSize, __) {
-                      return switch (mapState) {
-                        LocationUpdateSuccess(location: final location) =>
-                          MarkerLayer(
-                            markers: [
-                              Marker(
-                                width: markerSize,
-                                height: markerSize,
-                                point: location.toLatLng(),
-                                child: Icon(
-                                  Icons.circle,
-                                  size: markerSize,
-                                  color: Colors.deepPurple.withOpacity(0.8),
-                                ),
-                              ),
-                            ],
-                          ),
-                        LocationLoading() => const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        _ => const SizedBox.shrink(),
-                      };
-                    },
-                  );
-                },
-              ),
-            ],
+          _FlutterMapWidget(
+            mapNotifier: _mapNotifier,
+            animatedMapController: _animatedMapController,
           ),
           Positioned(
             right: 10,
@@ -268,6 +204,130 @@ class _MapViewState extends State<_MapView>
 
   @override
   bool get wantKeepAlive => true;
+}
+
+class _FlutterMapWidget extends StatelessWidget {
+  const _FlutterMapWidget({
+    required this.mapNotifier,
+    required this.animatedMapController,
+  });
+
+  final MapNotifier mapNotifier;
+  final AnimatedMapController animatedMapController;
+
+  @override
+  Widget build(BuildContext context) {
+    return FlutterMap(
+      mapController: animatedMapController.mapController,
+      options: MapOptions(
+        interactionOptions: const InteractionOptions(
+          pinchZoomWinGestures: InteractiveFlag.pinchZoom,
+        ),
+        initialZoom: mapNotifier.viewConfig.defaultZoom,
+        maxZoom: mapNotifier.viewConfig.maxZoom,
+        minZoom: mapNotifier.viewConfig.minZoom,
+      ),
+      children: [
+        _TileLayerWidget(mapNotifier: mapNotifier),
+        _PolylineLayerWidget(mapNotifier: mapNotifier),
+        _MarkerLayerWidget(mapNotifier: mapNotifier),
+      ],
+    );
+  }
+}
+
+class _TileLayerWidget extends StatelessWidget {
+  const _TileLayerWidget({
+    required this.mapNotifier,
+  });
+
+  final MapNotifier mapNotifier;
+
+  @override
+  Widget build(BuildContext context) {
+    return TileLayer(
+      retinaMode: true,
+      userAgentPackageName: mapNotifier.viewConfig.userAgentPackageName,
+      urlTemplate: mapNotifier.viewConfig.urlTemplate,
+      fallbackUrl: mapNotifier.viewConfig.fallbackUrl,
+      subdomains: const ['a', 'b', 'c'],
+      maxZoom: mapNotifier.viewConfig.maxZoom,
+      minZoom: mapNotifier.viewConfig.minZoom,
+    );
+  }
+}
+
+class _PolylineLayerWidget extends StatelessWidget {
+  const _PolylineLayerWidget({
+    required this.mapNotifier,
+  });
+
+  final MapNotifier mapNotifier;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<LatLng>>(
+      valueListenable: mapNotifier.routePoints,
+      builder: (BuildContext context, List<LatLng> routePoints, _) {
+        return ValueListenableBuilder<double>(
+          valueListenable: mapNotifier.polylineWidth,
+          builder: (BuildContext context, double width, _) {
+            return PolylineLayer(
+              polylines: <Polyline>[
+                Polyline(
+                  points: routePoints,
+                  color: context.appColors.lightPurple,
+                  strokeWidth: width,
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _MarkerLayerWidget extends StatelessWidget {
+  const _MarkerLayerWidget({
+    required this.mapNotifier,
+  });
+
+  final MapNotifier mapNotifier;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<LocationState>(
+      valueListenable: mapNotifier.locationState,
+      builder: (_, LocationState mapState, __) {
+        return ValueListenableBuilder<double>(
+          valueListenable: mapNotifier.markerSize,
+          builder: (BuildContext context, double markerSize, __) {
+            return switch (mapState) {
+              LocationUpdateSuccess(location: final location) => MarkerLayer(
+                  markers: [
+                    Marker(
+                      width: markerSize,
+                      height: markerSize,
+                      point: location.toLatLng(),
+                      child: Icon(
+                        Icons.circle,
+                        size: markerSize,
+                        color: Colors.deepPurple.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              LocationLoading() => const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              _ => const SizedBox.shrink(),
+            };
+          },
+        );
+      },
+    );
+  }
 }
 
 class _MapAppBar extends StatefulWidget implements PreferredSizeWidget {
