@@ -31,9 +31,14 @@ class MapNotifier {
 
   late StreamSubscription<Location> _locationUpdateSubscription;
 
+  // map location update notifier
+  late final locationState = ValueNotifier<LocationState>(LocationLoading());
+
+  // map route recording notifiers
   final routeRecordingStarted = ValueNotifier<bool>(false);
   final routePoints = ValueNotifier<List<LatLng>>([]);
-  late final locationState = ValueNotifier<LocationState>(LocationLoading());
+
+  // map view notifiers
   late final zoom = ValueNotifier<double>(_config.defaultZoom);
   late final markerSize = ValueNotifier<double>(_config.markerSize);
   late final polylineWidth = ValueNotifier<double>(_config.polylineWidth);
