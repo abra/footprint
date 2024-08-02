@@ -72,12 +72,12 @@ class MapNotifier {
       log('--- Location [$hashCode]: $location');
       locationState.value = LocationUpdateSuccess(location: location);
 
-      /// Center the map on the current location
+      // Center the map on the current location
       if (mapCentered.value && onMapLocationChanged != null) {
         onMapLocationChanged!(location.toLatLng());
       }
 
-      /// Start route recording
+      // Start route recording
       if (routeRecordingStarted.value) {
         // TODO: Replace with routeRepository
         // TODO: _routesRepository.addRoutePoint(location.toLatLng());
