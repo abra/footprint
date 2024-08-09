@@ -6,12 +6,12 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
-  geolocator: ^10.1.0
+  geolocator: ^13.0.1
   meta: ^1.10.0
   uuid: ^4.2.2
   domain_models:
     path: ../domain_models
 
 dev_dependencies:
-  lints: ^3.0.0
+  lints: ^4.0.0
   test: ^1.24.0
