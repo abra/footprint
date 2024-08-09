@@ -284,7 +284,6 @@ class _MarkerLayerWidget extends StatelessWidget {
       valueListenable: combinedNotifier,
       builder: (BuildContext context, CombinedNotifier combinedNotifier, _) {
         final (locationState, markerSize) = combinedNotifier;
-        final location = (locationState as LocationUpdateSuccess).location;
 
         return switch (locationState) {
           LocationUpdateSuccess(location: final location) => MarkerLayer(
@@ -301,6 +300,10 @@ class _MarkerLayerWidget extends StatelessWidget {
                 ),
               ],
             ),
+          LocationLoading() => const Center(
+              child: CircularProgressIndicator(),
+            ),
+          _ => const SizedBox(),
         };
       },
     );
