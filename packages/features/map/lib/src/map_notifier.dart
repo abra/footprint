@@ -44,7 +44,8 @@ class MapNotifier {
   late final polylineWidth = ValueNotifier<double>(_config.polylineWidth);
   late final mapCentered = ValueNotifier<bool>(_config.mapCentered);
 
-  void Function(LatLng)? onLocationChanged;
+  void Function(double)? onZoomChanged;
+  void Function(Location)? onMapCentered;
 
   void dispose() {
     _locationUpdateSubscription.cancel();
@@ -73,8 +74,8 @@ class MapNotifier {
       locationState.value = LocationUpdateSuccess(location: location);
 
       // Center the map on the current location
-      if (mapCentered.value && onLocationChanged != null) {
-        onLocationChanged!(location.toLatLng());
+      if (mapCentered.value && onMapCentered != null) {
+        onMapCentered!(location);
       }
 
       // Start route recording
@@ -118,11 +119,11 @@ class MapNotifier {
     }
   }
 
-  Future<void> zoomIn(Function(double) callback) =>
-      _updateZoom(zoomValue.value + _config.zoomStep, callback);
+  Future<void> zoomIn() =>
+      _updateZoom(zoomValue.value + _config.zoomStep, onZoomChanged ?? (_) {});
 
-  Future<void> zoomOut(Function(double) callback) =>
-      _updateZoom(zoomValue.value - _config.zoomStep, callback);
+  Future<void> zoomOut() =>
+      _updateZoom(zoomValue.value - _config.zoomStep, onZoomChanged ?? (_) {});
 
   Future<void> _updateZoom(double newZoom, Function(double) callback) async {
     if (newZoom >= _config.minZoom && newZoom <= _config.maxZoom) {
@@ -130,6 +131,17 @@ class MapNotifier {
       callback(zoomValue.value);
       await _updateMarkerSize(zoomValue.value);
       await _updatePolylineWidth(zoomValue.value);
+    }
+  }
+
+  Future<void> toggleMapCenter(bool value) async {
+    if (onMapCentered != null) {
+      mapCentered.value = value;
+      if (value) {
+        final location =
+            (locationState.value as LocationUpdateSuccess).location;
+        onMapCentered!(location);
+      }
     }
   }
 

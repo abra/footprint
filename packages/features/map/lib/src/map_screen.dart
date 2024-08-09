@@ -61,7 +61,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       );
 }
 
-class _MapView extends StatefulWidget {
+class _MapView extends StatelessWidget {
   const _MapView({
     required this.onPageChange,
   });
@@ -69,57 +69,18 @@ class _MapView extends StatefulWidget {
   final VoidCallback onPageChange;
 
   @override
-  State<_MapView> createState() => _MapViewState();
-}
-
-class _MapViewState extends State<_MapView>
-    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
-  late AnimatedMapController _animatedMapController;
-  late MapNotifier _mapNotifier;
-
-  @override
-  void initState() {
-    super.initState();
-    _animatedMapController = AnimatedMapController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.fastOutSlowIn,
-    );
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _mapNotifier = context.notifier;
-    _mapNotifier.onLocationChanged = ((location) {
-      _animatedMapController.animateTo(
-        dest: location,
-      );
-    });
-  }
-
-  @override
-  void dispose() {
-    _animatedMapController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final mapNotifier = context.notifier;
     log('>>> build $runtimeType $hashCode');
-    super.build(context);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: _MapAppBar(
-        onPageChange: widget.onPageChange,
+        onPageChange: onPageChange,
       ),
       body: Stack(
         children: [
-          _FlutterMapWidget(
-            mapNotifier: _mapNotifier,
-            animatedMapController: _animatedMapController,
-          ),
+          const _FlutterMapWidget(),
           Positioned(
             right: 10,
             top: 0,
@@ -134,15 +95,13 @@ class _MapViewState extends State<_MapView>
                     Icons.zoom_in,
                   ),
                   onPressed: () {
-                    _mapNotifier.zoomIn((zoom) {
-                      _animatedMapController.animatedZoomTo(zoom);
-                    });
+                    mapNotifier.zoomIn();
                   },
                 ),
                 const SizedBox(width: 20),
                 // TODO: Temporary for testing
                 ValueListenableBuilder<double>(
-                  valueListenable: _mapNotifier.zoomValue,
+                  valueListenable: mapNotifier.zoomValue,
                   builder: (BuildContext context, double zoom, _) => Text(
                     '[$zoom]',
                   ),
@@ -150,17 +109,11 @@ class _MapViewState extends State<_MapView>
                 const SizedBox(width: 20),
                 // TODO: Temporary for testing
                 ValueListenableBuilder<bool>(
-                  valueListenable: _mapNotifier.mapCentered,
+                  valueListenable: mapNotifier.mapCentered,
                   builder: (BuildContext context, bool isCentered, _) => Switch(
                     value: isCentered,
                     onChanged: (value) {
-                      _mapNotifier.mapCentered.value = value;
-                      final mapState = _mapNotifier.locationState.value;
-                      if (mapState is LocationUpdateSuccess) {
-                        _animatedMapController.animateTo(
-                          dest: mapState.location.toLatLng(),
-                        );
-                      }
+                      mapNotifier.toggleMapCenter(value);
                     },
                   ),
                 ),
@@ -171,9 +124,7 @@ class _MapViewState extends State<_MapView>
                     Icons.zoom_out,
                   ),
                   onPressed: () {
-                    _mapNotifier.zoomOut((zoom) {
-                      _animatedMapController.animatedZoomTo(zoom);
-                    });
+                    mapNotifier.zoomOut();
                   },
                 ),
               ],
@@ -184,14 +135,14 @@ class _MapViewState extends State<_MapView>
             right: 0,
             bottom: 20,
             child: ValueListenableBuilder<bool>(
-              valueListenable: _mapNotifier.routeRecordingStarted,
+              valueListenable: mapNotifier.routeRecordingStarted,
               builder: (BuildContext context, bool isRecording, _) => Switch(
                 value: isRecording,
                 onChanged: (value) {
                   if (value) {
-                    _mapNotifier.startRouteRecording();
+                    mapNotifier.startRouteRecording();
                   } else {
-                    _mapNotifier.stopRouteRecording();
+                    mapNotifier.stopRouteRecording();
                   }
                 },
               ),
@@ -201,50 +152,81 @@ class _MapViewState extends State<_MapView>
       ),
     );
   }
+}
+
+class _FlutterMapWidget extends StatefulWidget {
+  const _FlutterMapWidget();
+
+  @override
+  State<_FlutterMapWidget> createState() => _FlutterMapWidgetState();
+}
+
+class _FlutterMapWidgetState extends State<_FlutterMapWidget>
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  late MapNotifier _mapNotifier;
+  late AnimatedMapController _animatedMapController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animatedMapController = AnimatedMapController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.fastOutSlowIn,
+    );
+  }
+
+  @override
+  void dispose() {
+    _animatedMapController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _mapNotifier = context.notifier;
+    _mapNotifier.onZoomChanged = ((zoom) {
+      _animatedMapController.animatedZoomTo(zoom);
+    });
+    _mapNotifier.onMapCentered = ((location) {
+      _animatedMapController.animateTo(
+        dest: location.toLatLng(),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return FlutterMap(
+      mapController: _animatedMapController.mapController,
+      options: MapOptions(
+        interactionOptions: const InteractionOptions(
+          pinchZoomWinGestures: InteractiveFlag.pinchZoom,
+        ),
+        initialZoom: _mapNotifier.viewConfig.defaultZoom,
+        maxZoom: _mapNotifier.viewConfig.maxZoom,
+        minZoom: _mapNotifier.viewConfig.minZoom,
+      ),
+      children: const [
+        _TileLayerWidget(),
+        _PolylineLayerWidget(),
+        _MarkerLayerWidget(),
+      ],
+    );
+  }
 
   @override
   bool get wantKeepAlive => true;
 }
 
-class _FlutterMapWidget extends StatelessWidget {
-  const _FlutterMapWidget({
-    required this.mapNotifier,
-    required this.animatedMapController,
-  });
-
-  final MapNotifier mapNotifier;
-  final AnimatedMapController animatedMapController;
-
-  @override
-  Widget build(BuildContext context) {
-    return FlutterMap(
-      mapController: animatedMapController.mapController,
-      options: MapOptions(
-        interactionOptions: const InteractionOptions(
-          pinchZoomWinGestures: InteractiveFlag.pinchZoom,
-        ),
-        initialZoom: mapNotifier.viewConfig.defaultZoom,
-        maxZoom: mapNotifier.viewConfig.maxZoom,
-        minZoom: mapNotifier.viewConfig.minZoom,
-      ),
-      children: [
-        _TileLayerWidget(mapNotifier: mapNotifier),
-        _PolylineLayerWidget(mapNotifier: mapNotifier),
-        _MarkerLayerWidget(mapNotifier: mapNotifier),
-      ],
-    );
-  }
-}
-
 class _TileLayerWidget extends StatelessWidget {
-  const _TileLayerWidget({
-    required this.mapNotifier,
-  });
-
-  final MapNotifier mapNotifier;
+  const _TileLayerWidget();
 
   @override
   Widget build(BuildContext context) {
+    final mapNotifier = context.notifier;
     return TileLayer(
       retinaMode: true,
       userAgentPackageName: mapNotifier.viewConfig.userAgentPackageName,
@@ -258,14 +240,11 @@ class _TileLayerWidget extends StatelessWidget {
 }
 
 class _PolylineLayerWidget extends StatelessWidget {
-  const _PolylineLayerWidget({
-    required this.mapNotifier,
-  });
-
-  final MapNotifier mapNotifier;
+  const _PolylineLayerWidget();
 
   @override
   Widget build(BuildContext context) {
+    final mapNotifier = context.notifier;
     return ValueListenableBuilder<List<LatLng>>(
       valueListenable: mapNotifier.routePoints,
       builder: (BuildContext context, List<LatLng> routePoints, _) {
@@ -289,14 +268,11 @@ class _PolylineLayerWidget extends StatelessWidget {
 }
 
 class _MarkerLayerWidget extends StatelessWidget {
-  const _MarkerLayerWidget({
-    required this.mapNotifier,
-  });
-
-  final MapNotifier mapNotifier;
+  const _MarkerLayerWidget();
 
   @override
   Widget build(BuildContext context) {
+    final mapNotifier = context.notifier;
     return ValueListenableBuilder<LocationState>(
       valueListenable: mapNotifier.locationState,
       builder: (_, LocationState mapState, __) {
