@@ -101,7 +101,7 @@ class _MapView extends StatelessWidget {
                 const SizedBox(width: 20),
                 // TODO: Temporary for testing
                 ValueListenableBuilder<double>(
-                  valueListenable: mapNotifier.zoomValue,
+                  valueListenable: mapNotifier.currentZoomLevel,
                   builder: (BuildContext context, double zoom, _) => Text(
                     '[$zoom]',
                   ),
@@ -109,7 +109,7 @@ class _MapView extends StatelessWidget {
                 const SizedBox(width: 20),
                 // TODO: Temporary for testing
                 ValueListenableBuilder<bool>(
-                  valueListenable: mapNotifier.mapCentered,
+                  valueListenable: mapNotifier.isMapCentered,
                   builder: (BuildContext context, bool isCentered, _) => Switch(
                     value: isCentered,
                     onChanged: (value) {
@@ -135,7 +135,7 @@ class _MapView extends StatelessWidget {
             right: 0,
             bottom: 20,
             child: ValueListenableBuilder<bool>(
-              valueListenable: mapNotifier.routeRecordingStarted,
+              valueListenable: mapNotifier.isRouteRecordingActive,
               builder: (BuildContext context, bool isRecording, _) => Switch(
                 value: isRecording,
                 onChanged: (value) {
@@ -249,7 +249,7 @@ class _PolylineLayerWidget extends StatelessWidget {
       valueListenable: mapNotifier.routePoints,
       builder: (BuildContext context, List<LatLng> routePoints, _) {
         return ValueListenableBuilder<double>(
-          valueListenable: mapNotifier.polylineWidth,
+          valueListenable: mapNotifier.currentPolylineWidth,
           builder: (BuildContext context, double width, _) {
             return PolylineLayer(
               polylines: <Polyline>[
@@ -267,40 +267,41 @@ class _PolylineLayerWidget extends StatelessWidget {
   }
 }
 
+typedef CombinedNotifier = (LocationState, double);
+
 class _MarkerLayerWidget extends StatelessWidget {
   const _MarkerLayerWidget();
 
   @override
   Widget build(BuildContext context) {
     final mapNotifier = context.notifier;
-    return ValueListenableBuilder<LocationState>(
-      valueListenable: mapNotifier.locationState,
-      builder: (_, LocationState mapState, __) {
-        return ValueListenableBuilder<double>(
-          valueListenable: mapNotifier.markerSize,
-          builder: (BuildContext context, double markerSize, __) {
-            return switch (mapState) {
-              LocationUpdateSuccess(location: final location) => MarkerLayer(
-                  markers: [
-                    Marker(
-                      width: markerSize,
-                      height: markerSize,
-                      point: location.toLatLng(),
-                      child: Icon(
-                        Icons.circle,
-                        size: markerSize,
-                        color: Colors.deepPurple.withOpacity(0.8),
-                      ),
-                    ),
-                  ],
+    final combinedNotifier = ValueNotifier<CombinedNotifier>((
+      mapNotifier.locationState.value,
+      mapNotifier.currentMarkerSize.value,
+    ));
+
+    return ValueListenableBuilder<CombinedNotifier>(
+      valueListenable: combinedNotifier,
+      builder: (BuildContext context, CombinedNotifier combinedNotifier, _) {
+        final (locationState, markerSize) = combinedNotifier;
+        final location = (locationState as LocationUpdateSuccess).location;
+
+        return switch (locationState) {
+          LocationUpdateSuccess(location: final location) => MarkerLayer(
+              markers: [
+                Marker(
+                  width: markerSize,
+                  height: markerSize,
+                  point: location.toLatLng(),
+                  child: Icon(
+                    Icons.circle,
+                    size: markerSize,
+                    color: Colors.deepPurple.withOpacity(0.8),
+                  ),
                 ),
-              LocationLoading() => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-              _ => const SizedBox.shrink(),
-            };
-          },
-        );
+              ],
+            ),
+        };
       },
     );
   }
@@ -323,23 +324,23 @@ class _MapAppBar extends StatefulWidget implements PreferredSizeWidget {
 class _MapAppBarState extends State<_MapAppBar> {
   late MapNotifier _mapNotifier;
 
-  bool _hasError = false;
+  bool _isErrorPresent = false;
 
-  bool _isShowExceptionDialog = true;
+  bool _shouldShowExceptionDialog = true;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _mapNotifier = context.notifier;
     _mapNotifier.locationState.addListener(
-      _handleLocationUpdateException,
+      _processLocationUpdateException,
     );
   }
 
   @override
   void dispose() {
     _mapNotifier.locationState.removeListener(
-      _handleLocationUpdateException,
+      _processLocationUpdateException,
     );
     super.dispose();
   }
@@ -400,14 +401,14 @@ class _MapAppBarState extends State<_MapAppBar> {
       centerTitle: true,
       leading: Padding(
         padding: const EdgeInsets.only(left: 8.0),
-        child: _hasError && !_isShowExceptionDialog
+        child: _isErrorPresent && !_shouldShowExceptionDialog
             ? FittedBox(
                 child: IconButton(
                   onPressed: () async {
                     setState(() {
-                      _isShowExceptionDialog = true;
+                      _shouldShowExceptionDialog = true;
                     });
-                    await _showExceptionDialog(context);
+                    await _displayExceptionDialog(context);
                   },
                   icon: const ExceptionIcon(),
                   alignment: Alignment.center,
@@ -437,18 +438,18 @@ class _MapAppBarState extends State<_MapAppBar> {
   }
 
   // TODO: Ugly code, refactor
-  Future<void> _handleLocationUpdateException() async {
+  Future<void> _processLocationUpdateException() async {
     if (_mapNotifier.locationState.value is LocationUpdateFailure) {
       setState(() {
-        _hasError = true;
+        _isErrorPresent = true;
       });
-      if (_isShowExceptionDialog) {
-        await _showExceptionDialog(context);
+      if (_shouldShowExceptionDialog) {
+        await _displayExceptionDialog(context);
       }
     } else {
       setState(() {
-        _hasError = false;
-        _isShowExceptionDialog = false;
+        _isErrorPresent = false;
+        _shouldShowExceptionDialog = false;
       });
     }
   }
@@ -456,17 +457,17 @@ class _MapAppBarState extends State<_MapAppBar> {
   Future<void> _onTryAgain() async {
     await _mapNotifier.reInit();
     setState(() {
-      _isShowExceptionDialog = true;
+      _shouldShowExceptionDialog = true;
     });
   }
 
   void _onDismiss() {
     setState(() {
-      _isShowExceptionDialog = false;
+      _shouldShowExceptionDialog = false;
     });
   }
 
-  Future<void> _showExceptionDialog(BuildContext context) async =>
+  Future<void> _displayExceptionDialog(BuildContext context) async =>
       showDialog<void>(
         barrierDismissible: false,
         context: context,

@@ -35,14 +35,14 @@ class MapNotifier {
   late final locationState = ValueNotifier<LocationState>(LocationLoading());
 
   // map route recording notifiers
-  final routeRecordingStarted = ValueNotifier<bool>(false);
+  final isRouteRecordingActive = ValueNotifier<bool>(false);
   final routePoints = ValueNotifier<List<LatLng>>([]);
 
   // map view notifiers
-  late final zoomValue = ValueNotifier<double>(_config.defaultZoom);
-  late final markerSize = ValueNotifier<double>(_config.markerSize);
-  late final polylineWidth = ValueNotifier<double>(_config.polylineWidth);
-  late final mapCentered = ValueNotifier<bool>(_config.mapCentered);
+  late final currentZoomLevel = ValueNotifier<double>(_config.defaultZoom);
+  late final currentMarkerSize = ValueNotifier<double>(_config.markerSize);
+  late final currentPolylineWidth = ValueNotifier<double>(_config.polylineWidth);
+  late final isMapCentered = ValueNotifier<bool>(_config.mapCentered);
 
   void Function(double)? onZoomChanged;
   void Function(Location)? onMapCentered;
@@ -74,12 +74,12 @@ class MapNotifier {
       locationState.value = LocationUpdateSuccess(location: location);
 
       // Center the map on the current location
-      if (mapCentered.value && onMapCentered != null) {
+      if (isMapCentered.value && onMapCentered != null) {
         onMapCentered!(location);
       }
 
       // Start route recording
-      if (routeRecordingStarted.value) {
+      if (isRouteRecordingActive.value) {
         // TODO: Replace with routeRepository
         // TODO: _routesRepository.addRoutePoint(location.toLatLng());
         routePoints.value = [
@@ -100,43 +100,43 @@ class MapNotifier {
   }
 
   Future<void> startRouteRecording() async {
-    if (!routeRecordingStarted.value &&
+    if (!isRouteRecordingActive.value &&
         locationState.value is LocationUpdateSuccess) {
       routePoints.value = [];
       final location = (locationState.value as LocationUpdateSuccess).location;
       // TODO: Replace with await _routesRepository.startNewRoute();
       routePoints.value = [location.toLatLng()];
-      routeRecordingStarted.value = true;
+      isRouteRecordingActive.value = true;
     }
   }
 
   Future<void> stopRouteRecording() async {
     // TODO: Replace with proper handling for routeRepository
-    if (routeRecordingStarted.value) {
+    if (isRouteRecordingActive.value) {
       // await _routesRepository.finishCurrentRoute();
       routePoints.value = [];
-      routeRecordingStarted.value = false;
+      isRouteRecordingActive.value = false;
     }
   }
 
   Future<void> zoomIn() =>
-      _updateZoom(zoomValue.value + _config.zoomStep, onZoomChanged ?? (_) {});
+      _updateZoom(currentZoomLevel.value + _config.zoomStep, onZoomChanged ?? (_) {});
 
   Future<void> zoomOut() =>
-      _updateZoom(zoomValue.value - _config.zoomStep, onZoomChanged ?? (_) {});
+      _updateZoom(currentZoomLevel.value - _config.zoomStep, onZoomChanged ?? (_) {});
 
   Future<void> _updateZoom(double newZoom, Function(double) callback) async {
     if (newZoom >= _config.minZoom && newZoom <= _config.maxZoom) {
-      zoomValue.value = newZoom;
-      callback(zoomValue.value);
-      await _updateMarkerSize(zoomValue.value);
-      await _updatePolylineWidth(zoomValue.value);
+      currentZoomLevel.value = newZoom;
+      callback(currentZoomLevel.value);
+      await _updateMarkerSize(currentZoomLevel.value);
+      await _updatePolylineWidth(currentZoomLevel.value);
     }
   }
 
   Future<void> toggleMapCenter(bool value) async {
     if (onMapCentered != null) {
-      mapCentered.value = value;
+      isMapCentered.value = value;
       if (value) {
         final location =
             (locationState.value as LocationUpdateSuccess).location;
@@ -146,7 +146,7 @@ class MapNotifier {
   }
 
   Future<void> _updatePolylineWidth(double zoom) async {
-    polylineWidth.value = await _updateMapParameter(
+    currentPolylineWidth.value = await _calculateMapParameter(
       zoom: zoom,
       minValue: _config.polylineMinWidth,
       maxValue: _config.polylineMaxWidth,
@@ -154,14 +154,14 @@ class MapNotifier {
   }
 
   Future<void> _updateMarkerSize(double zoom) async {
-    markerSize.value = await _updateMapParameter(
+    currentMarkerSize.value = await _calculateMapParameter(
       zoom: zoom,
       minValue: _config.markerMinSize,
       maxValue: _config.markerMaxSize,
     );
   }
 
-  Future<double> _updateMapParameter({
+  Future<double> _calculateMapParameter({
     required double zoom,
     required double minValue,
     required double maxValue,
