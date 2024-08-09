@@ -91,7 +91,7 @@ class _MapViewState extends State<_MapView>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _mapNotifier = context.notifier;
-    _mapNotifier.onMapLocationChanged = ((location) {
+    _mapNotifier.onLocationChanged = ((location) {
       _animatedMapController.animateTo(
         dest: location,
       );

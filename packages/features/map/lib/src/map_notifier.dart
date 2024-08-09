@@ -44,7 +44,7 @@ class MapNotifier {
   late final polylineWidth = ValueNotifier<double>(_config.polylineWidth);
   late final mapCentered = ValueNotifier<bool>(_config.mapCentered);
 
-  void Function(LatLng)? onMapLocationChanged;
+  void Function(LatLng)? onLocationChanged;
 
   void dispose() {
     _locationUpdateSubscription.cancel();
@@ -73,8 +73,8 @@ class MapNotifier {
       locationState.value = LocationUpdateSuccess(location: location);
 
       // Center the map on the current location
-      if (mapCentered.value && onMapLocationChanged != null) {
-        onMapLocationChanged!(location.toLatLng());
+      if (mapCentered.value && onLocationChanged != null) {
+        onLocationChanged!(location.toLatLng());
       }
 
       // Start route recording
