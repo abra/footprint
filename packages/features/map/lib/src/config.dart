@@ -1,5 +1,5 @@
-class MapViewConfig {
-  const MapViewConfig();
+class Config {
+  const Config();
 
   final double markerSize = 17.3;
   final double markerMaxSize = 22.0;

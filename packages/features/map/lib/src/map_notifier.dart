@@ -10,24 +10,25 @@ import 'package:location_repository/location_repository.dart';
 import 'package:routes_repository/routes_repository.dart';
 
 import 'extensions.dart';
-import 'map_view_config.dart';
+import 'config.dart';
 
 class MapNotifier {
   MapNotifier({
     required LocationRepository locationRepository,
     required RoutesRepository routesRepository,
-    required MapViewConfig viewConfig,
+    required Config viewConfig,
   })  : _locationRepository = locationRepository,
         _routesRepository = routesRepository,
         _config = viewConfig {
     _init();
+    log('--- MapNotifier init $hashCode');
   }
 
   final LocationRepository _locationRepository;
   final RoutesRepository _routesRepository;
-  final MapViewConfig _config;
+  final Config _config;
 
-  MapViewConfig get viewConfig => _config;
+  Config get viewConfig => _config;
 
   late StreamSubscription<Location> _locationUpdateSubscription;
 
