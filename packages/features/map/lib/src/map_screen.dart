@@ -70,9 +70,8 @@ class _MapView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    log('>>> _MapView build $runtimeType $hashCode');
     final mapNotifier = context.notifier;
-    log('>>> build $runtimeType $hashCode');
-
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: _MapAppBar(
@@ -226,6 +225,7 @@ class _TileLayerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    log('>>> _TileLayerWidget build $runtimeType $hashCode');
     final mapNotifier = context.notifier;
     return TileLayer(
       retinaMode: true,
@@ -244,6 +244,7 @@ class _PolylineLayerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    log('>>> _PolylineLayerWidget build $runtimeType $hashCode');
     final mapNotifier = context.notifier;
     return ValueListenableBuilder<List<LatLng>>(
       valueListenable: mapNotifier.routePoints,
@@ -267,44 +268,41 @@ class _PolylineLayerWidget extends StatelessWidget {
   }
 }
 
-typedef CombinedNotifier = (LocationState, double);
-
 class _MarkerLayerWidget extends StatelessWidget {
   const _MarkerLayerWidget();
 
   @override
   Widget build(BuildContext context) {
+    log('>>> _MarkerLayerWidget build $runtimeType $hashCode');
     final mapNotifier = context.notifier;
-    final combinedNotifier = ValueNotifier<CombinedNotifier>((
-      mapNotifier.locationState.value,
-      mapNotifier.currentMarkerSize.value,
-    ));
-
-    return ValueListenableBuilder<CombinedNotifier>(
-      valueListenable: combinedNotifier,
-      builder: (BuildContext context, CombinedNotifier combinedNotifier, _) {
-        final (locationState, markerSize) = combinedNotifier;
-
-        return switch (locationState) {
-          LocationUpdateSuccess(location: final location) => MarkerLayer(
-              markers: [
-                Marker(
-                  width: markerSize,
-                  height: markerSize,
-                  point: location.toLatLng(),
-                  child: Icon(
-                    Icons.circle,
-                    size: markerSize,
-                    color: Colors.deepPurple.withOpacity(0.8),
-                  ),
+    return ValueListenableBuilder<LocationState>(
+      valueListenable: mapNotifier.locationState,
+      builder: (_, LocationState locationState, __) {
+        return ValueListenableBuilder<double>(
+          valueListenable: mapNotifier.currentMarkerSize,
+          builder: (BuildContext context, double size, _) {
+            return switch (locationState) {
+              LocationUpdateSuccess(location: final location) => MarkerLayer(
+                  markers: <Marker>[
+                    Marker(
+                      width: size,
+                      height: size,
+                      point: location.toLatLng(),
+                      child: Icon(
+                        Icons.circle,
+                        size: size,
+                        color: Colors.deepPurple.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          LocationLoading() => const Center(
-              child: CircularProgressIndicator(),
-            ),
-          _ => const SizedBox(),
-        };
+              LocationLoading() => const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              _ => const SizedBox.shrink(),
+            };
+          },
+        );
       },
     );
   }
@@ -350,6 +348,7 @@ class _MapAppBarState extends State<_MapAppBar> {
 
   @override
   Widget build(BuildContext context) {
+    log('>>> _MapAppBar build $runtimeType $hashCode');
     return AppBar(
       surfaceTintColor: Colors.transparent,
       title: DecoratedBox(
