@@ -334,14 +334,14 @@ class _MapAppBarState extends State<_MapAppBar> {
     super.didChangeDependencies();
     _mapNotifier = context.notifier;
     _mapNotifier.locationState.addListener(
-      _processLocationUpdateException,
+      _handleLocationUpdateException,
     );
   }
 
   @override
   void dispose() {
     _mapNotifier.locationState.removeListener(
-      _processLocationUpdateException,
+      _handleLocationUpdateException,
     );
     super.dispose();
   }
@@ -440,7 +440,7 @@ class _MapAppBarState extends State<_MapAppBar> {
   }
 
   // TODO: Ugly code, refactor
-  Future<void> _processLocationUpdateException() async {
+  Future<void> _handleLocationUpdateException() async {
     if (_mapNotifier.locationState.value is LocationUpdateFailure) {
       setState(() {
         _isErrorPresent = true;
