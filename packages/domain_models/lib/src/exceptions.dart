@@ -28,3 +28,8 @@ class DefinitionsForPermissionNotFoundException implements Exception {
       'Configuration is missing (e.g. in the AndroidManifest.xml'
       ' on Android or the Info.plist on iOS)';
 }
+
+class CouldNotGetPlaceAddressException implements Exception {
+  @override
+  String toString() => 'Could not get place address.';
+}

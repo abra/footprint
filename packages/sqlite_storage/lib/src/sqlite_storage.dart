@@ -4,8 +4,8 @@ import 'package:sqflite/sqflite.dart';
 
 import 'exceptions.dart';
 
-class LocalStorage {
-  const LocalStorage();
+class SqfliteStorage {
+  const SqfliteStorage();
 
   static Database? _database;
 
