@@ -1,2 +1,2 @@
 export 'src/exceptions.dart';
-export 'src/sqflite_storage.dart';
+export 'src/sqlite_storage.dart';

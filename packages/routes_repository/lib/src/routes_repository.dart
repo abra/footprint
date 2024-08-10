@@ -1,10 +1,10 @@
-import 'package:flutter/foundation.dart';
-import 'package:local_storage/local_storage.dart';
+import 'package:meta/meta.dart';
+import 'package:sqlite_storage/sqlite_storage.dart';
 
 class RoutesRepository {
   const RoutesRepository({
-    @visibleForTesting LocalStorage? localStorage,
-  }) : _localStorage = localStorage ?? const LocalStorage();
+    @visibleForTesting SqliteStorage? localStorage,
+  }) : _localStorage = localStorage ?? const SqliteStorage();
 
-  final LocalStorage _localStorage;
+  final SqliteStorage _localStorage;
 }

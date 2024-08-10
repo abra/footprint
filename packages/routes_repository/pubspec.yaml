@@ -5,10 +5,11 @@ environment:
   sdk: '>=3.4.0'
 
 dependencies:
+  meta: ^1.10.0
   domain_models:
     path: ../domain_models
-  local_storage:
-    path: ../local_storage
+  sqlite_storage:
+    path: ../sqlite_storage
 
 dev_dependencies:
   lints: ^4.0.0

@@ -10,6 +10,8 @@ dependencies:
   meta: ^1.10.0
   domain_models:
     path: ../domain_models
+  sqlite_storage:
+    path: ../sqlite_storage
 
 dev_dependencies:
   lints: ^4.0.0
