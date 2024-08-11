@@ -1,14 +1,12 @@
 import 'package:equatable/equatable.dart';
 
-import '../domain_models.dart';
-
 class RoutePoint extends Equatable {
   const RoutePoint({
     required this.id,
     required this.routeId,
     required this.latitude,
     required this.longitude,
-    required this.locationAddress,
+    required this.address,
     required this.timestamp,
   });
 
@@ -16,8 +14,19 @@ class RoutePoint extends Equatable {
   final int routeId;
   final double latitude;
   final double longitude;
-  final LocationAddress locationAddress;
+  final String address;
   final DateTime timestamp;
+
+  static RoutePoint fromMap(Map<String, dynamic> map) {
+    return RoutePoint(
+      id: map['id'] as int,
+      routeId: map['route_id'] as int,
+      latitude: map['latitude'] as double,
+      longitude: map['longitude'] as double,
+      address: map['address'] as String,
+      timestamp: DateTime.parse(map['timestamp'] as String),
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -25,7 +34,7 @@ class RoutePoint extends Equatable {
         routeId,
         latitude,
         longitude,
-        locationAddress,
+        address,
         timestamp,
       ];
 }
