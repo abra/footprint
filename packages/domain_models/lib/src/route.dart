@@ -1,6 +1,8 @@
-import 'location.dart';
+import 'package:equatable/equatable.dart';
 
-class Route {
+import 'route_point.dart';
+
+class Route extends Equatable {
   const Route({
     required this.id,
     required this.startPoint,
@@ -8,21 +10,36 @@ class Route {
     required this.startTime,
     required this.endTime,
     required this.distance,
-    required this.status,
+    required this.averageSpeed,
+    this.status = Status.active,
     required this.routePoints,
   });
 
   final String id;
-  final Location startPoint;
-  final Location endPoint;
+  final RoutePoint startPoint;
+  final RoutePoint endPoint;
   final DateTime startTime;
   final DateTime endTime;
   final double distance;
-  final RouteStatus status;
-  final List<Location> routePoints;
+  final double averageSpeed;
+  final Status status;
+  final List<RoutePoint> routePoints;
+
+  @override
+  List<Object?> get props => [
+        id,
+        startPoint,
+        endPoint,
+        startTime,
+        endTime,
+        distance,
+        averageSpeed,
+        status,
+        routePoints,
+      ];
 }
 
-enum RouteStatus {
+enum Status {
   active,
   completed,
 }

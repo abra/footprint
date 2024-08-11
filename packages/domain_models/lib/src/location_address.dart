@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
-class PlaceAddress extends Equatable {
-  const PlaceAddress({
+class LocationAddress extends Equatable {
+  const LocationAddress({
     required this.timestamp,
     required this.latitude,
     required this.longitude,
