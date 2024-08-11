@@ -36,11 +36,11 @@ class SqliteStorage {
   }
 
   Future<int> createRoute(Location location) async {
-    if (_database == null) {
-      await init();
-    }
-
     try {
+      if (_database == null) {
+        await init();
+      }
+
       final int routeId = await _database!.insert(
         _Routes.tableName,
         <String, dynamic>{
@@ -50,7 +50,8 @@ class SqliteStorage {
         },
       );
 
-      await _database!.insert(_RoutePoints.tableName, {
+      final int routePointsId =
+          await _database!.insert(_RoutePoints.tableName, {
         'route_id': routeId,
         'latitude': location.latitude,
         'longitude': location.longitude,
@@ -63,16 +64,16 @@ class SqliteStorage {
     }
   }
 
-  Future<void> addRoutePoints(
+  Future<int> addRoutePoints(
     int routeId,
     Location location,
   ) async {
-    if (_database == null) {
-      await init();
-    }
-
     try {
-      await _database!.insert(
+      if (_database == null) {
+        await init();
+      }
+
+      return await _database!.insert(
         _RoutePoints.tableName,
         <String, dynamic>{
           'route_id': routeId,
@@ -87,11 +88,11 @@ class SqliteStorage {
   }
 
   Future<List<Location>> getRoutePoints(int routeId) async {
-    if (_database == null) {
-      await init();
-    }
-
     try {
+      if (_database == null) {
+        await init();
+      }
+
       final List<Map<String, dynamic>> result = await _database!.query(
         _RoutePoints.tableName,
         where: 'route_id = ?',
@@ -109,11 +110,11 @@ class SqliteStorage {
   }
 
   Future<void> deleteRoute(int routeId) async {
-    if (_database == null) {
-      await init();
-    }
-
     try {
+      if (_database == null) {
+        await init();
+      }
+
       await _database!.transaction((Transaction txn) async {
         await txn.delete(
           _RoutePoints.tableName,

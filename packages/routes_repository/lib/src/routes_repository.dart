@@ -3,8 +3,8 @@ import 'package:sqlite_storage/sqlite_storage.dart';
 
 class RoutesRepository {
   const RoutesRepository({
-    @visibleForTesting SqliteStorage? localStorage,
-  }) : _localStorage = localStorage ?? const SqliteStorage();
+    @visibleForTesting SqliteStorage? sqliteStorage,
+  }) : _routesStorage = sqliteStorage ?? const SqliteStorage();
 
-  final SqliteStorage _localStorage;
+  final SqliteStorage _routesStorage;
 }

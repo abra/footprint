@@ -14,7 +14,7 @@ class GeocodingRepository {
   final GeocodingService _geocodingService;
   final SqliteStorage storage;
 
-  Future<PlaceAddress> getLocationAddress(Location location) async {
+  Future<LocationAddress> getLocationAddress(Location location) async {
     final lat = location.latitude;
     final lon = location.longitude;
     try {
