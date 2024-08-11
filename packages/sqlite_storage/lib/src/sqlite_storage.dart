@@ -26,16 +26,23 @@ class SqliteStorage {
     }
   }
 
+  Future<void> close() async {
+    if (_database != null) {
+      await _database!.close();
+    }
+  }
+
   Future<void> _createTables(Database db, int version) async {
     try {
       await _Routes.createTable(db);
       await _RoutePoints.createTable(db);
+      await _GeocodingCache.createTable(db);
     } on DatabaseException catch (_) {
       throw UnableCreateTableException();
     }
   }
 
-  Future<int> createRoute(Location location) async {
+  Future<int> createRoute(RoutePoint routePoint) async {
     try {
       if (_database == null) {
         await init();
@@ -44,19 +51,20 @@ class SqliteStorage {
       final int routeId = await _database!.insert(
         _Routes.tableName,
         <String, dynamic>{
-          'start_point': location.id,
-          'start_time': location.timestamp.toIso8601String(),
-          'status': 0,
+          'start_time': DateTime.now().toIso8601String(),
+          'status': 'active',
         },
       );
 
-      final int routePointsId =
-          await _database!.insert(_RoutePoints.tableName, {
-        'route_id': routeId,
-        'latitude': location.latitude,
-        'longitude': location.longitude,
-        'timestamp': location.timestamp.toIso8601String(),
-      });
+      final int routePointsId = await _database!.insert(
+        _RoutePoints.tableName,
+        <String, dynamic>{
+          'route_id': routeId,
+          'latitude': routePoint.latitude,
+          'longitude': routePoint.longitude,
+          'timestamp': routePoint.timestamp.toIso8601String(),
+        },
+      );
 
       return routeId;
     } on DatabaseException catch (_) {
@@ -64,22 +72,24 @@ class SqliteStorage {
     }
   }
 
-  Future<int> addRoutePoints(
+  Future<int> upsertRoutePointOfRouteById(
     int routeId,
-    Location location,
+    RoutePoint routePoint,
   ) async {
     try {
       if (_database == null) {
         await init();
       }
 
-      return await _database!.insert(
+      return await _database!.update(
         _RoutePoints.tableName,
+        where: 'route_id = ?',
+        whereArgs: [routeId],
         <String, dynamic>{
-          'route_id': routeId,
-          'latitude': location.latitude,
-          'longitude': location.longitude,
-          'timestamp': location.timestamp.toIso8601String(),
+          'latitude': routePoint.latitude,
+          'longitude': routePoint.longitude,
+          'address': routePoint.address,
+          'timestamp': routePoint.timestamp.toIso8601String(),
         },
       );
     } on DatabaseException catch (_) {
@@ -87,7 +97,7 @@ class SqliteStorage {
     }
   }
 
-  Future<List<Location>> getRoutePoints(int routeId) async {
+  Future<Route> getPointsOfRouteById(int routeId) async {
     try {
       if (_database == null) {
         await init();
@@ -100,9 +110,29 @@ class SqliteStorage {
         orderBy: 'id ASC',
       );
 
-      return List<Location>.generate(
+      final routePoints = List<RoutePoint>.generate(
         result.length,
-        (int index) => Location.fromMap(result[index]),
+        (int index) => RoutePoint.fromMap(result[index]),
+      );
+
+      final route = await _database!.query(
+        _Routes.tableName,
+        where: 'id = ?',
+        whereArgs: [routeId],
+      );
+
+      final routes = Route.fromMap(route.first);
+
+      return Route(
+        id: routes.id,
+        startPoint: routePoints.first,
+        endPoint: routePoints.last,
+        startTime: routes.startTime,
+        endTime: routes.endTime,
+        distance: routes.distance,
+        averageSpeed: routes.averageSpeed,
+        status: routes.status,
+        routePoints: routePoints,
       );
     } on DatabaseException catch (_) {
       throw UnableExecuteQueryDatabaseException();
@@ -115,6 +145,14 @@ class SqliteStorage {
         await init();
       }
 
+      // await database.transaction((txn) async {
+      //   // Ok
+      //   await txn. execute(...);
+      //
+      //   // DON'T  use the database object in a transaction
+      //   // this will deadlock!
+      //   await database. execute(...);
+      // });
       await _database!.transaction((Transaction txn) async {
         await txn.delete(
           _RoutePoints.tableName,
@@ -133,20 +171,20 @@ class SqliteStorage {
     }
   }
 
-  Future<int> changeRouteStatus(int routeId, int status) async {
-    if (_database == null) {
-      await init();
-    }
-
+  Future<int> changeRouteStatus(int routeId, String status) async {
     try {
-      final int result = await _database!.update(
+      if (_database == null) {
+        await init();
+      }
+
+      return await _database!.update(
         _Routes.tableName,
+        where: 'id = ?',
+        whereArgs: [routeId],
         <String, dynamic>{
           'status': status,
         },
       );
-
-      return result;
     } on DatabaseException catch (_) {
       throw UnableUpdateDatabaseException();
     }
@@ -159,15 +197,15 @@ class _Routes {
   static Future<void> createTable(Database db) async {
     await db.execute('''
     CREATE TABLE $tableName (
-      id INTEGER PRIMARY KEY,
-      start_point TEXT,
-      end_point TEXT,
-      start_time TEXT,
-      end_time TEXT,
-      distance REAL,
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      start_point   TEXT,
+      end_point     TEXT,
+      start_time    TEXT,
+      end_time      TEXT,
+      distance      REAL,
       average_speed REAL,
-      status TINYINT
-    )
+      status        TEXT CHECK(status IN ('active', 'completed')), 
+    );
     ''');
   }
 }
@@ -178,13 +216,29 @@ class _RoutePoints {
   static Future<void> createTable(Database db) async {
     await db.execute('''
     CREATE TABLE $tableName (
-      id INTEGER PRIMARY KEY,
-      route_id INTEGER,
-      latitude REAL,
-      longitude REAL,  
-      placemark TEXT,
-      timestamp TEXT,
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      route_id        INTEGER NOT NULL,
+      latitude        REAL NOT NULL,
+      longitude       REAL NOT NULL,  
+      address         TEXT,
+      timestamp       TEXT NOT NULL,
       FOREIGN KEY(route_id) REFERENCES routes(id)
+    );
+    ''');
+  }
+}
+
+class _GeocodingCache {
+  static const String tableName = 'geocoding_cache';
+
+  static Future<void> createTable(Database db) async {
+    await db.execute('''
+    CREATE TABLE $tableName (
+      id        INTEGER PRIMARY KEY AUTOINCREMENT,
+      latitude  REAL NOT NULL,
+      longitude REAL NOT NULL,
+      usage_frequency INTEGER DEFAULT 0,
+      timestamp TEXT NOT NULL,
     );
     ''');
   }
