@@ -39,7 +39,7 @@ class LocationRepository {
     }
   }
 
-  Stream<Location> locationUpdateStream() async* {
+  Stream<LocationModel> locationUpdateStream() async* {
     try {
       final positionUpdateStream = _locationService.positionUpdateStream();
 
@@ -53,7 +53,7 @@ class LocationRepository {
     }
   }
 
-  Future<Location> determineLocation() async {
+  Future<LocationModel> determineLocation() async {
     try {
       final position = await _locationService.determinePosition();
       return position.toDomainModel();
@@ -63,8 +63,8 @@ class LocationRepository {
   }
 
   Future<double> calculateDistance({
-    required Location from,
-    required Location to,
+    required LocationModel from,
+    required LocationModel to,
   }) async =>
       await _locationService.calculateDistance(
         startLatitude: from.latitude,
@@ -74,8 +74,8 @@ class LocationRepository {
       );
 
   Future<double> calculateSpeed({
-    required Location from,
-    required Location to,
+    required LocationModel from,
+    required LocationModel to,
   }) async {
     final timeDifference = to.timestamp.difference(from.timestamp);
     final distance = await calculateDistance(
