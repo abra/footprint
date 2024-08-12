@@ -4,7 +4,7 @@ import 'package:sqlite_storage/sqlite_storage.dart';
 class RoutesRepository {
   RoutesRepository({
     @visibleForTesting SqliteStorage? sqliteStorage,
-  }) : _routesStorage = sqliteStorage ?? SqliteStorage();
+  }) : _storage = sqliteStorage ?? SqliteStorage();
 
-  final SqliteStorage _routesStorage;
+  final SqliteStorage _storage;
 }

@@ -5,10 +5,6 @@ import 'database_helper.dart';
 import 'exceptions.dart';
 
 class SqliteStorage {
-  SqliteStorage() {
-    init();
-  }
-
   static const String _routesTableName = Routes.tableName;
   static const String _routePointsTableName = RoutePoints.tableName;
   static const String _geocodingCacheTableName = GeocodingCache.tableName;
@@ -34,12 +30,12 @@ class SqliteStorage {
 
   /// Create new route.
   ///
-  /// [routePoint] - [RoutePoint] object to insert
+  /// [routePoint] - [RoutePointModel] object to insert
   ///
   /// Returns inserted route id
   ///
   /// Throws [UnableInsertDatabaseException] if failed to insert route point
-  Future<int> createRoute(RoutePoint routePoint) async {
+  Future<int> createRoute(RoutePointModel routePoint) async {
     try {
       final db = await database;
 
@@ -74,12 +70,12 @@ class SqliteStorage {
   /// Insert route point into route.
   ///
   /// [routeId] - route id
-  /// [routePoint] - [RoutePoint] object point to insert
+  /// [routePoint] - [RoutePointModel] object point to insert
   ///
   /// Returns inserted route point id
   ///
   /// Throws [UnableInsertDatabaseException] if unable to insert
-  Future<int> insertRoutePoint(int routeId, RoutePoint routePoint) async {
+  Future<int> insertRoutePoint(int routeId, RoutePointModel routePoint) async {
     try {
       final db = await database;
 
@@ -100,14 +96,14 @@ class SqliteStorage {
     }
   }
 
-  /// Get [Route] object with all points by id.
+  /// Get [RouteModel] object with all points by id.
   ///
   /// [routeId] route id
   ///
-  /// Returns [Route] object with route points
+  /// Returns [RouteModel] object with route points
   ///
   /// Throws [UnableExecuteQueryDatabaseException] if unable to execute query
-  Future<Route> getAllRoutePoints(int routeId) async {
+  Future<RouteModel> getAllRoutePoints(int routeId) async {
     try {
       final db = await database;
 
@@ -118,9 +114,9 @@ class SqliteStorage {
         orderBy: 'id ASC',
       );
 
-      final routePoints = List<RoutePoint>.generate(
+      final routePoints = List<RoutePointModel>.generate(
         result.length,
-        (int index) => RoutePoint.fromMap(result[index]),
+        (int index) => RoutePointModel.fromMap(result[index]),
       );
 
       final route = await db.query(
@@ -129,9 +125,9 @@ class SqliteStorage {
         whereArgs: [routeId],
       );
 
-      final routes = Route.fromMap(route.first);
+      final routes = RouteModel.fromMap(route.first);
 
-      return Route(
+      return RouteModel(
         id: routes.id,
         startPoint: routePoints.first,
         endPoint: routePoints.last,
@@ -215,7 +211,7 @@ class SqliteStorage {
 
   /// Get address from cache if available
   ///
-  /// [location] - [Location] model of the point.
+  /// [location] - [LocationModel] model of the point.
   /// [distance] - Max distance in meters.
   /// [limit] - Max amount of results.
   ///
@@ -223,7 +219,7 @@ class SqliteStorage {
   ///
   /// Throws [UnableExecuteQueryDatabaseException] if unable to execute query
   Future<String?> getAddressFromCache(
-    Location location, [
+    LocationModel location, [
     int distance = 20,
     int limit = 1,
   ]) async {
@@ -314,19 +310,23 @@ class SqliteStorage {
 
   /// Add new geocoding cache entry.
   ///
-  /// [point] - [RoutePoint] object to add to cache.
+  /// [point] - [RoutePointModel] object to add to cache.
   ///
   /// Throws [UnableInsertDatabaseException] if insertion fails.
-  Future<int> addNewAddressToCache(RoutePoint point) async {
+  Future<int> addNewAddressToCache({
+    required double latitude,
+    required double longitude,
+    required String address,
+  }) async {
     try {
       final db = await database;
 
       return await db.insert(
         _geocodingCacheTableName,
         <String, dynamic>{
-          'latitude': point.latitude,
-          'longitude': point.longitude,
-          'address': point.address,
+          'latitude': latitude,
+          'longitude': longitude,
+          'address': address,
           'timestamp': DateTime.now().toIso8601String(),
         },
       );
