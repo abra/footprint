@@ -1,6 +1,5 @@
 import 'dart:developer';
 
-import 'package:domain_models/domain_models.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'database_helper.dart';
@@ -124,9 +123,9 @@ class SqliteStorage {
         orderBy: 'id ASC',
       );
 
-      final routePoints = List<RoutePointModel>.generate(
+      final routePoints = List<Map<String, dynamic>>.generate(
         result.length,
-        (int index) => RoutePointModel.fromMap(result[index]),
+        (int index) => result[index],
       );
 
       final route = await db.query(
@@ -135,7 +134,10 @@ class SqliteStorage {
         whereArgs: [routeId],
       );
 
-      return <String, dynamic>{...route.first, 'routePoints': routePoints};
+      return <String, dynamic>{
+        ...route.first,
+        'routePoints': routePoints,
+      };
     } on DatabaseException catch (e) {
       throw UnableExecuteQueryDatabaseException(
         message: 'Failed to get route points by route id: [$routeId]: $e',

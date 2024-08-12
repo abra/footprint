@@ -12,13 +12,13 @@ class GeocodingRepository {
     @visibleForTesting GeocodingCacheStorage? cacheStorage,
     @visibleForTesting GeocodingService? geocodingService,
   })  : _geocodingService = geocodingService ?? const GeocodingService(),
-        _cacheStorage = cacheStorage ??
+        _geocodingCacheStorage = cacheStorage ??
             GeocodingCacheStorage(
               sqliteStorage: sqliteStorage,
             );
 
   final GeocodingService _geocodingService;
-  final GeocodingCacheStorage _cacheStorage;
+  final GeocodingCacheStorage _geocodingCacheStorage;
 
   Future<LocationAddressModel> getAddressFromCoordinates(
     LocationModel location,
@@ -36,7 +36,7 @@ class GeocodingRepository {
       // for geocoding, but at the same time not to mislead the user when
       // the received address does not correspond to the real address.
 
-      final cachedAddress = await _cacheStorage.getAddressFromCache(
+      final cachedAddress = await _geocodingCacheStorage.getAddressFromCache(
         <String, dynamic>{
           'latitude': latitude,
           'longitude': longitude,
@@ -56,7 +56,7 @@ class GeocodingRepository {
 
       if (locationAddress.address != null) {
         final address = locationAddress.address;
-        await _cacheStorage.addAddressToCache(
+        await _geocodingCacheStorage.addAddressToCache(
           <String, dynamic>{
             'latitude': latitude,
             'longitude': longitude,

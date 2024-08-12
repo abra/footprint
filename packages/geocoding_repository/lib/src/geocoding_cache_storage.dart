@@ -1,8 +1,7 @@
-import 'package:domain_models/domain_models.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
 
 class GeocodingCacheStorage {
-  GeocodingCacheStorage({
+  const GeocodingCacheStorage({
     required this.sqliteStorage,
     Duration? cacheMaxAge,
   }) : _cacheMaxAge = cacheMaxAge ?? const Duration(days: 7);
