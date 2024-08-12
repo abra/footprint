@@ -5,7 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'map_notifier.dart';
 import 'map_notifier_provider.dart';
 
-extension LocationToLatLng on Location {
+extension LocationToLatLng on LocationModel {
   LatLng toLatLng() => LatLng(latitude, longitude);
 }
 
