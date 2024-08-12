@@ -1,19 +1,24 @@
+import 'package:domain_models/domain_models.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
 
 class GeocodingCacheStorage {
   GeocodingCacheStorage({
     required this.sqliteStorage,
-  });
+    Duration? cacheMaxAge,
+  }) : _cacheMaxAge = cacheMaxAge ?? const Duration(days: 7);
 
   final SqliteStorage sqliteStorage;
+  final Duration _cacheMaxAge;
 
-  // TODO: Clear cache
+  Future<int> addAddressToCache(RoutePoint point) async {
+    return await sqliteStorage.addNewAddressToCache(point);
+  }
 
-  // TODO: Add cache
+  Future<String?> getAddressFromCache(Location location) async {
+    return await sqliteStorage.getAddressFromCache(location);
+  }
 
-  // TODO: Get cache
-
-  // TODO: Remove cache
-
-  // TODO: Update cache
+  Future<int> clearCache() async {
+    return await sqliteStorage.clearGeocodingCache(_cacheMaxAge);
+  }
 }
