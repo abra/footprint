@@ -3,34 +3,34 @@ import 'package:geocoding/geocoding.dart';
 
 extension PlacemarkToDomain on Placemark {
   // TODO: Replace with a more thoughtful version of address drafting
-  LocationAddress toDomainModel() {
+  LocationAddressModel toDomainModel() {
     if (street != null) {
-      return LocationAddress(address: street);
+      return LocationAddressModel(address: street);
     }
     if (subThoroughfare != null && thoroughfare != null) {
-      return LocationAddress(address: '$subThoroughfare, $thoroughfare');
+      return LocationAddressModel(address: '$subThoroughfare, $thoroughfare');
     }
     if (subThoroughfare == null && thoroughfare != null) {
-      return LocationAddress(address: '$thoroughfare');
+      return LocationAddressModel(address: '$thoroughfare');
     }
     if (subLocality != null && locality != null) {
-      return LocationAddress(address: '$subLocality, $locality');
+      return LocationAddressModel(address: '$subLocality, $locality');
     }
     if (subLocality == null && locality != null) {
-      return LocationAddress(address: locality);
+      return LocationAddressModel(address: locality);
     }
     if (subAdministrativeArea != null && administrativeArea != null) {
-      return LocationAddress(
+      return LocationAddressModel(
         address: '$subAdministrativeArea, $administrativeArea',
       );
     }
     if (subAdministrativeArea == null && administrativeArea != null) {
-      return LocationAddress(address: administrativeArea);
+      return LocationAddressModel(address: administrativeArea);
     }
     if (country != null) {
-      return LocationAddress(address: country);
+      return LocationAddressModel(address: country);
     }
 
-    return LocationAddress(address: null);
+    return LocationAddressModel(address: null);
   }
 }
