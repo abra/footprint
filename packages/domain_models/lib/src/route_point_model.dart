@@ -1,7 +1,9 @@
 import 'package:equatable/equatable.dart';
+import 'package:meta/meta.dart';
 
-class RoutePoint extends Equatable {
-  const RoutePoint({
+@immutable
+class RoutePointModel extends Equatable {
+  const RoutePointModel({
     required this.id,
     required this.routeId,
     required this.latitude,
@@ -17,8 +19,8 @@ class RoutePoint extends Equatable {
   final String address;
   final DateTime timestamp;
 
-  static RoutePoint fromMap(Map<String, dynamic> map) {
-    return RoutePoint(
+  static RoutePointModel fromMap(Map<String, dynamic> map) {
+    return RoutePointModel(
       id: map['id'] as int,
       routeId: map['route_id'] as int,
       latitude: map['latitude'] as double,

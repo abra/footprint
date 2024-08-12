@@ -1,9 +1,11 @@
 import 'package:equatable/equatable.dart';
+import 'package:meta/meta.dart';
 
-import 'route_point.dart';
+import 'route_point_model.dart';
 
-class Route extends Equatable {
-  const Route({
+@immutable
+class RouteModel extends Equatable {
+  const RouteModel({
     required this.id,
     required this.startPoint,
     required this.endPoint,
@@ -16,28 +18,28 @@ class Route extends Equatable {
   });
 
   final String id;
-  final RoutePoint startPoint;
-  final RoutePoint endPoint;
+  final RoutePointModel startPoint;
+  final RoutePointModel endPoint;
   final DateTime startTime;
   final DateTime endTime;
   final double distance;
   final double averageSpeed;
   final Status status;
-  final List<RoutePoint> routePoints;
+  final List<RoutePointModel> routePoints;
 
-  static Route fromMap(Map<String, dynamic> map) {
-    return Route(
+  static RouteModel fromMap(Map<String, dynamic> map) {
+    return RouteModel(
       id: map['id'] as String,
       startPoint:
-          RoutePoint.fromMap(map['start_point'] as Map<String, dynamic>),
-      endPoint: RoutePoint.fromMap(map['end_point'] as Map<String, dynamic>),
+          RoutePointModel.fromMap(map['start_point'] as Map<String, dynamic>),
+      endPoint: RoutePointModel.fromMap(map['end_point'] as Map<String, dynamic>),
       startTime: DateTime.parse(map['start_time'] as String),
       endTime: DateTime.parse(map['end_time'] as String),
       distance: map['distance'] as double,
       averageSpeed: map['average_speed'] as double,
       status: Status.values.byName(map['status'] as String),
       routePoints: (map['route_points'] as List<dynamic>)
-          .map((map) => RoutePoint.fromMap(map as Map<String, dynamic>))
+          .map((map) => RoutePointModel.fromMap(map as Map<String, dynamic>))
           .toList(),
     );
   }
