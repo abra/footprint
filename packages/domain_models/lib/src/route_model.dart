@@ -30,8 +30,7 @@ class RouteModel extends Equatable {
   static RouteModel fromMap(Map<String, dynamic> map) {
     return RouteModel(
       id: map['id'] as String,
-      startPoint:
-          RoutePointModel.fromMap(map['start_point'] as Map<String, dynamic>),
+      startPoint: RoutePointModel.fromMap(map['start_point'] as Map<String, dynamic>),
       endPoint: RoutePointModel.fromMap(map['end_point'] as Map<String, dynamic>),
       startTime: DateTime.parse(map['start_time'] as String),
       endTime: DateTime.parse(map['end_time'] as String),
