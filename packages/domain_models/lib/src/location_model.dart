@@ -15,7 +15,7 @@ class LocationModel extends Equatable {
   final double longitude;
   final DateTime timestamp;
 
-  static LocationModel fromMap(Map<String, dynamic> map) => LocationModel(
+  factory LocationModel.fromMap(Map<String, dynamic> map) => LocationModel(
         id: map['id'] as String,
         latitude: map['latitude'] as double,
         longitude: map['longitude'] as double,

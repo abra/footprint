@@ -19,16 +19,14 @@ class RoutePointModel extends Equatable {
   final String address;
   final DateTime timestamp;
 
-  static RoutePointModel fromMap(Map<String, dynamic> map) {
-    return RoutePointModel(
-      id: map['id'] as int,
-      routeId: map['route_id'] as int,
-      latitude: map['latitude'] as double,
-      longitude: map['longitude'] as double,
-      address: map['address'] as String,
-      timestamp: DateTime.parse(map['timestamp'] as String),
-    );
-  }
+  factory RoutePointModel.fromMap(Map<String, dynamic> map) => RoutePointModel(
+        id: map['id'] as int,
+        routeId: map['route_id'] as int,
+        latitude: map['latitude'] as double,
+        longitude: map['longitude'] as double,
+        address: map['address'] as String,
+        timestamp: DateTime.parse(map['timestamp'] as String),
+      );
 
   @override
   List<Object?> get props => [

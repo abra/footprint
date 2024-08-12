@@ -27,7 +27,7 @@ class RouteModel extends Equatable {
   final Status status;
   final List<RoutePointModel> routePoints;
 
-  static RouteModel fromMap(Map<String, dynamic> map) {
+  factory RouteModel.fromMap(Map<String, dynamic> map) {
     return RouteModel(
       id: map['id'] as String,
       startPoint: RoutePointModel.fromMap(map['start_point'] as Map<String, dynamic>),
