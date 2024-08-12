@@ -229,19 +229,9 @@ class SqliteStorage {
   ]) async {
     try {
       final db = await database;
+
       final result = await db.rawQuery(
         '''
-        @input_lat = ${location.latitude};
-        @input_lng = ${location.longitude};
-        @table = ${GeocodingCache.tableName};
-        @distance = $distance;
-        @limit = $limit;
-        
-        CREATE FUNCTION RADIANS(degrees DOUBLE) RETURNS DOUBLE
-        BEGIN
-          RETURN degrees * (3.14159265358979323846 / 180.0);
-        END;
-        
         SELECT 
         id, 
         address,
@@ -250,41 +240,52 @@ class SqliteStorage {
           (
             6371 * 1000 * acos(
               cos(
-                RADIANS(input_lat)
+                (? * (3.14159265358979323846 / 180.0))
               ) * cos(
-                RADIANS(lat)
+                (latitude * (3.14159265358979323846 / 180.0))
               ) * cos(
-                RADIANS(lng) - RADIANS(input_lng)
+                (longitude * (3.14159265358979323846 / 180.0)) - (? * (3.14159265358979323846 / 180.0))
               ) + sin(
-                RADIANS(input_lat)
+                (? * (3.14159265358979323846 / 180.0))
               ) * sin(
-                RADIANS(lat)
+                (latitude * (3.14159265358979323846 / 180.0))
               )
             )
           ) AS distance_meters 
         FROM 
-          @table
+          ?
         WHERE 
           (
             6371 * 1000 * acos(
               cos(
-                RADIANS(input_lat)
+                (? * (3.14159265358979323846 / 180.0))
               ) * cos(
-                RADIANS(lat)
+                (latitude * (3.14159265358979323846 / 180.0))
               ) * cos(
-                RADIANS(lng) - RADIANS(input_lng)
+                (longitude * (3.14159265358979323846 / 180.0)) - (? * (3.14159265358979323846 / 180.0))
               ) + sin(
-                RADIANS(input_lat)
+                (? * (3.14159265358979323846 / 180.0))
               ) * sin(
-                RADIANS(lat)
+                (latitude * (3.14159265358979323846 / 180.0))
               )
             )
-          ) < @distance
+          ) < ?
         ORDER BY 
           distance_meters
         LIMIT 
-          @limit;
+          ?;
         ''',
+        [
+          location.latitude,
+          location.longitude,
+          location.latitude,
+          _geocodingCacheTableName,
+          location.latitude,
+          location.longitude,
+          location.latitude,
+          distance,
+          limit,
+        ],
       );
 
       if (result.isEmpty) {
