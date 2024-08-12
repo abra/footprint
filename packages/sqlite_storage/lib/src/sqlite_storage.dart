@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:domain_models/domain_models.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -30,20 +32,22 @@ class SqliteStorage {
 
   /// Create new route.
   ///
-  /// [routePoint] - [RoutePointModel] object to insert
+  /// [point] - [Map] object of route point to insert
   ///
   /// Returns inserted route id
   ///
   /// Throws [UnableInsertDatabaseException] if failed to insert route point
-  Future<int> createRoute(RoutePointModel routePoint) async {
+  Future<int> createRoute(Map<String, dynamic> point) async {
     try {
       final db = await database;
+
+      final timestamp = point['timestamp'] as DateTime;
 
       return await db.transaction((Transaction txn) async {
         final int routeId = await txn.insert(
           _routesTableName,
           <String, dynamic>{
-            'start_time': DateTime.now().toIso8601String(),
+            'start_time': timestamp.toIso8601String(),
             'status': 'active',
           },
         );
@@ -52,9 +56,10 @@ class SqliteStorage {
           _routePointsTableName,
           <String, dynamic>{
             'route_id': routeId,
-            'latitude': routePoint.latitude,
-            'longitude': routePoint.longitude,
-            'timestamp': routePoint.timestamp.toIso8601String(),
+            'latitude': point['latitude'] as double,
+            'longitude': point['longitude'] as double,
+            'address': point['address'] as String,
+            'timestamp': timestamp.toIso8601String(),
           },
         );
 
@@ -70,23 +75,28 @@ class SqliteStorage {
   /// Insert route point into route.
   ///
   /// [routeId] - route id
-  /// [routePoint] - [RoutePointModel] object point to insert
+  /// [routePoint] - [Map] object of route point to insert
   ///
   /// Returns inserted route point id
   ///
   /// Throws [UnableInsertDatabaseException] if unable to insert
-  Future<int> insertRoutePoint(int routeId, RoutePointModel routePoint) async {
+  Future<int> insertRoutePoint(
+    int routeId,
+    Map<String, dynamic> routePoint,
+  ) async {
     try {
       final db = await database;
+
+      final timestamp = routePoint['timestamp'] as DateTime;
 
       return await db.insert(
         _routePointsTableName,
         <String, dynamic>{
           'route_id': routeId,
-          'latitude': routePoint.latitude,
-          'longitude': routePoint.longitude,
-          'address': routePoint.address,
-          'timestamp': routePoint.timestamp.toIso8601String(),
+          'latitude': routePoint['latitude'] as double,
+          'longitude': routePoint['longitude'] as double,
+          'address': routePoint['address'] as String,
+          'timestamp': timestamp.toIso8601String(),
         },
       );
     } on DatabaseException catch (e) {
@@ -96,14 +106,14 @@ class SqliteStorage {
     }
   }
 
-  /// Get [RouteModel] object with all points by id.
+  /// Get route with all points by id.
   ///
   /// [routeId] route id
   ///
-  /// Returns [RouteModel] object with route points
+  /// Returns [Map] object with route points
   ///
   /// Throws [UnableExecuteQueryDatabaseException] if unable to execute query
-  Future<RouteModel> getAllRoutePoints(int routeId) async {
+  Future<Map<String, dynamic>?> getAllRoutePoints(int routeId) async {
     try {
       final db = await database;
 
@@ -125,19 +135,7 @@ class SqliteStorage {
         whereArgs: [routeId],
       );
 
-      final routes = RouteModel.fromMap(route.first);
-
-      return RouteModel(
-        id: routes.id,
-        startPoint: routePoints.first,
-        endPoint: routePoints.last,
-        startTime: routes.startTime,
-        endTime: routes.endTime,
-        distance: routes.distance,
-        averageSpeed: routes.averageSpeed,
-        status: routes.status,
-        routePoints: routePoints,
-      );
+      return <String, dynamic>{...route.first, 'routePoints': routePoints};
     } on DatabaseException catch (e) {
       throw UnableExecuteQueryDatabaseException(
         message: 'Failed to get route points by route id: [$routeId]: $e',
@@ -211,7 +209,7 @@ class SqliteStorage {
 
   /// Get address from cache if available
   ///
-  /// [location] - [LocationModel] model of the point.
+  /// [location] - [Map] object of the point.
   /// [distance] - Max distance in meters.
   /// [limit] - Max amount of results.
   ///
@@ -219,12 +217,14 @@ class SqliteStorage {
   ///
   /// Throws [UnableExecuteQueryDatabaseException] if unable to execute query
   Future<String?> getAddressFromCache(
-    LocationModel location, [
+    Map<String, dynamic> location, [
     int distance = 20,
     int limit = 1,
   ]) async {
     try {
       final db = await database;
+      final latitude = location['latitude'] as double;
+      final longitude = location['longitude'] as double;
 
       final result = await db.rawQuery(
         '''
@@ -272,13 +272,13 @@ class SqliteStorage {
           ?;
         ''',
         [
-          location.latitude,
-          location.longitude,
-          location.latitude,
+          location,
+          location,
+          location,
           _geocodingCacheTableName,
-          location.latitude,
-          location.longitude,
-          location.latitude,
+          location,
+          location,
+          location,
           distance,
           limit,
         ],
@@ -290,7 +290,7 @@ class SqliteStorage {
 
       final int usageFrequency = result.first['usage_frequency'] as int;
 
-      await db.update(
+      final int resultCount = await db.update(
         _geocodingCacheTableName,
         <String, dynamic>{
           'usage_frequency': usageFrequency + 1,
@@ -299,6 +299,10 @@ class SqliteStorage {
         where: 'id = ?',
         whereArgs: [result.first['id']],
       );
+
+      if (resultCount > 0) {
+        log('Usage frequency increased: $usageFrequency');
+      }
 
       return result.first['address'] as String;
     } on DatabaseException catch (e) {
@@ -310,23 +314,19 @@ class SqliteStorage {
 
   /// Add new geocoding cache entry.
   ///
-  /// [point] - [RoutePointModel] object to add to cache.
+  /// [point] - [Map] object to add to cache.
   ///
   /// Throws [UnableInsertDatabaseException] if insertion fails.
-  Future<int> addNewAddressToCache({
-    required double latitude,
-    required double longitude,
-    required String address,
-  }) async {
+  Future<int> addNewAddressToCache(Map<String, dynamic> locationAddress) async {
     try {
       final db = await database;
 
       return await db.insert(
         _geocodingCacheTableName,
         <String, dynamic>{
-          'latitude': latitude,
-          'longitude': longitude,
-          'address': address,
+          'latitude': locationAddress['latitude'] as double,
+          'longitude': locationAddress['longitude'] as double,
+          'address': locationAddress['address'] as String,
           'timestamp': DateTime.now().toIso8601String(),
         },
       );

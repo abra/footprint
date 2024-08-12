@@ -23,43 +23,53 @@ class GeocodingRepository {
   Future<LocationAddressModel> getAddressFromCoordinates(
     LocationModel location,
   ) async {
-    final lat = location.latitude;
-    final lon = location.longitude;
+    final latitude = location.latitude;
+    final longitude = location.longitude;
 
     try {
-      // TODO: Implement an algorithm to get the address of a place by lat, lon
+      // TODO: Implement an algorithm to get the address of a place by latitude,
+      // TODO: longitude
       // It is necessary to implement an algorithm to get the address
-      // (LocationAddress) of a place by coordinates (lat, lon) through
+      // (LocationAddress) of a place by coordinates (latitude, longitude) through
       // GeocodingService or get it from GeocodingCacheStorage cache,
       // taking into account the requirements that Google and Apple have
       // for geocoding, but at the same time not to mislead the user when
       // the received address does not correspond to the real address.
 
-      final cachedAddress = await _cacheStorage.getAddressFromCache(location);
+      final cachedAddress = await _cacheStorage.getAddressFromCache(
+        <String, dynamic>{
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+      );
+
       if (cachedAddress != null) {
         return LocationAddressModel(address: cachedAddress);
       }
 
-      // TODO: Replace with proper handling for geocodingRepository
-      final placemarkList = await _geocodingService.getPlacemarkList(lat, lon);
+      final placemarkList = await _geocodingService.getPlacemarkList(
+        latitude,
+        longitude,
+      );
+
       final locationAddress = placemarkList.first.toDomainModel();
 
       if (locationAddress.address != null) {
         final address = locationAddress.address;
         await _cacheStorage.addAddressToCache(
-          latitude: lat,
-          longitude: lon,
-          address: address!,
+          <String, dynamic>{
+            'latitude': latitude,
+            'longitude': longitude,
+            'address': address,
+          },
         );
       }
-
-      // TODO: Add implementation
 
       return locationAddress;
     } catch (e) {
       // TODO: Need to able to pass exception and stackTrace
       throw CouldNotGetPlaceAddressException(
-        message: 'Could not get place address from $lat, $lon: $e',
+        message: 'Could not get place address from $latitude, $longitude: $e',
       );
     }
   }
