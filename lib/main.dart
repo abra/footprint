@@ -12,7 +12,7 @@ Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
-      runApp(const FootprintApp());
+      runApp(FootprintApp());
     },
     (error, stack) {
       log('ZONED ERROR: $error\n$stack');
@@ -21,12 +21,12 @@ Future<void> main() async {
 }
 
 class FootprintApp extends StatelessWidget {
-  const FootprintApp({
+  FootprintApp({
     super.key,
   });
 
   final LocationRepository _locationRepository = const LocationRepository();
-  final RoutesRepository _routesRepository = const RoutesRepository();
+  final RoutesRepository _routesRepository = RoutesRepository();
 
   @override
   Widget build(BuildContext context) => MaterialApp(
