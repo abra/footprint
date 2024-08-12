@@ -9,15 +9,15 @@ class GeocodingCacheStorage {
   final SqliteStorage sqliteStorage;
   final Duration _cacheMaxAge;
 
-  Future<int> addAddressToCache(Map<String, dynamic> locationAddress) async {
-    return await sqliteStorage.addNewAddressToCache(locationAddress);
-  }
+  Future<int> addAddressToCache(Map<String, dynamic> locationAddress) async =>
+      await sqliteStorage.addNewAddressToCache(locationAddress);
 
-  Future<String?> getAddressFromCache(Map<String, dynamic> location) async {
-    return await sqliteStorage.getAddressFromCache(location);
-  }
 
-  Future<int> clearCache() async {
-    return await sqliteStorage.clearGeocodingCache(_cacheMaxAge);
-  }
+  Future<String?> getAddressFromCache(Map<String, dynamic> location) async =>
+      await sqliteStorage.getAddressFromCache(location);
+
+
+  Future<int> clearCache() async =>
+      await sqliteStorage.clearGeocodingCache(_cacheMaxAge);
+
 }
