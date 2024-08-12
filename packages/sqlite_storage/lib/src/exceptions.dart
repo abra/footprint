@@ -6,9 +6,7 @@ class UnableCreateDatabaseException implements Exception {
   final String message;
 
   @override
-  String toString() {
-    return message;
-  }
+  String toString() => message;
 }
 
 class UnableCreateTableException implements Exception {
@@ -19,9 +17,7 @@ class UnableCreateTableException implements Exception {
   final String message;
 
   @override
-  String toString() {
-    return message;
-  }
+  String toString() => message;
 }
 
 class UnableInsertDatabaseException implements Exception {
@@ -32,9 +28,7 @@ class UnableInsertDatabaseException implements Exception {
   final String message;
 
   @override
-  String toString() {
-    return message;
-  }
+  String toString() => message;
 }
 
 class UnableUpdateDatabaseException implements Exception {
@@ -45,9 +39,7 @@ class UnableUpdateDatabaseException implements Exception {
   final String message;
 
   @override
-  String toString() {
-    return message;
-  }
+  String toString() => message;
 }
 
 class UnableDeleteDatabaseException implements Exception {
@@ -58,9 +50,7 @@ class UnableDeleteDatabaseException implements Exception {
   final String message;
 
   @override
-  String toString() {
-    return message;
-  }
+  String toString() => message;
 }
 
 class UnableExecuteQueryDatabaseException implements Exception {
@@ -71,7 +61,5 @@ class UnableExecuteQueryDatabaseException implements Exception {
   final String message;
 
   @override
-  String toString() {
-    return message;
-  }
+  String toString() => message;
 }

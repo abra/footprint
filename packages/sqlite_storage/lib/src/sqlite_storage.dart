@@ -215,7 +215,7 @@ class SqliteStorage {
 
   /// Get address from cache if available
   ///
-  /// [location] - [Location] object of the point.
+  /// [location] - [Location] model of the point.
   /// [distance] - Max distance in meters.
   /// [limit] - Max amount of results.
   ///
@@ -339,20 +339,16 @@ class SqliteStorage {
 
   /// Delete all geocoding cache entries.
   ///
-  /// [hours] - Max age of entries in hours
+  /// [maxAge] - [Duration] object of max age of entries
   ///
   /// Throws [UnableDeleteDatabaseException] if deletion fails.
-  Future<void> clearGeocodingCache([int hours = 168]) async {
+  Future<int> clearGeocodingCache(Duration maxAge) async {
     try {
       final db = await database;
 
-      final timestamp = DateTime.now()
-          .subtract(
-            Duration(hours: hours),
-          )
-          .toIso8601String();
+      final timestamp = DateTime.now().subtract(maxAge).toIso8601String();
 
-      await db.delete(
+      return await db.delete(
         _geocodingCacheTableName,
         where: 'timestamp < ?',
         whereArgs: [timestamp],
