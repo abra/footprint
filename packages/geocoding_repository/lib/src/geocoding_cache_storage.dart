@@ -10,11 +10,19 @@ class GeocodingCacheStorage {
   final SqliteStorage sqliteStorage;
   final Duration _cacheMaxAge;
 
-  Future<int> addAddressToCache(RoutePoint point) async {
-    return await sqliteStorage.addNewAddressToCache(point);
+  Future<int> addAddressToCache({
+    required double latitude,
+    required double longitude,
+    required String address,
+  }) async {
+    return await sqliteStorage.addNewAddressToCache(
+      latitude: latitude,
+      longitude: longitude,
+      address: address,
+    );
   }
 
-  Future<String?> getAddressFromCache(Location location) async {
+  Future<String?> getAddressFromCache(LocationModel location) async {
     return await sqliteStorage.getAddressFromCache(location);
   }
 

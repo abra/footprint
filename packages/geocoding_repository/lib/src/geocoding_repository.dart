@@ -20,9 +20,12 @@ class GeocodingRepository {
   final GeocodingService _geocodingService;
   final GeocodingCacheStorage _cacheStorage;
 
-  Future<LocationAddress> getAddressFromCoordinates(Location location) async {
+  Future<LocationAddressModel> getAddressFromCoordinates(
+    LocationModel location,
+  ) async {
     final lat = location.latitude;
     final lon = location.longitude;
+
     try {
       // TODO: Implement an algorithm to get the address of a place by lat, lon
       // It is necessary to implement an algorithm to get the address
@@ -32,9 +35,25 @@ class GeocodingRepository {
       // for geocoding, but at the same time not to mislead the user when
       // the received address does not correspond to the real address.
 
+      final cachedAddress = await _cacheStorage.getAddressFromCache(location);
+      if (cachedAddress != null) {
+        return LocationAddressModel(address: cachedAddress);
+      }
+
       // TODO: Replace with proper handling for geocodingRepository
       final placemarkList = await _geocodingService.getPlacemarkList(lat, lon);
       final locationAddress = placemarkList.first.toDomainModel();
+
+      if (locationAddress.address != null) {
+        final address = locationAddress.address;
+        await _cacheStorage.addAddressToCache(
+          latitude: lat,
+          longitude: lon,
+          address: address!,
+        );
+      }
+
+      // TODO: Add implementation
 
       return locationAddress;
     } catch (e) {
