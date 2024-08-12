@@ -30,6 +30,12 @@ class DefinitionsForPermissionNotFoundException implements Exception {
 }
 
 class CouldNotGetPlaceAddressException implements Exception {
+  const CouldNotGetPlaceAddressException({
+    this.message = 'Could not get the place address.',
+  });
+
+  final String message;
+
   @override
-  String toString() => 'Could not get place address.';
+  String toString() => message;
 }

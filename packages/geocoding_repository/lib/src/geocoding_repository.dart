@@ -24,7 +24,7 @@ class GeocodingRepository {
     final lat = location.latitude;
     final lon = location.longitude;
     try {
-      // TODO: Implement an algorithm to get the address of a place by coordinates (lat, lon)
+      // TODO: Implement an algorithm to get the address of a place by lat, lon
       // It is necessary to implement an algorithm to get the address
       // (LocationAddress) of a place by coordinates (lat, lon) through
       // GeocodingService or get it from GeocodingCacheStorage cache,
@@ -36,12 +36,12 @@ class GeocodingRepository {
       final placemarkList = await _geocodingService.getPlacemarkList(lat, lon);
       final locationAddress = placemarkList.first.toDomainModel();
 
-
-
       return locationAddress;
     } catch (e) {
       // TODO: Need to able to pass exception and stackTrace
-      throw CouldNotGetPlaceAddressException();
+      throw CouldNotGetPlaceAddressException(
+        message: 'Could not get place address from $lat, $lon: $e',
+      );
     }
   }
 }
