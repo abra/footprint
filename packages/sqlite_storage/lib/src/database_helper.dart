@@ -27,9 +27,15 @@ class DatabaseHelper {
     final databasePath = await getDatabasesPath();
     final path = join(databasePath, 'footprint.db');
     try {
-      return await openDatabase(path, version: 1, onCreate: _createTables);
-    } on DatabaseException catch (_) {
-      throw UnableCreateDatabaseException();
+      return await openDatabase(
+        path,
+        version: 1,
+        onCreate: _createTables,
+      );
+    } on DatabaseException catch (e) {
+      throw UnableCreateDatabaseException(
+        message: "Failed to create database: $e",
+      );
     }
   }
 
@@ -38,8 +44,10 @@ class DatabaseHelper {
       await Routes.createTable(db);
       await RoutePoints.createTable(db);
       await GeocodingCache.createTable(db);
-    } on DatabaseException catch (_) {
-      throw UnableCreateTableException();
+    } on DatabaseException catch (e) {
+      throw UnableCreateTableException(
+        message: "Failed to create table: $e",
+      );
     }
   }
 }
@@ -90,6 +98,7 @@ class GeocodingCache {
       id        INTEGER PRIMARY KEY AUTOINCREMENT,
       latitude  REAL NOT NULL,
       longitude REAL NOT NULL,
+      address   TEXT NOT NULL,
       usage_frequency INTEGER DEFAULT 0,
       timestamp TEXT NOT NULL,
     );
