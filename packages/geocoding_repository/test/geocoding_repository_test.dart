@@ -4,7 +4,7 @@
 // import 'package:geocoding_repository/geocoding_repository.dart';
 // import 'package:geocoding_repository/src/geocoding_cache_storage.dart';
 // import 'package:geocoding_repository/src/geocoding_service.dart';
-// import 'package:geocoding_repository/src/mappers/placemark_to_domain.dart';
+// import 'package:geocoding_repository/src/mappers/mappers.dart';
 // import 'package:mocktail/mocktail.dart';
 // import 'package:sqlite_storage/sqlite_storage.dart';
 //

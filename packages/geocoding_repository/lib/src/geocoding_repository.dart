@@ -4,7 +4,7 @@ import 'package:sqlite_storage/sqlite_storage.dart';
 
 import 'geocoding_cache_storage.dart';
 import 'geocoding_service.dart';
-import 'mappers/placemark_to_domain.dart';
+import 'mappers/mappers.dart';
 
 class GeocodingRepository {
   GeocodingRepository({
@@ -37,35 +37,46 @@ class GeocodingRepository {
       // the received address does not correspond to the real address.
 
       final cachedAddress = await _geocodingCacheStorage.getAddressFromCache(
-        <String, dynamic>{
-          'latitude': latitude,
-          'longitude': longitude,
-        },
+        lat: latitude,
+        lon: longitude,
       );
 
       if (cachedAddress != null) {
-        return LocationAddressModel(address: cachedAddress);
+        return cachedAddress.toDomainModel();
       }
 
-      final placemarkList = await _geocodingService.getPlacemarkList(
-        latitude,
-        longitude,
+      final placemark = await _geocodingService.getPlacemark(
+        lat: latitude,
+        lon: longitude,
       );
 
-      final locationAddress = placemarkList.first.toDomainModel();
+      if (placemark != null) {
+        final locationAddress = placemark.toDomainModel();
 
-      if (locationAddress.address != null) {
-        final address = locationAddress.address;
-        await _geocodingCacheStorage.addAddressToCache(
-          <String, dynamic>{
-            'latitude': latitude,
-            'longitude': longitude,
-            'address': address,
-          },
-        );
+        if (locationAddress != null) {
+          final address = locationAddress;
+          await _geocodingCacheStorage.addAddressToCache(
+            LocationAddressCM.fromMap({
+              'address': address,
+              'latitude': latitude,
+              'longitude': longitude,
+            }),
+          );
+          return LocationAddressModel(
+            address: address,
+            latitude: latitude,
+            longitude: longitude,
+          );
+        }
       }
 
-      return locationAddress;
+      // if failed to get address in cache or service
+      // just return the coordinates
+      return LocationAddressModel(
+        address: '$latitude, $longitude',
+        latitude: latitude,
+        longitude: longitude,
+      );
     } catch (e) {
       // TODO: Need to able to pass exception and stackTrace
       throw CouldNotGetLocationAddressException(

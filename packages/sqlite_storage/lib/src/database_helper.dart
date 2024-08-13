@@ -96,9 +96,9 @@ class GeocodingCache {
     await db.execute('''
     CREATE TABLE IF NOT EXISTS $tableName (
       id        INTEGER PRIMARY KEY AUTOINCREMENT,
+      address   TEXT NOT NULL,
       latitude  REAL NOT NULL,
       longitude REAL NOT NULL,
-      address   TEXT NOT NULL,
       usage_frequency INTEGER DEFAULT 0,
       timestamp TEXT NOT NULL,
     );

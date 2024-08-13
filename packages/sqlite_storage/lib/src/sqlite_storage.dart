@@ -1,9 +1,11 @@
 import 'dart:developer';
 
 import 'package:sqflite/sqflite.dart';
+import 'package:sqlite_storage/src/models/location_address_cm.dart';
 
 import 'database_helper.dart';
 import 'exceptions.dart';
+import 'models/route_dto.dart';
 
 class SqliteStorage {
   static const String _routesTableName = Routes.tableName;
@@ -109,10 +111,10 @@ class SqliteStorage {
   ///
   /// [routeId] route id
   ///
-  /// Returns [Map] object with route points
+  /// Returns [RouteDTO] object with route points
   ///
   /// Throws [UnableExecuteQueryDatabaseException] if unable to execute query
-  Future<Map<String, dynamic>?> getAllRoutePoints(int routeId) async {
+  Future<RouteDTO?> getAllRoutePoints(int routeId) async {
     try {
       final db = await database;
 
@@ -134,10 +136,14 @@ class SqliteStorage {
         whereArgs: [routeId],
       );
 
-      return <String, dynamic>{
+      if (route.isEmpty) return null;
+
+      final data = <String, dynamic>{
         ...route.first,
-        'routePoints': routePoints,
+        'route_points': routePoints,
       };
+
+      return RouteDTO.fromMap(data);
     } on DatabaseException catch (e) {
       throw UnableExecuteQueryDatabaseException(
         message: 'Failed to get route points by route id: [$routeId]: $e',
@@ -211,22 +217,24 @@ class SqliteStorage {
 
   /// Get address from cache if available
   ///
-  /// [location] - [Map] object of the location.
-  /// [distance] - Max distance in meters.
-  /// [limit] - Max amount of results.
+  /// [latitude] - location latitude
+  /// [longitude] - location longitude
+  /// [distance] - Max distance in meters. default 20
+  /// [limit] - Max amount of results. default 1
   ///
   /// Returns string with address or null if not found.
   ///
   /// Throws [UnableExecuteQueryDatabaseException] if unable to execute query
-  Future<String?> getAddressFromCache(
-    Map<String, dynamic> location, [
+  Future<LocationAddressCM?> getAddressFromCache({
+    required double latitude,
+    required double longitude,
     int distance = 20,
     int limit = 1,
-  ]) async {
+  }) async {
     try {
       final db = await database;
-      final latitude = location['latitude'] as double;
-      final longitude = location['longitude'] as double;
+      final lat = latitude;
+      final lon = longitude;
 
       final result = await db.rawQuery(
         '''
@@ -274,13 +282,13 @@ class SqliteStorage {
           ?;
         ''',
         [
-          location,
-          location,
-          location,
+          lat,
+          lon,
+          lat,
           _geocodingCacheTableName,
-          location,
-          location,
-          location,
+          lat,
+          lon,
+          lat,
           distance,
           limit,
         ],
@@ -292,24 +300,41 @@ class SqliteStorage {
 
       final int usageFrequency = result.first['usage_frequency'] as int;
 
-      final int resultCount = await db.update(
-        _geocodingCacheTableName,
-        <String, dynamic>{
-          'usage_frequency': usageFrequency + 1,
-          'timestamp': DateTime.now().toIso8601String(),
-        },
-        where: 'id = ?',
-        whereArgs: [result.first['id']],
+      await _updateUsageFrequency(
+        result.first['id'] as int,
+        usageFrequency + 1,
       );
 
-      if (resultCount > 0) {
-        log('Usage frequency increased: $usageFrequency');
+      // TODO: For logging purposes. Remove later.
+      if (usageFrequency > 0) {
+        log('@@@ Usage frequency increased: $usageFrequency');
       }
 
-      return result.first['address'] as String;
+      return LocationAddressCM.fromMap(result.first);
     } on DatabaseException catch (e) {
       throw UnableExecuteQueryDatabaseException(
         message: 'Failed to execute query: $e',
+      );
+    }
+  }
+
+  Future<int> _updateUsageFrequency(int id, int newValue) async {
+    try {
+      final db = await database;
+
+      return await db.update(
+        _geocodingCacheTableName,
+        <String, dynamic>{
+          'usage_frequency': newValue,
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } on DatabaseException catch (e) {
+      throw UnableUpdateDatabaseException(
+        message:
+            "Failed to update usage frequency to [$newValue] of address [$id]: $e",
       );
     }
   }
@@ -319,16 +344,16 @@ class SqliteStorage {
   /// [locationAddress] - [Map] object to add to cache.
   ///
   /// Throws [UnableInsertDatabaseException] if insertion fails.
-  Future<int> addAddressToCache(Map<String, dynamic> locationAddress) async {
+  Future<int> addAddressToCache(LocationAddressCM locationAddress) async {
     try {
       final db = await database;
 
       return await db.insert(
         _geocodingCacheTableName,
         <String, dynamic>{
-          'latitude': locationAddress['latitude'] as double,
-          'longitude': locationAddress['longitude'] as double,
-          'address': locationAddress['address'] as String,
+          'latitude': locationAddress.latitude,
+          'longitude': locationAddress.longitude,
+          'address': locationAddress.address,
           'timestamp': DateTime.now().toIso8601String(),
         },
       );
