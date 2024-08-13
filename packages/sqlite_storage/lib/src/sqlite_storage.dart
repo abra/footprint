@@ -211,7 +211,7 @@ class SqliteStorage {
 
   /// Get address from cache if available
   ///
-  /// [location] - [Map] object of the point.
+  /// [location] - [Map] object of the location.
   /// [distance] - Max distance in meters.
   /// [limit] - Max amount of results.
   ///
@@ -316,7 +316,7 @@ class SqliteStorage {
 
   /// Add new geocoding cache entry.
   ///
-  /// [point] - [Map] object to add to cache.
+  /// [locationAddress] - [Map] object to add to cache.
   ///
   /// Throws [UnableInsertDatabaseException] if insertion fails.
   Future<int> addAddressToCache(Map<String, dynamic> locationAddress) async {
@@ -341,7 +341,7 @@ class SqliteStorage {
 
   /// Delete all geocoding cache entries.
   ///
-  /// [maxAge] - [Duration] object of max age of entries
+  /// [maxAge] - [Duration] object of max age of records to delete.
   ///
   /// Throws [UnableDeleteDatabaseException] if deletion fails.
   Future<int> clearGeocodingCache(Duration maxAge) async {
