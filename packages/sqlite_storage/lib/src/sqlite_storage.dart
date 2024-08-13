@@ -319,7 +319,7 @@ class SqliteStorage {
   /// [point] - [Map] object to add to cache.
   ///
   /// Throws [UnableInsertDatabaseException] if insertion fails.
-  Future<int> addNewAddressToCache(Map<String, dynamic> locationAddress) async {
+  Future<int> addAddressToCache(Map<String, dynamic> locationAddress) async {
     try {
       final db = await database;
 

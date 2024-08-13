@@ -117,7 +117,7 @@
 //           () => geocodingRepository.getAddressFromCoordinates(
 //             location,
 //           ),
-//           throwsA(isA<CouldNotGetPlaceAddressException>()),
+//           throwsA(isA<CouldNotGetLocationAddressException>()),
 //         );
 //       },
 //     );

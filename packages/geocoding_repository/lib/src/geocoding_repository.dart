@@ -30,8 +30,8 @@ class GeocodingRepository {
       // TODO: Implement an algorithm to get the address of a place by latitude,
       // TODO: longitude
       // It is necessary to implement an algorithm to get the address
-      // (LocationAddress) of a place by coordinates (latitude, longitude) through
-      // GeocodingService or get it from GeocodingCacheStorage cache,
+      // (LocationAddress) of a place by coordinates (latitude, longitude)
+      // through GeocodingService or get it from GeocodingCacheStorage cache,
       // taking into account the requirements that Google and Apple have
       // for geocoding, but at the same time not to mislead the user when
       // the received address does not correspond to the real address.
@@ -68,7 +68,7 @@ class GeocodingRepository {
       return locationAddress;
     } catch (e) {
       // TODO: Need to able to pass exception and stackTrace
-      throw CouldNotGetPlaceAddressException(
+      throw CouldNotGetLocationAddressException(
         message: 'Could not get place address from $latitude, $longitude: $e',
       );
     }
