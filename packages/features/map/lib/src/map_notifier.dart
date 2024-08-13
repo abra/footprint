@@ -30,7 +30,7 @@ class MapNotifier {
 
   Config get viewConfig => _config;
 
-  late StreamSubscription<Location> _locationUpdateSubscription;
+  late StreamSubscription<LocationModel> _locationUpdateSubscription;
 
   // map location update notifier
   late final locationState = ValueNotifier<LocationState>(LocationLoading());
@@ -46,7 +46,7 @@ class MapNotifier {
   late final isMapCentered = ValueNotifier<bool>(_config.mapCentered);
 
   void Function(double)? onZoomChanged;
-  void Function(Location)? onMapCentered;
+  void Function(LocationModel)? onMapCentered;
 
   void dispose() {
     _locationUpdateSubscription.cancel();
@@ -68,9 +68,9 @@ class MapNotifier {
   }
 
   Future<void> _startLocationUpdate() async {
-    final Stream<Location> stream = _locationRepository.locationUpdateStream();
+    final Stream<LocationModel> stream = _locationRepository.locationUpdateStream();
 
-    _locationUpdateSubscription = stream.listen((Location location) {
+    _locationUpdateSubscription = stream.listen((LocationModel location) {
       log('--- Location [$hashCode]: $location');
       locationState.value = LocationUpdateSuccess(location: location);
 
@@ -189,7 +189,7 @@ class LocationUpdateSuccess extends LocationState {
     this.locationUpdateError,
   });
 
-  final Location location;
+  final LocationModel location;
   final dynamic locationUpdateError;
 
   @override

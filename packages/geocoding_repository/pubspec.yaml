@@ -1,11 +1,14 @@
-name: routes_repository
+name: geocoding_repository
 publish_to: none
 
 environment:
-  sdk: '>=3.4.0'
+  sdk: ^3.5.0
 
+# Add regular dependencies here.
 dependencies:
+  geocoding: ^3.0.0
   meta: ^1.10.0
+  mocktail: ^1.0.4
   domain_models:
     path: ../domain_models
   sqlite_storage:
@@ -14,3 +17,5 @@ dependencies:
 dev_dependencies:
   lints: ^4.0.0
   test: ^1.24.0
+  flutter_test:
+    sdk: flutter

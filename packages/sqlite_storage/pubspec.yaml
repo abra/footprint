@@ -1,4 +1,4 @@
-name: local_storage
+name: sqlite_storage
 publish_to: none
 
 environment:
