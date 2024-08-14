@@ -74,17 +74,22 @@ class _MapAppBarState extends State<MapAppBar> {
             right: 8,
             bottom: 4,
           ),
-          child: RichText(
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
-            text: TextSpan(
-              // TODO(abra): Add address based on current location
-              text: 'Address of current location',
-              style: GoogleFonts.robotoCondensed(
-                fontSize: 16,
-                color: context.appColors.appWhite,
-              ),
-            ),
+          child: ValueListenableBuilder<LocationAddressModel?>(
+            valueListenable: _mapNotifier.locationAddress,
+            builder: (BuildContext context, LocationAddressModel? value, _) {
+              return RichText(
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                text: TextSpan(
+                  // TODO(abra): Add address based on current location
+                  text: value?.address ?? 'Current location',
+                  style: GoogleFonts.robotoCondensed(
+                    fontSize: 16,
+                    color: context.appColors.appWhite,
+                  ),
+                ),
+              );
+            }
           ),
         ),
       ),

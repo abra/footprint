@@ -23,6 +23,8 @@ dependencies:
     path: ../../location_repository
   routes_repository:
     path: ../../routes_repository
+  geocoding_repository:
+    path: ../../geocoding_repository
   component_library:
     path: ../../component_library
 

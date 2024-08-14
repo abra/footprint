@@ -3,10 +3,12 @@ import 'dart:developer';
 
 import 'package:component_library/component_library.dart';
 import 'package:flutter/material.dart';
+import 'package:geocoding_repository/geocoding_repository.dart';
 import 'package:location_repository/location_repository.dart';
 import 'package:map/map.dart';
 import 'package:route_list/route_list.dart';
 import 'package:routes_repository/routes_repository.dart';
+import 'package:sqlite_storage/sqlite_storage.dart';
 
 Future<void> main() async {
   await runZonedGuarded<Future<void>>(
@@ -27,6 +29,10 @@ class FootprintApp extends StatelessWidget {
 
   final LocationRepository _locationRepository = const LocationRepository();
   final RoutesRepository _routesRepository = RoutesRepository();
+  final SqliteStorage _sqliteStorage = SqliteStorage()..init();
+  late final GeocodingRepository _geocodingRepository = GeocodingRepository(
+    sqliteStorage: _sqliteStorage,
+  );
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -37,6 +43,7 @@ class FootprintApp extends StatelessWidget {
             MapScreen(
               locationRepository: _locationRepository,
               routesRepository: _routesRepository,
+              geocodingRepository: _geocodingRepository,
               onPageChangeRequested: () => _PageManager.goToPage(
                 _Pages.routeList,
               ),

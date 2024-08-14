@@ -5,20 +5,23 @@ import 'package:domain_models/domain_models.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:geocoding_repository/geocoding_repository.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location_repository/location_repository.dart';
 import 'package:routes_repository/routes_repository.dart';
 
-import 'extensions.dart';
 import 'config.dart';
+import 'extensions.dart';
 
 class MapNotifier {
   MapNotifier({
     required LocationRepository locationRepository,
     required RoutesRepository routesRepository,
+    required GeocodingRepository geocodingRepository,
     required Config viewConfig,
   })  : _locationRepository = locationRepository,
         _routesRepository = routesRepository,
+        _geocodingRepository = geocodingRepository,
         _config = viewConfig {
     _init();
     log('--- MapNotifier init $hashCode');
@@ -26,6 +29,7 @@ class MapNotifier {
 
   final LocationRepository _locationRepository;
   final RoutesRepository _routesRepository;
+  final GeocodingRepository _geocodingRepository;
   final Config _config;
 
   Config get viewConfig => _config;
@@ -39,10 +43,14 @@ class MapNotifier {
   final isRouteRecordingActive = ValueNotifier<bool>(false);
   final routePoints = ValueNotifier<List<LatLng>>([]);
 
+  // map address retrieval notifier
+  final locationAddress = ValueNotifier<LocationAddressModel?>(null);
+
   // map view notifiers
   late final currentZoomLevel = ValueNotifier<double>(_config.defaultZoom);
   late final currentMarkerSize = ValueNotifier<double>(_config.markerSize);
-  late final currentPolylineWidth = ValueNotifier<double>(_config.polylineWidth);
+  late final currentPolylineWidth =
+      ValueNotifier<double>(_config.polylineWidth);
   late final isMapCentered = ValueNotifier<bool>(_config.mapCentered);
 
   void Function(double)? onZoomChanged;
@@ -68,11 +76,15 @@ class MapNotifier {
   }
 
   Future<void> _startLocationUpdate() async {
-    final Stream<LocationModel> stream = _locationRepository.locationUpdateStream();
+    final Stream<LocationModel> stream =
+        _locationRepository.locationUpdateStream();
 
     _locationUpdateSubscription = stream.listen((LocationModel location) {
       log('--- Location [$hashCode]: $location');
+
       locationState.value = LocationUpdateSuccess(location: location);
+
+      _updateAddress(location);
 
       // Center the map on the current location
       if (isMapCentered.value && onMapCentered != null) {
@@ -100,6 +112,13 @@ class MapNotifier {
     });
   }
 
+  Future<void> _updateAddress(LocationModel location) async {
+    locationAddress.value =
+    await _geocodingRepository.getAddressFromCoordinates(
+      location,
+    );
+  }
+
   Future<void> startRouteRecording() async {
     if (!isRouteRecordingActive.value &&
         locationState.value is LocationUpdateSuccess) {
@@ -120,11 +139,11 @@ class MapNotifier {
     }
   }
 
-  Future<void> zoomIn() =>
-      _updateZoom(currentZoomLevel.value + _config.zoomStep, onZoomChanged ?? (_) {});
+  Future<void> zoomIn() => _updateZoom(
+      currentZoomLevel.value + _config.zoomStep, onZoomChanged ?? (_) {});
 
-  Future<void> zoomOut() =>
-      _updateZoom(currentZoomLevel.value - _config.zoomStep, onZoomChanged ?? (_) {});
+  Future<void> zoomOut() => _updateZoom(
+      currentZoomLevel.value - _config.zoomStep, onZoomChanged ?? (_) {});
 
   Future<void> _updateZoom(double newZoom, Function(double) callback) async {
     if (newZoom >= _config.minZoom && newZoom <= _config.maxZoom) {
