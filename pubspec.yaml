@@ -15,6 +15,8 @@ dependencies:
     path: packages/domain_models
   location_repository:
     path: packages/location_repository
+  geocoding_repository:
+    path: packages/geocoding_repository
   routes_repository:
     path: packages/routes_repository
   component_library:
@@ -23,6 +25,8 @@ dependencies:
     path: packages/features/map
   route_list:
     path: packages/features/route_list
+  sqlite_storage:
+    path: packages/sqlite_storage
 
 dev_dependencies:
   flutter_test:
