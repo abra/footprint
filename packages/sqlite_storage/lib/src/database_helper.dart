@@ -65,7 +65,7 @@ class Routes {
       end_time      TEXT,
       distance      REAL,
       average_speed REAL,
-      status        TEXT CHECK(status IN ('active', 'completed')), 
+      status        TEXT NOT NULL CHECK (status IN ('active', 'completed')) 
     );
     ''');
   }
@@ -100,7 +100,7 @@ class GeocodingCache {
       latitude  REAL NOT NULL,
       longitude REAL NOT NULL,
       usage_frequency INTEGER DEFAULT 0,
-      timestamp TEXT NOT NULL,
+      timestamp TEXT NOT NULL
     );
     ''');
   }

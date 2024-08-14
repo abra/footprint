@@ -238,65 +238,21 @@ class SqliteStorage {
 
       final result = await db.rawQuery(
         '''
-        SELECT 
-        id, 
-        address,
-        usage_frequency,
-        timestamp,
-          (
-            6371 * 1000 * acos(
-              cos(
-                (? * (3.14159265358979323846 / 180.0))
-              ) * cos(
-                (latitude * (3.14159265358979323846 / 180.0))
-              ) * cos(
-                (longitude * (3.14159265358979323846 / 180.0)) - (? * (3.14159265358979323846 / 180.0))
-              ) + sin(
-                (? * (3.14159265358979323846 / 180.0))
-              ) * sin(
-                (latitude * (3.14159265358979323846 / 180.0))
-              )
-            )
-          ) AS distance_meters 
-        FROM 
-          ?
-        WHERE 
-          (
-            6371 * 1000 * acos(
-              cos(
-                (? * (3.14159265358979323846 / 180.0))
-              ) * cos(
-                (latitude * (3.14159265358979323846 / 180.0))
-              ) * cos(
-                (longitude * (3.14159265358979323846 / 180.0)) - (? * (3.14159265358979323846 / 180.0))
-              ) + sin(
-                (? * (3.14159265358979323846 / 180.0))
-              ) * sin(
-                (latitude * (3.14159265358979323846 / 180.0))
-              )
-            )
-          ) < ?
-        ORDER BY 
-          distance_meters
-        LIMIT 
-          ?;
-        ''',
-        [
-          lat,
-          lon,
-          lat,
-          _geocodingCacheTableName,
-          lat,
-          lon,
-          lat,
-          distance,
-          limit,
-        ],
+      SELECT 
+      id, 
+      address,
+      usage_frequency,
+      timestamp
+      FROM 
+        $_geocodingCacheTableName
+      '''
       );
 
       if (result.isEmpty) {
         return null;
       }
+
+      // TODO: Add implementation of distance and limit
 
       final int usageFrequency = result.first['usage_frequency'] as int;
 

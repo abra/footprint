@@ -2,11 +2,12 @@ name: geocoding_repository
 publish_to: none
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.4.0
 
 # Add regular dependencies here.
 dependencies:
   geocoding: ^3.0.0
+  osm_nominatim: ^3.0.1
   meta: ^1.10.0
   mocktail: ^1.0.4
   domain_models:

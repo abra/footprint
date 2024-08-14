@@ -3,7 +3,6 @@ import 'package:geocoding/geocoding.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
 
 extension PlacemarkToAddress on Placemark {
-  // TODO: Replace with a more thoughtful version of address drafting
   String? toDomainModel() {
     if (street != null) {
       return street;

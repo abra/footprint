@@ -11,7 +11,7 @@ class GeocodingRepository {
     required SqliteStorage sqliteStorage,
     @visibleForTesting GeocodingCacheStorage? cacheStorage,
     @visibleForTesting GeocodingService? geocodingService,
-  })  : _geocodingService = geocodingService ?? const GeocodingService(),
+  })  : _geocodingService = geocodingService ?? GeocodingService(),
         _geocodingCacheStorage = cacheStorage ??
             GeocodingCacheStorage(
               sqliteStorage: sqliteStorage,
@@ -27,8 +27,8 @@ class GeocodingRepository {
     final longitude = location.longitude;
 
     try {
-      // TODO: Implement an algorithm to get the address of a place by latitude,
-      // TODO: longitude
+      // TODO: Implement an algorithm for location address retrieval policy
+
       // It is necessary to implement an algorithm to get the address
       // (LocationAddress) of a place by coordinates (latitude, longitude)
       // through GeocodingService or get it from GeocodingCacheStorage cache,
