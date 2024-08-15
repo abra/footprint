@@ -1,20 +1,17 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:geocoding/geocoding.dart';
 import 'package:osm_nominatim/osm_nominatim.dart';
 
-import 'display_address_builder.dart';
+import 'utils/display_address_builder.dart';
 
 /// [GeocodingService] class
 ///
 /// Provides platform geocoding services from [geocoding] package if available,
 /// otherwise it provides services from [osm_nominatim] (Nominatim API) as a fallback
 class GeocodingService {
-  GeocodingService() : _addressBuilder = AddressBuilder();
-
   static DateTime? _lastNominatimCall;
-  final AddressBuilder _addressBuilder;
+  final _addressBuilder = AddressBuilder();
 
   /// Get address from coordinates
   ///
@@ -29,23 +26,23 @@ class GeocodingService {
     try {
       final placemark = await _getPlacemark(lat, lon);
       if (placemark != null) {
-        log('2> GEOCODING PACKAGE USED');
-        log('2> PLACEMARK: $placemark');
+        // log('2> GEOCODING PACKAGE USED');
+        // log('2> PLACEMARK: $placemark');
         return _addressBuilder.buildAddressFromPlacemark(placemark);
       }
 
       final place = await _getPlace(lat, lon);
       if (place != null) {
-        log('1> NOMINATIM PACKAGE USED');
-        log('1> NOMINATIM: ${place.address!}');
+        // log('1> NOMINATIM PACKAGE USED');
+        // log('1> NOMINATIM: ${place.address!}');
         return _addressBuilder.buildAddressFromNominatim(place);
       }
     } on Exception catch (e) {
-      log('4> ERROR: $e');
+      // log('4> ERROR: $e');
       final place = await _getPlace(lat, lon);
       if (place != null) {
-        log('3> NOMINATIM PACKAGE USED');
-        log('3> NOMINATIM: ${place.address!}');
+        // log('3> NOMINATIM PACKAGE USED');
+        // log('3> NOMINATIM: ${place.address!}');
         return _addressBuilder.buildAddressFromNominatim(place);
       }
     }
@@ -73,9 +70,9 @@ class GeocodingService {
           Duration(
             milliseconds: (1200 - timeSinceLastCall.inMilliseconds),
           ),
-          () => log(
-            'Nominatim call delayed in ${timeSinceLastCall.inMilliseconds}',
-          ),
+          // () => log(
+          //   'Nominatim call delayed in ${timeSinceLastCall.inMilliseconds}',
+          // ),
         );
       }
     }

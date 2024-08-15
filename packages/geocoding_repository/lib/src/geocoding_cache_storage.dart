@@ -1,4 +1,3 @@
-import 'dart:developer' as logger;
 import 'dart:isolate';
 import 'dart:math';
 
@@ -24,7 +23,10 @@ class GeocodingCacheStorage {
     double distance = 15,
     double limit = 1,
   }) async {
-    final result = await _sqliteStorage.getAddressListFromCache();
+    final result = await _sqliteStorage.getNearestAddressListFromCache(
+      lat: lat,
+      lon: lon,
+    );
 
     if (result.isEmpty) return null;
 
@@ -41,8 +43,6 @@ class GeocodingCacheStorage {
     if (nearestResult.isEmpty) {
       return null;
     }
-
-    logger.log('nearestResult: $nearestResult');
 
     final int usageFrequency = nearestResult['usage_frequency'] as int;
 
@@ -90,7 +90,7 @@ class GeocodingCacheStorage {
       (a, b) => (a['distance'] as double).compareTo((b['distance'] as double)),
     );
 
-    logger.log('5> GET FROM CACHE: ${filteredCoordinates.first['address']}');
+    // logger.log('5> GET FROM CACHE: ${filteredCoordinates.first['address']}');
     // logger.log('Isolate: _getNearestAddress finished');
 
     return filteredCoordinates.first;

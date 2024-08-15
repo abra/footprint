@@ -99,6 +99,8 @@ class GeocodingCache {
       address   TEXT NOT NULL,
       latitude  REAL NOT NULL,
       longitude REAL NOT NULL,
+      latitude_idx INTEGER NOT NULL,
+      longitude_idx INTEGER NOT NULL,
       usage_frequency INTEGER DEFAULT 0,
       timestamp TEXT NOT NULL
     );
