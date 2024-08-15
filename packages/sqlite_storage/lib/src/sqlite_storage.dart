@@ -258,12 +258,6 @@ class SqliteStorage {
     }
   }
 
-  // TODO: Replace in future hardcoded distance in meters
-  // int _getScaledValue(double value, [int distanceInMeters = 100]) {
-  //   final scaleFactor = 1 / (distanceInMeters / 111000);
-  //   return (value * scaleFactor).floor();
-  // }
-
   (int, int) _getScaledValue(double latitude, double longitude,
       [int distanceInMeters = 50]) {
     const double latitudeDegreeInMeters = 111120;
