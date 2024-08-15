@@ -44,7 +44,9 @@ class MapNotifier {
   final routePoints = ValueNotifier<List<LatLng>>([]);
 
   // map address retrieval notifier
-  final locationAddress = ValueNotifier<LocationAddressModel?>(null);
+  final locationAddress = ValueNotifier<LocationAddressState>(
+    LocationAddressLoading(),
+  );
 
   // map view notifiers
   late final currentZoomLevel = ValueNotifier<double>(_config.defaultZoom);
@@ -80,7 +82,7 @@ class MapNotifier {
         _locationRepository.locationUpdateStream();
 
     _locationUpdateSubscription = stream.listen((LocationModel location) {
-      log('--- Location [$hashCode]: $location');
+      // log('--- Location [$hashCode]: $location');
 
       locationState.value = LocationUpdateSuccess(location: location);
 
@@ -113,10 +115,16 @@ class MapNotifier {
   }
 
   Future<void> _updateAddress(LocationModel location) async {
-    locationAddress.value =
-    await _geocodingRepository.getAddressFromCoordinates(
-      location,
-    );
+    try {
+      final locationAddressModel =
+          await _geocodingRepository.getAddressFromCoordinates(location);
+
+      locationAddress.value = LocationAddressSuccess(
+        address: locationAddressModel.address,
+      );
+    } on CouldNotGetLocationAddressException catch (e) {
+      locationAddress.value = LocationAddressFailure(error: e);
+    }
   }
 
   Future<void> startRouteRecording() async {
@@ -231,4 +239,36 @@ class LocationUpdateFailure extends LocationState {
         error,
         errorMessage,
       ];
+}
+
+sealed class LocationAddressState extends Equatable {
+  const LocationAddressState();
+}
+
+class LocationAddressLoading extends LocationAddressState {
+  @override
+  List<Object?> get props => [];
+}
+
+class LocationAddressSuccess extends LocationAddressState {
+  const LocationAddressSuccess({
+    required this.address,
+  });
+
+  final String address;
+
+  @override
+  List<Object?> get props => [address];
+}
+
+class LocationAddressFailure extends LocationAddressState {
+  const LocationAddressFailure({
+    required this.error,
+  }) : errorMessage = '$error';
+
+  final dynamic error;
+  final String errorMessage;
+
+  @override
+  List<Object?> get props => [error, errorMessage];
 }
