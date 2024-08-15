@@ -29,7 +29,7 @@ class GeocodingRepository {
     final longitude = location.longitude;
 
     try {
-      log('0> GET ADDRESS FROM COORDINATES: $latitude, $longitude');
+      // log('0> GET ADDRESS FROM COORDINATES: $latitude, $longitude');
 
       final cachedAddress = await _geocodingCacheStorage.getAddressFromCache(
         lat: latitude,
@@ -53,9 +53,9 @@ class GeocodingRepository {
         }),
       );
 
-      if (added > 0) {
-        log('6> PUT ADDRESS TO CACHE: $geocodedAddress [$latitude, $longitude]');
-      }
+      // if (added > 0) {
+      //   log('6> PUT ADDRESS TO CACHE: $geocodedAddress [$latitude, $longitude]');
+      // }
 
       return LocationAddressModel(
         address: geocodedAddress,

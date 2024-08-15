@@ -123,6 +123,7 @@ class MapNotifier {
         address: locationAddressModel.address,
       );
     } on CouldNotGetLocationAddressException catch (e) {
+      log('Could not get location address: $e');
       locationAddress.value = LocationAddressFailure(error: e);
     }
   }

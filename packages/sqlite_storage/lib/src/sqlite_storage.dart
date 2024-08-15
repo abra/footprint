@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'dart:math';
 
 import 'package:sqflite/sqflite.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
@@ -6,7 +6,7 @@ import 'package:sqlite_storage/sqlite_storage.dart';
 import 'database_helper.dart';
 
 class SqliteStorage {
-  SqliteStorage() : _dbHelper = DatabaseHelper() {
+  SqliteStorage() {
     _init();
   }
 
@@ -14,7 +14,7 @@ class SqliteStorage {
   static const String _routePointsTableName = RoutePoints.tableName;
   static const String _geocodingCacheTableName = GeocodingCache.tableName;
 
-  final DatabaseHelper _dbHelper;
+  final DatabaseHelper _dbHelper = DatabaseHelper();
   Database? _database;
 
   Future<Database> get database async {
@@ -217,27 +217,38 @@ class SqliteStorage {
     }
   }
 
-  /// Get address from cache if available
+  /// Get nearest addresses of specified latitude and longitude from cache storage.
   ///
-  /// [latitude] - location latitude
-  /// [longitude] - location longitude
-  /// [distance] - Max distance in meters. default 20
-  /// [limit] - Max amount of results. default 1
+  /// [lat] - latitude<br />
+  /// [lon] - longitude<br />
   ///
   /// Returns string with address or null if not found.
   ///
   /// Throws [UnableExecuteQueryDatabaseException] if unable to execute query
-  Future<List<Map<String, dynamic>>> getAddressListFromCache() async {
+  Future<List<Map<String, dynamic>>> getNearestAddressListFromCache({
+    required double lat,
+    required double lon,
+  }) async {
     try {
       final db = await database;
+      final (latitudeIdx, longitudeIdx) = _getScaledValue(lat, lon);
 
-      final result = await db.query(_geocodingCacheTableName);
+      // There is some conversion error, but it still allows you to limit
+      // the query fetching from the database
+      final result = await db.query(
+        _geocodingCacheTableName,
+        where: 'latitude_idx BETWEEN ? AND ? AND longitude_idx BETWEEN ? AND ?',
+        whereArgs: [
+          latitudeIdx - 1,
+          latitudeIdx + 1,
+          longitudeIdx - 1,
+          longitudeIdx + 1,
+        ],
+      );
 
       if (result.isEmpty) {
         return [];
       }
-
-      // log('Get address list from cache: $result');
 
       return result;
     } on DatabaseException catch (e) {
@@ -245,6 +256,28 @@ class SqliteStorage {
         message: 'Failed to execute query: $e',
       );
     }
+  }
+
+  // TODO: Replace in future hardcoded distance in meters
+  // int _getScaledValue(double value, [int distanceInMeters = 100]) {
+  //   final scaleFactor = 1 / (distanceInMeters / 111000);
+  //   return (value * scaleFactor).floor();
+  // }
+
+  (int, int) _getScaledValue(double latitude, double longitude,
+      [int distanceInMeters = 50]) {
+    const double latitudeDegreeInMeters = 111120;
+
+    final latitudeScaleFactor = 1 / (distanceInMeters / latitudeDegreeInMeters);
+    final latitudeIdx = (latitude * latitudeScaleFactor).round();
+
+    final metersPerDegreeLongitude =
+        latitudeDegreeInMeters * cos(latitude * pi / 180);
+    final longitudeScaleFactor =
+        1 / (distanceInMeters / metersPerDegreeLongitude);
+    final longitudeIdx = (longitude * longitudeScaleFactor).round();
+
+    return (latitudeIdx, longitudeIdx);
   }
 
   Future<int> updateCacheInfoByAddressId(
@@ -280,11 +313,18 @@ class SqliteStorage {
     try {
       final db = await database;
 
+      final (latitudeIdx, longitudeIdx) = _getScaledValue(
+        locationAddress.latitude,
+        locationAddress.longitude,
+      );
+
       return await db.insert(
         _geocodingCacheTableName,
         <String, dynamic>{
           'latitude': locationAddress.latitude,
           'longitude': locationAddress.longitude,
+          'latitude_idx': latitudeIdx,
+          'longitude_idx': longitudeIdx,
           'address': locationAddress.address,
           'timestamp': DateTime.now().toIso8601String(),
         },
