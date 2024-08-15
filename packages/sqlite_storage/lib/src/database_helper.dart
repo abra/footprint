@@ -94,6 +94,7 @@ class GeocodingCache {
 
   static Future<void> createTable(Database db) async {
     await db.execute('''
+    -- Create table
     CREATE TABLE IF NOT EXISTS $tableName (
       id        INTEGER PRIMARY KEY AUTOINCREMENT,
       address   TEXT NOT NULL,
@@ -104,6 +105,10 @@ class GeocodingCache {
       usage_frequency INTEGER DEFAULT 0,
       timestamp TEXT NOT NULL
     );
+    
+    -- Create indexes
+    CREATE INDEX IF NOT EXISTS idx_${tableName}_location
+    ON $tableName(latitude_idx, longitude_idx);
     ''');
   }
 }
