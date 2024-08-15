@@ -1,94 +1,94 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:geocoding/geocoding.dart';
 import 'package:osm_nominatim/osm_nominatim.dart';
 
-// TODO: Refactor the following code
+import 'display_address_builder.dart';
+
+/// [GeocodingService] class
+///
+/// Provides platform geocoding services from [geocoding] package if available,
+/// otherwise it uses package [osm_nominatim] (Nominatim API) is used
 class GeocodingService {
-  GeocodingService();
+  GeocodingService() : _addressBuilder = AddressBuilder();
 
   static DateTime? _lastNominatimCall;
+  final AddressBuilder _addressBuilder;
 
-  Future<Placemark?> getPlacemark({
+  /// Get address from coordinates
+  ///
+  /// [lat] - location latitude
+  /// [lon] - location longitude
+  ///
+  /// Returns string with address
+  Future<String> reverseGeocoding({
     required double lat,
     required double lon,
   }) async {
     try {
-      // Попытка получить данные через geocoding
-      final placemarkList = await placemarkFromCoordinates(lat, lon);
-      if (placemarkList.isNotEmpty) {
-        return placemarkList.first;
+      final placemark = await _getPlacemark(lat, lon);
+      if (placemark != null) {
+        log('2> GEOCODING PACKAGE USED');
+        log('2> PLACEMARK: $placemark');
+        return _addressBuilder.buildAddressFromPlacemark(placemark);
+      }
+
+      final place = await _getPlace(lat, lon);
+      if (place != null) {
+        log('1> NOMINATIM PACKAGE USED');
+        log('1> NOMINATIM: ${place.address!}');
+        return _addressBuilder.buildAddressFromNominatim(place);
       }
     } on Exception catch (e) {
-      // Если произошла ошибка с превышением лимита запросов или другая ошибка
-      return await _getPlacemarkFromNominatim(lat, lon);
+      log('4> ERROR: $e');
+      final place = await _getPlace(lat, lon);
+      if (place != null) {
+        log('3> NOMINATIM PACKAGE USED');
+        log('3> NOMINATIM: ${place.address!}');
+        return _addressBuilder.buildAddressFromNominatim(place);
+      }
     }
-
-    // Если данные не были получены через geocoding, используем Nominatim
-    return await _getPlacemarkFromNominatim(lat, lon);
+    return '$lat, $lon';
   }
 
-  Future<Placemark?> _getPlacemarkFromNominatim(double lat, double lon) async {
-    // Проверка на соблюдение лимита запросов (не чаще 1 раза в секунду)
-    if (_lastNominatimCall != null) {
+  Future<Placemark?> _getPlacemark(double lat, double lon) async {
+    final placemarkList = await placemarkFromCoordinates(lat, lon);
+    return placemarkList.firstWhere(
+      (placemark) => placemark.name != null,
+    );
+  }
+
+  Future<Place?> _getPlace(double lat, double lon) async {
+    final inRateLimit = (_lastNominatimCall != null &&
+        DateTime.now().difference(_lastNominatimCall!).inMilliseconds >= 1200);
+    final canCallNominatimAPI = inRateLimit || _lastNominatimCall == null;
+
+    /// Delay the Nominatim call if it has been called less than
+    /// 1200 milliseconds ago to avoid overloading the Nominatim API
+    if (!canCallNominatimAPI) {
       final timeSinceLastCall = DateTime.now().difference(_lastNominatimCall!);
-      if (timeSinceLastCall.inSeconds < 1) {
+      if (timeSinceLastCall.inMilliseconds <= 1200) {
         await Future.delayed(
-          Duration(seconds: 1 - timeSinceLastCall.inSeconds),
+          Duration(
+            milliseconds: (1200 - timeSinceLastCall.inMilliseconds),
+          ),
+          () => log(
+            'Nominatim call delayed in ${timeSinceLastCall.inMilliseconds}',
+          ),
         );
       }
     }
 
-    // Выполняем запрос к osm_nominatim
     final reverseSearch = await Nominatim.reverseSearch(
       lat: lat,
       lon: lon,
       addressDetails: true,
+      nameDetails: true,
     );
 
     _lastNominatimCall = DateTime.now();
 
-    // Преобразование ответа osm_nominatim в Placemark
-    if (reverseSearch.address != null) {
-      final Map<String, dynamic> address = reverseSearch.address!;
-
-      return Placemark(
-        street: _buildStreet(
-          address['road'],
-          address['houseNumber'],
-          address['houseName'],
-        ),
-        subThoroughfare: address['houseNumber'],
-        thoroughfare: address['road'],
-        subLocality: address['suburb'] ??
-            address['borough'] ??
-            address['neighbourhood'] ??
-            address['quarter'] ??
-            address['cityDistrict'],
-        locality: address['city'] ??
-            address['town'] ??
-            address['village'] ??
-            address['hamlet'],
-        subAdministrativeArea: address['county'] ??
-            address['district'] ??
-            address['stateDistrict'] ??
-            address['municipality'],
-        administrativeArea: address['state'] ?? address['region'],
-        postalCode: address['postcode'],
-        country: address['country'],
-      );
-    }
-
-    return null;
-  }
-
-  String? _buildStreet(String? road, String? houseNumber, String? houseName) {
-    if (houseName != null) {
-      return houseName;
-    }
-    if (houseNumber != null && road != null) {
-      return '$road, $houseNumber';
-    }
-    return road;
+    return reverseSearch;
   }
 }

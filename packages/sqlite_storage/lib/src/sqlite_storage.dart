@@ -1,18 +1,20 @@
 import 'dart:developer';
 
 import 'package:sqflite/sqflite.dart';
-import 'package:sqlite_storage/src/models/location_address_cm.dart';
+import 'package:sqlite_storage/sqlite_storage.dart';
 
 import 'database_helper.dart';
-import 'exceptions.dart';
-import 'models/route_dto.dart';
 
 class SqliteStorage {
+  SqliteStorage() : _dbHelper = DatabaseHelper() {
+    _init();
+  }
+
   static const String _routesTableName = Routes.tableName;
   static const String _routePointsTableName = RoutePoints.tableName;
   static const String _geocodingCacheTableName = GeocodingCache.tableName;
 
-  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final DatabaseHelper _dbHelper;
   Database? _database;
 
   Future<Database> get database async {
@@ -22,7 +24,7 @@ class SqliteStorage {
   }
 
   /// Initialize database
-  Future<void> init() async {
+  Future<void> _init() async {
     _database = await _dbHelper.database;
   }
 
@@ -225,48 +227,19 @@ class SqliteStorage {
   /// Returns string with address or null if not found.
   ///
   /// Throws [UnableExecuteQueryDatabaseException] if unable to execute query
-  Future<LocationAddressCM?> getAddressFromCache({
-    required double latitude,
-    required double longitude,
-    int distance = 20,
-    int limit = 1,
-  }) async {
+  Future<List<Map<String, dynamic>>> getAddressListFromCache() async {
     try {
       final db = await database;
-      final lat = latitude;
-      final lon = longitude;
 
-      final result = await db.rawQuery(
-        '''
-      SELECT 
-      id, 
-      address,
-      usage_frequency,
-      timestamp
-      FROM 
-        $_geocodingCacheTableName
-      '''
-      );
+      final result = await db.query(_geocodingCacheTableName);
 
       if (result.isEmpty) {
-        return null;
+        return [];
       }
 
-      // TODO: Add implementation of distance and limit
+      // log('Get address list from cache: $result');
 
-      final int usageFrequency = result.first['usage_frequency'] as int;
-
-      await _updateUsageFrequency(
-        result.first['id'] as int,
-        usageFrequency + 1,
-      );
-
-      // TODO: For logging purposes. Remove later.
-      if (usageFrequency > 0) {
-        log('@@@ Usage frequency increased: $usageFrequency');
-      }
-
-      return LocationAddressCM.fromMap(result.first);
+      return result;
     } on DatabaseException catch (e) {
       throw UnableExecuteQueryDatabaseException(
         message: 'Failed to execute query: $e',
@@ -274,7 +247,10 @@ class SqliteStorage {
     }
   }
 
-  Future<int> _updateUsageFrequency(int id, int newValue) async {
+  Future<int> updateCacheInfoByAddressId(
+    int id,
+    int newValue,
+  ) async {
     try {
       final db = await database;
 

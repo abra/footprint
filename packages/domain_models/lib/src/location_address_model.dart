@@ -11,4 +11,8 @@ class LocationAddressModel {
   final String address;
   final double latitude;
   final double longitude;
+
+  @override
+  String toString() =>
+      'LocationAddressModel(address: $address, latitude: $latitude, longitude: $longitude)';
 }

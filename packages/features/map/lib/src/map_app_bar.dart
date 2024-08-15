@@ -51,7 +51,7 @@ class _MapAppBarState extends State<MapAppBar> {
 
   @override
   Widget build(BuildContext context) {
-    log('>>> _MapAppBar build $runtimeType $hashCode');
+    // log('>>> _MapAppBar build $runtimeType $hashCode');
     return AppBar(
       surfaceTintColor: Colors.transparent,
       title: DecoratedBox(
@@ -74,22 +74,29 @@ class _MapAppBarState extends State<MapAppBar> {
             right: 8,
             bottom: 4,
           ),
-          child: ValueListenableBuilder<LocationAddressModel?>(
-            valueListenable: _mapNotifier.locationAddress,
-            builder: (BuildContext context, LocationAddressModel? value, _) {
-              return RichText(
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                text: TextSpan(
-                  // TODO(abra): Add address based on current location
-                  text: value?.address ?? 'Current location',
-                  style: GoogleFonts.robotoCondensed(
-                    fontSize: 16,
-                    color: context.appColors.appWhite,
+          child: SizedBox(
+            width: double.infinity,
+            child: ValueListenableBuilder<LocationAddressState>(
+              valueListenable: _mapNotifier.locationAddress,
+              builder: (BuildContext context, LocationAddressState state, _) {
+                return RichText(
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  text: TextSpan(
+                    // TODO(abra): Add address based on current location
+                    text: switch (state) {
+                      LocationAddressLoading() => 'Loading...',
+                      LocationAddressSuccess(address: final address) => address,
+                      LocationAddressFailure() => 'Error',
+                    },
+                    style: GoogleFonts.robotoCondensed(
+                      fontSize: 16,
+                      color: context.appColors.appWhite,
+                    ),
                   ),
-                ),
-              );
-            }
+                );
+              }
+            ),
           ),
         ),
       ),
