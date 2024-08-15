@@ -258,8 +258,11 @@ class SqliteStorage {
     }
   }
 
-  (int, int) _getScaledValue(double latitude, double longitude,
-      [int distanceInMeters = 50]) {
+  (int, int) _getScaledValue(
+    double latitude,
+    double longitude, [
+    int distanceInMeters = 50,
+  ]) {
     const double latitudeDegreeInMeters = 111120;
 
     final latitudeScaleFactor = 1 / (distanceInMeters / latitudeDegreeInMeters);
@@ -267,6 +270,7 @@ class SqliteStorage {
 
     final metersPerDegreeLongitude =
         latitudeDegreeInMeters * cos(latitude * pi / 180);
+
     final longitudeScaleFactor =
         1 / (distanceInMeters / metersPerDegreeLongitude);
     final longitudeIdx = (longitude * longitudeScaleFactor).round();
