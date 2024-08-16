@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:domain_models/domain_models.dart';
 import 'package:meta/meta.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
@@ -31,7 +29,7 @@ class GeocodingRepository {
     try {
       // log('0> GET ADDRESS FROM COORDINATES: $latitude, $longitude');
 
-      final cachedAddress = await _geocodingCacheStorage.getAddressFromCache(
+      final cachedAddress = await _geocodingCacheStorage.getPlaceAddress(
         lat: latitude,
         lon: longitude,
       );
@@ -45,8 +43,8 @@ class GeocodingRepository {
         lon: longitude,
       );
 
-      final added = await _geocodingCacheStorage.addAddressToCache(
-        LocationAddressCM.fromMap({
+      final added = await _geocodingCacheStorage.addPlaceAddress(
+        PlaceAddressCM.fromMap({
           'address': geocodedAddress,
           'latitude': latitude,
           'longitude': longitude,

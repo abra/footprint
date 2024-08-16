@@ -225,7 +225,7 @@ class SqliteStorage {
   /// Returns string with address or null if not found.
   ///
   /// Throws [UnableExecuteQueryDatabaseException] if unable to execute query
-  Future<List<Map<String, dynamic>>> getNearestAddressListFromCache({
+  Future<List<Map<String, dynamic>>> getNearestPlaces({
     required double lat,
     required double lon,
   }) async {
@@ -278,8 +278,13 @@ class SqliteStorage {
     return (latitudeIdx, longitudeIdx);
   }
 
-  Future<int> updateCacheInfoByAddressId(
-    int id,
+  /// Update usage frequency and timestamp of geocoding cache entry.
+  ///
+  /// [placeAddressId] - Place address id of the entry to update
+  ///
+  /// Returns number of rows affected.
+  Future<int> updatePlaceAddressInfoById(
+    int placeAddressId,
     int newValue,
   ) async {
     try {
@@ -292,38 +297,38 @@ class SqliteStorage {
           'timestamp': DateTime.now().toIso8601String(),
         },
         where: 'id = ?',
-        whereArgs: [id],
+        whereArgs: [placeAddressId],
       );
     } on DatabaseException catch (e) {
       throw UnableUpdateDatabaseException(
         message:
-            "Failed to update usage frequency to [$newValue] of address [$id]: $e",
+            "Failed to update usage frequency to [$newValue] of address [$placeAddressId]: $e",
       );
     }
   }
 
   /// Add new geocoding cache entry.
   ///
-  /// [locationAddress] - [Map] object to add to cache.
+  /// [placeAddress] - [PlaceAddressCM] model to add to cache.
   ///
   /// Throws [UnableInsertDatabaseException] if insertion fails.
-  Future<int> addAddressToCache(LocationAddressCM locationAddress) async {
+  Future<int> addPlaceAddress(PlaceAddressCM placeAddress) async {
     try {
       final db = await database;
 
       final (latitudeIdx, longitudeIdx) = _getScaledValue(
-        locationAddress.latitude,
-        locationAddress.longitude,
+        placeAddress.latitude,
+        placeAddress.longitude,
       );
 
       return await db.insert(
         _geocodingCacheTableName,
         <String, dynamic>{
-          'latitude': locationAddress.latitude,
-          'longitude': locationAddress.longitude,
+          'latitude': placeAddress.latitude,
+          'longitude': placeAddress.longitude,
           'latitude_idx': latitudeIdx,
           'longitude_idx': longitudeIdx,
-          'address': locationAddress.address,
+          'address': placeAddress.address,
           'timestamp': DateTime.now().toIso8601String(),
         },
       );

@@ -12,24 +12,24 @@ class GeocodingCacheStorage {
   final SqliteStorage _sqliteStorage;
   final Duration _cacheMaxAge;
 
-  Future<int> addAddressToCache(LocationAddressCM locationAddress) async {
-    return await _sqliteStorage.addAddressToCache(locationAddress);
+  Future<int> addPlaceAddress(PlaceAddressCM placeAddress) async {
+    return await _sqliteStorage.addPlaceAddress(placeAddress);
   }
 
-  Future<LocationAddressCM?> getAddressFromCache({
+  Future<PlaceAddressCM?> getPlaceAddress({
     required double lat,
     required double lon,
     double distance = 15,
     double limit = 1,
   }) async {
-    final result = await _sqliteStorage.getNearestAddressListFromCache(
+    final result = await _sqliteStorage.getNearestPlaces(
       lat: lat,
       lon: lon,
     );
 
     if (result.isEmpty) return null;
 
-    final nearestResult = await _getNearestAddress(
+    final nearestResult = await _getNearestPlaceAddress(
       result,
       lat,
       lon,
@@ -37,57 +37,53 @@ class GeocodingCacheStorage {
       limit,
     );
 
-    if (nearestResult.isEmpty) {
+    if (nearestResult == null) {
       return null;
     }
 
-    final int usageFrequency = nearestResult['usage_frequency'] as int;
+    final int usageFrequency = nearestResult.usageFrequency;
 
-    await _sqliteStorage.updateCacheInfoByAddressId(
-      nearestResult['id'] as int,
+    await _sqliteStorage.updatePlaceAddressInfoById(
+      nearestResult.id,
       usageFrequency + 1,
     );
 
-    return LocationAddressCM.fromMap(nearestResult);
+    return nearestResult;
   }
 
-  Future<Map<String, dynamic>> _getNearestAddress(
-    List<Map<String, dynamic>> result,
+  Future<PlaceAddressCM?> _getNearestPlaceAddress(
+    List<Map<String, dynamic>> cachedPlaces,
     double lat,
     double lon,
     double distance,
     double limit,
   ) async {
-    List<Map<String, dynamic>> filteredCoordinates = result
-        .where((e) =>
-            _calculateDistance(
-              lat,
-              lon,
-              e['latitude'] as double,
-              e['longitude'] as double,
-            ) <=
-            distance)
-        .map((e) => <String, dynamic>{
-              ...e,
-              'distance': _calculateDistance(
-                lat,
-                lon,
-                e['latitude'] as double,
-                e['longitude'] as double,
-              ),
-            })
-        .toList();
+    List<Map<String, dynamic>> filteredPlaces = [];
 
-    if (filteredCoordinates.isEmpty) {
-      return {};
+    for (var place in cachedPlaces) {
+      double eLat = place['latitude'] as double;
+      double eLon = place['longitude'] as double;
+      double dist = _calculateDistance(lat, lon, eLat, eLon);
+
+      if (dist <= distance) {
+        Map<String, dynamic> e = <String, dynamic>{
+          ...place,
+          'distance': dist,
+        };
+
+        filteredPlaces.add(e);
+      }
     }
 
-    filteredCoordinates.sort(
+    if (filteredPlaces.isEmpty) {
+      return null;
+    }
+
+    filteredPlaces.sort(
       (a, b) => (a['distance'] as double).compareTo((b['distance'] as double)),
     );
 
-    // logger.log('5> GET FROM CACHE: ${filteredCoordinates.first['address']}');
-    return filteredCoordinates.first;
+    return PlaceAddressCM.fromMap(filteredPlaces.first);
   }
 
   double _calculateDistance(

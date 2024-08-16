@@ -33,7 +33,7 @@ class GeocodingService {
       if (place != null) {
         return _addressBuilder.buildAddressFromNominatim(place);
       }
-    } on Exception catch (e) {
+    } on Exception {
       final place = await _getPlace(lat, lon);
       if (place != null) {
         return _addressBuilder.buildAddressFromNominatim(place);
