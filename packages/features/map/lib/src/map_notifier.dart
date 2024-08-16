@@ -44,8 +44,8 @@ class MapNotifier {
   final routePoints = ValueNotifier<List<LatLng>>([]);
 
   // map address retrieval notifier
-  final locationAddress = ValueNotifier<LocationAddressState>(
-    LocationAddressLoading(),
+  final placeAddress = ValueNotifier<PlaceAddressState>(
+    PlaceAddressLoading(),
   );
 
   // map view notifiers
@@ -116,15 +116,15 @@ class MapNotifier {
 
   Future<void> _updateAddress(LocationModel location) async {
     try {
-      final locationAddressModel =
+      final placeAddressModel =
           await _geocodingRepository.getAddressFromCoordinates(location);
 
-      locationAddress.value = LocationAddressSuccess(
-        address: locationAddressModel.address,
+      placeAddress.value = PlaceAddressSuccess(
+        address: placeAddressModel.address,
       );
-    } on CouldNotGetLocationAddressException catch (e) {
+    } on CouldNotGetPlaceAddressException catch (e) {
       log('Could not get location address: $e');
-      locationAddress.value = LocationAddressFailure(error: e);
+      placeAddress.value = PlaceAddressFailure(error: e);
     }
   }
 
@@ -242,17 +242,17 @@ class LocationUpdateFailure extends LocationState {
       ];
 }
 
-sealed class LocationAddressState extends Equatable {
-  const LocationAddressState();
+sealed class PlaceAddressState extends Equatable {
+  const PlaceAddressState();
 }
 
-class LocationAddressLoading extends LocationAddressState {
+class PlaceAddressLoading extends PlaceAddressState {
   @override
   List<Object?> get props => [];
 }
 
-class LocationAddressSuccess extends LocationAddressState {
-  const LocationAddressSuccess({
+class PlaceAddressSuccess extends PlaceAddressState {
+  const PlaceAddressSuccess({
     required this.address,
   });
 
@@ -262,8 +262,8 @@ class LocationAddressSuccess extends LocationAddressState {
   List<Object?> get props => [address];
 }
 
-class LocationAddressFailure extends LocationAddressState {
-  const LocationAddressFailure({
+class PlaceAddressFailure extends PlaceAddressState {
+  const PlaceAddressFailure({
     required this.error,
   }) : errorMessage = '$error';
 

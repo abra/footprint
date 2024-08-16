@@ -29,8 +29,8 @@ class DefinitionsForPermissionNotFoundException implements Exception {
       ' on Android or the Info.plist on iOS)';
 }
 
-class CouldNotGetLocationAddressException implements Exception {
-  const CouldNotGetLocationAddressException({
+class CouldNotGetPlaceAddressException implements Exception {
+  const CouldNotGetPlaceAddressException({
     this.message = 'Could not get the place address.',
   });
 

@@ -1,8 +1,8 @@
 import 'package:meta/meta.dart';
 
 @immutable
-class LocationAddressModel {
-  const LocationAddressModel({
+class PlaceAddressModel {
+  const PlaceAddressModel({
     required this.address,
     required this.latitude,
     required this.longitude,
@@ -14,5 +14,5 @@ class LocationAddressModel {
 
   @override
   String toString() =>
-      'LocationAddressModel(address: $address, latitude: $latitude, longitude: $longitude)';
+      'PlaceAddressModel(address: $address, latitude: $latitude, longitude: $longitude)';
 }

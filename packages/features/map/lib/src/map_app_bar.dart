@@ -76,18 +76,18 @@ class _MapAppBarState extends State<MapAppBar> {
           ),
           child: SizedBox(
             width: double.infinity,
-            child: ValueListenableBuilder<LocationAddressState>(
-              valueListenable: _mapNotifier.locationAddress,
-              builder: (BuildContext context, LocationAddressState state, _) {
+            child: ValueListenableBuilder<PlaceAddressState>(
+              valueListenable: _mapNotifier.placeAddress,
+              builder: (BuildContext context, PlaceAddressState state, _) {
                 return RichText(
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
                   text: TextSpan(
                     // TODO(abra): Add address based on current location
                     text: switch (state) {
-                      LocationAddressLoading() => 'Loading...',
-                      LocationAddressSuccess(address: final address) => address,
-                      LocationAddressFailure() => 'Error',
+                      PlaceAddressLoading() => 'Loading...',
+                      PlaceAddressSuccess(address: final address) => address,
+                      PlaceAddressFailure() => 'Error',
                     },
                     style: GoogleFonts.robotoCondensed(
                       fontSize: 16,
