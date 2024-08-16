@@ -165,6 +165,7 @@ class _TileLayerWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     log('>>> _TileLayerWidget build $runtimeType $hashCode');
     final mapNotifier = context.notifier;
+    // TODO: Implement handler for errors via errorTileCallback
     return TileLayer(
       retinaMode: true,
       userAgentPackageName: mapNotifier.viewConfig.userAgentPackageName,
