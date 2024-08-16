@@ -27,8 +27,6 @@ class GeocodingRepository {
     final longitude = location.longitude;
 
     try {
-      // log('0> GET ADDRESS FROM COORDINATES: $latitude, $longitude');
-
       final cachedAddress = await _geocodingCacheStorage.getPlaceAddress(
         lat: latitude,
         lon: longitude,
@@ -50,10 +48,6 @@ class GeocodingRepository {
           'longitude': longitude,
         }),
       );
-
-      // if (added > 0) {
-      //   log('6> PUT ADDRESS TO CACHE: $geocodedAddress [$latitude, $longitude]');
-      // }
 
       return PlaceAddressModel(
         address: geocodedAddress,
