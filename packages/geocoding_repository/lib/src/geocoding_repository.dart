@@ -41,7 +41,7 @@ class GeocodingRepository {
         lon: longitude,
       );
 
-      final added = await _geocodingCacheStorage.addPlaceAddress(
+      await _geocodingCacheStorage.addPlaceAddress(
         PlaceAddressCM.fromMap({
           'address': geocodedAddress,
           'latitude': latitude,
