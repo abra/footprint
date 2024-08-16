@@ -40,7 +40,7 @@ class SqliteStorage {
   /// Returns inserted route id
   ///
   /// Throws [UnableInsertDatabaseException] if failed to insert route point
-  Future<int> createRoute(Map<String, dynamic> point) async {
+  Future<int> createNewRoute(Map<String, dynamic> point) async {
     try {
       final db = await database;
 
@@ -116,7 +116,7 @@ class SqliteStorage {
   /// Returns [RouteDTO] object with route points
   ///
   /// Throws [UnableExecuteQueryDatabaseException] if unable to execute query
-  Future<RouteDTO?> getAllRoutePoints(int routeId) async {
+  Future<RouteDTO?> fetchRouteWithPoints(int routeId) async {
     try {
       final db = await database;
 
@@ -158,7 +158,7 @@ class SqliteStorage {
   /// [routeId] - Id of the route to delete.
   ///
   /// Throws [UnableDeleteDatabaseException] if database operation fails.
-  Future<void> deleteRouteById(int routeId) async {
+  Future<void> deleteRouteWithPoints(int routeId) async {
     try {
       final db = await database;
 
@@ -198,7 +198,7 @@ class SqliteStorage {
   /// Returns number of rows affected.
   ///
   /// Throws [UnableUpdateDatabaseException] if unable to update database.
-  Future<int> changeRouteStatus(int routeId, String status) async {
+  Future<int> updateRouteStatus(int routeId, String status) async {
     try {
       final db = await database;
 
@@ -225,7 +225,7 @@ class SqliteStorage {
   /// Returns string with address or null if not found.
   ///
   /// Throws [UnableExecuteQueryDatabaseException] if unable to execute query
-  Future<List<Map<String, dynamic>>> getNearestPlaces({
+  Future<List<Map<String, dynamic>>> fetchNearestPlaces({
     required double lat,
     required double lon,
   }) async {
@@ -283,7 +283,7 @@ class SqliteStorage {
   /// [placeAddressId] - Place address id of the entry to update
   ///
   /// Returns number of rows affected.
-  Future<int> updatePlaceAddressInfoById(
+  Future<int> updatePlaceAddressCache(
     int placeAddressId,
     int newValue,
   ) async {
@@ -312,7 +312,7 @@ class SqliteStorage {
   /// [placeAddress] - [PlaceAddressCM] model to add to cache.
   ///
   /// Throws [UnableInsertDatabaseException] if insertion fails.
-  Future<int> addPlaceAddress(PlaceAddressCM placeAddress) async {
+  Future<int> addPlaceAddressToCache(PlaceAddressCM placeAddress) async {
     try {
       final db = await database;
 
@@ -344,7 +344,7 @@ class SqliteStorage {
   /// [maxAge] - [Duration] object of max age of records to delete.
   ///
   /// Throws [UnableDeleteDatabaseException] if deletion fails.
-  Future<int> clearGeocodingCache({required Duration maxAge}) async {
+  Future<int> deleteOldCacheEntries({required Duration maxAge}) async {
     try {
       final db = await database;
 

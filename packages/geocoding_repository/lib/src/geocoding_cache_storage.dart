@@ -13,7 +13,7 @@ class GeocodingCacheStorage {
   final Duration _cacheMaxAge;
 
   Future<int> addPlaceAddress(PlaceAddressCM placeAddress) async {
-    return await _sqliteStorage.addPlaceAddress(placeAddress);
+    return await _sqliteStorage.addPlaceAddressToCache(placeAddress);
   }
 
   Future<PlaceAddressCM?> getPlaceAddress({
@@ -22,33 +22,31 @@ class GeocodingCacheStorage {
     double distance = 15,
     double limit = 1,
   }) async {
-    final result = await _sqliteStorage.getNearestPlaces(
+    final places = await _sqliteStorage.fetchNearestPlaces(
       lat: lat,
       lon: lon,
     );
 
-    if (result.isEmpty) return null;
+    if (places.isEmpty) return null;
 
-    final nearestResult = await _getNearestPlaceAddress(
-      result,
+    final nearestPlace = await _getNearestPlaceAddress(
+      places,
       lat,
       lon,
       distance,
       limit,
     );
 
-    if (nearestResult == null) {
+    if (nearestPlace == null) {
       return null;
     }
 
-    final int usageFrequency = nearestResult.usageFrequency;
-
-    await _sqliteStorage.updatePlaceAddressInfoById(
-      nearestResult.id,
-      usageFrequency + 1,
+    await _sqliteStorage.updatePlaceAddressCache(
+      nearestPlace.id,
+      nearestPlace.usageFrequency + 1,
     );
 
-    return nearestResult;
+    return nearestPlace;
   }
 
   Future<PlaceAddressCM?> _getNearestPlaceAddress(
@@ -114,5 +112,5 @@ class GeocodingCacheStorage {
   }
 
   Future<int> clearCache() async =>
-      await _sqliteStorage.clearGeocodingCache(maxAge: _cacheMaxAge);
+      await _sqliteStorage.deleteOldCacheEntries(maxAge: _cacheMaxAge);
 }
