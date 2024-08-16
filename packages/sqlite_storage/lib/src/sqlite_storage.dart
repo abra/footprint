@@ -334,7 +334,7 @@ class SqliteStorage {
     }
   }
 
-  /// Delete all geocoding cache entries.
+  /// Delete all geocoding cache entries older than [maxAge].
   ///
   /// [maxAge] - [Duration] object of max age of records to delete.
   ///
