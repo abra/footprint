@@ -339,16 +339,16 @@ class SqliteStorage {
   /// [maxAge] - [Duration] object of max age of records to delete.
   ///
   /// Throws [UnableDeleteDatabaseException] if deletion fails.
-  Future<int> clearGeocodingCache(Duration maxAge) async {
+  Future<int> clearGeocodingCache({required Duration maxAge}) async {
     try {
       final db = await database;
 
-      final timestamp = DateTime.now().subtract(maxAge).toIso8601String();
+      final timestamp = DateTime.now().subtract(maxAge);
 
       return await db.delete(
         _geocodingCacheTableName,
         where: 'timestamp < ?',
-        whereArgs: [timestamp],
+        whereArgs: [timestamp.toIso8601String()],
       );
     } on DatabaseException catch (e) {
       throw UnableDeleteDatabaseException(

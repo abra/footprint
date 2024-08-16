@@ -58,7 +58,6 @@ class GeocodingCacheStorage {
     double distance,
     double limit,
   ) async {
-
     List<Map<String, dynamic>> filteredCoordinates = result
         .where((e) =>
             _calculateDistance(
@@ -119,5 +118,5 @@ class GeocodingCacheStorage {
   }
 
   Future<int> clearCache() async =>
-      await _sqliteStorage.clearGeocodingCache(_cacheMaxAge);
+      await _sqliteStorage.clearGeocodingCache(maxAge: _cacheMaxAge);
 }
