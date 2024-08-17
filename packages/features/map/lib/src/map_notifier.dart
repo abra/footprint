@@ -82,8 +82,6 @@ class MapNotifier {
         _locationRepository.getLocationUpdateStream();
 
     _locationUpdateSubscription = stream.listen((LocationModel location) {
-      // log('--- Location [$hashCode]: $location');
-
       locationState.value = LocationUpdateSuccess(location: location);
 
       _updateAddress(location);
