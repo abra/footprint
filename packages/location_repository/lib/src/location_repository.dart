@@ -39,9 +39,9 @@ class LocationRepository {
     }
   }
 
-  Stream<LocationModel> locationUpdateStream() async* {
+  Stream<LocationModel> getLocationUpdateStream() async* {
     try {
-      final positionUpdateStream = _locationService.positionUpdateStream();
+      final positionUpdateStream = _locationService.getPositionUpdateStream();
 
       await for (final position in positionUpdateStream) {
         yield position.toDomainModel();

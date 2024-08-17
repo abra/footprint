@@ -79,7 +79,7 @@ class MapNotifier {
 
   Future<void> _startLocationUpdate() async {
     final Stream<LocationModel> stream =
-        _locationRepository.locationUpdateStream();
+        _locationRepository.getLocationUpdateStream();
 
     _locationUpdateSubscription = stream.listen((LocationModel location) {
       // log('--- Location [$hashCode]: $location');

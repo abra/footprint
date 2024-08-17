@@ -34,7 +34,7 @@ class LocationService {
     return Permission.granted;
   }
 
-  Stream<Position> positionUpdateStream() async* {
+  Stream<Position> getPositionUpdateStream() async* {
     final locationSettings = LocationSettings(
       distanceFilter: _distanceFilter,
     );
