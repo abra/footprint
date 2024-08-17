@@ -42,11 +42,11 @@ class GeocodingRepository {
       );
 
       await _geocodingCacheStorage.addPlaceAddress(
-        PlaceAddressCM.fromMap({
+        <String, dynamic>{
           'address': geocodedAddress,
           'latitude': latitude,
           'longitude': longitude,
-        }),
+        },
       );
 
       return PlaceAddressModel(
@@ -54,9 +54,10 @@ class GeocodingRepository {
         latitude: latitude,
         longitude: longitude,
       );
-    } catch (e) {
+    } catch (e, s) {
       throw CouldNotGetPlaceAddressException(
         message: 'Could not get place address from $latitude, $longitude: $e',
+        stackTrace: s,
       );
     }
   }

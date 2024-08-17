@@ -12,7 +12,7 @@ class GeocodingCacheStorage {
   final SqliteStorage _sqliteStorage;
   final Duration _cacheMaxAge;
 
-  Future<int> addPlaceAddress(PlaceAddressCM placeAddress) async {
+  Future<int> addPlaceAddress(Map<String, dynamic> placeAddress) async {
     return await _sqliteStorage.addPlaceAddressToCache(placeAddress);
   }
 
@@ -81,7 +81,12 @@ class GeocodingCacheStorage {
       (a, b) => (a['distance'] as double).compareTo((b['distance'] as double)),
     );
 
-    return PlaceAddressCM.fromMap(filteredPlaces.first);
+    try {
+      return PlaceAddressCM.fromMap(filteredPlaces.first);
+    } catch (e) {
+      print("ERROR: $e");
+      return null;
+    }
   }
 
   double _calculateDistance(
