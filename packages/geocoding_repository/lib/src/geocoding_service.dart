@@ -19,7 +19,7 @@ class GeocodingService {
   /// [lon] - location longitude
   ///
   /// Returns address as a [String]
-  Future<String> reverseGeocoding({
+  Future<String?> reverseGeocoding({
     required double lat,
     required double lon,
   }) async {
@@ -40,7 +40,7 @@ class GeocodingService {
         return _addressBuilder.buildAddressFromNominatim(place);
       }
     }
-    return '$lat, $lon';
+    return null;
   }
 
   Future<Placemark?> _getPlacemark(double lat, double lon) async {

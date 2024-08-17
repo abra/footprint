@@ -20,7 +20,7 @@ class GeocodingRepository {
   final GeocodingService _geocodingService;
   final GeocodingCacheStorage _geocodingCacheStorage;
 
-  Future<PlaceAddressModel> getAddressFromCoordinates(
+  Future<PlaceAddressModel?> getAddressFromCoordinates(
     LocationModel location,
   ) async {
     final latitude = location.latitude;
@@ -41,19 +41,22 @@ class GeocodingRepository {
         lon: longitude,
       );
 
-      await _geocodingCacheStorage.addPlaceAddress(
-        <String, dynamic>{
-          'address': geocodedAddress,
-          'latitude': latitude,
-          'longitude': longitude,
-        },
-      );
+      if (geocodedAddress != null) {
+        await _geocodingCacheStorage.addPlaceAddress(
+          <String, dynamic>{
+            'address': geocodedAddress,
+            'latitude': latitude,
+            'longitude': longitude,
+          },
+        );
 
-      return PlaceAddressModel(
-        address: geocodedAddress,
-        latitude: latitude,
-        longitude: longitude,
-      );
+        return PlaceAddressModel(
+          address: geocodedAddress,
+          latitude: latitude,
+          longitude: longitude,
+        );
+      }
+      return null;
     } catch (e, s) {
       throw CouldNotGetPlaceAddressException(
         message: 'Could not get place address from $latitude, $longitude: $e',

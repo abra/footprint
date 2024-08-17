@@ -119,9 +119,11 @@ class MapNotifier {
       final placeAddressModel =
           await _geocodingRepository.getAddressFromCoordinates(location);
 
-      placeAddress.value = PlaceAddressSuccess(
-        address: placeAddressModel.address,
-      );
+      if (placeAddressModel != null) {
+        placeAddress.value = PlaceAddressSuccess(
+          address: placeAddressModel.address,
+        );
+      }
     } on CouldNotGetPlaceAddressException catch (e) {
       log('Could not get location address: $e');
       placeAddress.value = PlaceAddressFailure(error: e);
