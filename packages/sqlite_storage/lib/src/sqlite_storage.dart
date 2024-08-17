@@ -316,23 +316,19 @@ class SqliteStorage {
     try {
       final db = await database;
 
-      final latitude = placeAddress['latitude'] as double;
-      final longitude = placeAddress['longitude'] as double;
-      final address = placeAddress['address'] as String;
-
       final (latitudeIdx, longitudeIdx) = _getScaledValue(
-        latitude,
-        longitude,
+        placeAddress['latitude'] as double,
+        placeAddress['longitude'] as double,
       );
 
       return await db.insert(
         _geocodingCacheTableName,
         <String, dynamic>{
-          'latitude': latitude,
-          'longitude': longitude,
+          'latitude': placeAddress['latitude'] as double,
+          'longitude': placeAddress['longitude'] as double,
           'latitude_idx': latitudeIdx,
           'longitude_idx': longitudeIdx,
-          'address': address,
+          'address': placeAddress['address'] as String,
           'timestamp': DateTime.now().toIso8601String(),
         },
       );
