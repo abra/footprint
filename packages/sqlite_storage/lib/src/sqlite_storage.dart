@@ -231,7 +231,7 @@ class SqliteStorage {
   }) async {
     try {
       final db = await database;
-      final (latitudeIdx, longitudeIdx) = _getScaledValue(lat, lon);
+      final (latitudeIdx, longitudeIdx) = _getScaledValues(lat, lon);
 
       // There is some conversion error, but it still allows you to limit
       // the query fetching from the database
@@ -258,7 +258,7 @@ class SqliteStorage {
     }
   }
 
-  (int, int) _getScaledValue(
+  (int, int) _getScaledValues(
     double latitude,
     double longitude, [
     int distanceInMeters = 50,
@@ -320,7 +320,7 @@ class SqliteStorage {
       final longitude = placeAddress['longitude'] as double;
       final address = placeAddress['address'] as String;
 
-      final (latitudeIdx, longitudeIdx) = _getScaledValue(
+      final (latitudeIdx, longitudeIdx) = _getScaledValues(
         latitude,
         longitude,
       );
