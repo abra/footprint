@@ -4,12 +4,13 @@ import 'package:geolocator/geolocator.dart';
 
 import 'permissions.dart';
 
+/// Location service wrapper for [Geolocator]
 class LocationService {
-  const LocationService({
-    int? distanceFilter,
-  }) : _distanceFilter = distanceFilter ?? 5;
+  const LocationService._();
 
-  final int _distanceFilter;
+  static const LocationService _instance = LocationService._();
+
+  factory LocationService() => _instance;
 
   Future<bool> ensureLocationServiceEnabled() async =>
       await Geolocator.isLocationServiceEnabled();
@@ -34,13 +35,11 @@ class LocationService {
     return Permission.granted;
   }
 
-  Stream<Position> getPositionUpdateStream() async* {
-    final locationSettings = LocationSettings(
-      distanceFilter: _distanceFilter,
-    );
-
+  Stream<Position> getPositionUpdateStream({
+    LocationSettings? locationSettings,
+  }) async* {
     final positionStream = Geolocator.getPositionStream(
-      locationSettings: locationSettings,
+      locationSettings: locationSettings ?? LocationSettings(distanceFilter: 5),
     );
 
     await for (Position position in positionStream) {

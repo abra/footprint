@@ -27,7 +27,7 @@ class FootprintApp extends StatelessWidget {
     super.key,
   });
 
-  final _locationRepository = const LocationRepository();
+  final _locationRepository = LocationRepository();
   final _routesRepository = RoutesRepository();
   final _sqliteStorage = SqliteStorage();
   late final _geocodingRepository = GeocodingRepository(

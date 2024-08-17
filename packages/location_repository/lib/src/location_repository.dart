@@ -7,9 +7,9 @@ import 'mappers/position_to_domain.dart';
 import 'permissions.dart';
 
 class LocationRepository {
-  const LocationRepository({
+  LocationRepository({
     @visibleForTesting LocationService? locationService,
-  }) : _locationService = locationService ?? const LocationService();
+  }) : _locationService = locationService ?? LocationService();
 
   final LocationService _locationService;
 
