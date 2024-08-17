@@ -12,6 +12,8 @@ class LocationService {
 
   factory LocationService() => _instance;
 
+  static Stream<Position>? _stream;
+
   Future<bool> ensureLocationServiceEnabled() async =>
       await Geolocator.isLocationServiceEnabled();
 
@@ -38,11 +40,11 @@ class LocationService {
   Stream<Position> getPositionUpdateStream({
     LocationSettings? locationSettings,
   }) async* {
-    final positionStream = Geolocator.getPositionStream(
+    _stream ??= Geolocator.getPositionStream(
       locationSettings: locationSettings ?? LocationSettings(distanceFilter: 5),
     );
 
-    await for (Position position in positionStream) {
+    await for (Position position in _stream!) {
       yield position;
       // TODO: Remove it
       // throw const LocationServiceDisabledException();
