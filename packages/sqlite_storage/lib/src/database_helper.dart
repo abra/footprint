@@ -4,12 +4,13 @@ import 'package:sqflite/sqflite.dart';
 import 'models/exceptions.dart';
 
 class DatabaseHelper {
+  DatabaseHelper._internal();
+
   static final DatabaseHelper _instance = DatabaseHelper._internal();
-  static Database? _database;
 
   factory DatabaseHelper() => _instance;
 
-  DatabaseHelper._internal();
+  static Database? _database;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
