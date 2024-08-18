@@ -317,7 +317,7 @@ class SqliteStorage {
 
   /// Add new geocoding cache entry.
   ///
-  /// [placeAddress] - [PlaceAddressCM] model to add to cache.
+  /// [placeAddress] - [Map] object to add to cache.
   ///
   /// Throws [UnableInsertDatabaseException] if insertion fails.
   Future<int> addPlaceAddressToCache(Map<String, dynamic> placeAddress) async {
