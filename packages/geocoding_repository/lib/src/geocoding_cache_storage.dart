@@ -12,9 +12,16 @@ class GeocodingCacheStorage {
   final SqliteStorage _sqliteStorage;
   final Duration _cacheMaxAge;
 
-  Future<int> addPlaceAddress(Map<String, dynamic> placeAddress) async {
-    return await _sqliteStorage.addPlaceAddressToCache(placeAddress);
-  }
+  Future<int> addPlaceAddress({
+    required String address,
+    required double lat,
+    required double lon,
+  }) async =>
+      await _sqliteStorage.addPlaceAddressToCache(
+        address: address,
+        lat: lat,
+        lon: lon,
+      );
 
   Future<PlaceAddressCM?> getPlaceAddress({
     required double lat,

@@ -43,11 +43,9 @@ class GeocodingRepository {
 
       if (geocodedAddress != null) {
         await _geocodingCacheStorage.addPlaceAddress(
-          <String, dynamic>{
-            'address': geocodedAddress,
-            'latitude': latitude,
-            'longitude': longitude,
-          },
+            address: geocodedAddress,
+            lat: latitude,
+            lon: longitude,
         );
 
         return PlaceAddressModel(

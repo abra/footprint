@@ -317,27 +317,29 @@ class SqliteStorage {
 
   /// Add new geocoding cache entry.
   ///
-  /// [placeAddress] - [Map] object to add to cache.
+  /// [address] - Address of the entry
+  /// [lat] - Latitude of the entry
+  /// [lon] - Longitude of the entry
   ///
   /// Throws [UnableInsertDatabaseException] if insertion fails.
-  Future<int> addPlaceAddressToCache(Map<String, dynamic> placeAddress) async {
+  Future<int> addPlaceAddressToCache({
+    required String address,
+    required double lat,
+    required double lon,
+  }) async {
     try {
       final db = await database;
 
-      final latitude = placeAddress['latitude'] as double;
-      final longitude = placeAddress['longitude'] as double;
-      final address = placeAddress['address'] as String;
-
       final (latitudeIdx, longitudeIdx) = _getScaledValues(
-        latitude,
-        longitude,
+        lat,
+        lon,
       );
 
       return await db.insert(
         _geocodingCacheTableName,
         <String, dynamic>{
-          'latitude': latitude,
-          'longitude': longitude,
+          'latitude': lat,
+          'longitude': lon,
           'latitude_idx': latitudeIdx,
           'longitude_idx': longitudeIdx,
           'address': address,
