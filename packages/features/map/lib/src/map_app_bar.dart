@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/cupertino.dart';
@@ -95,7 +93,7 @@ class _MapAppBarState extends State<MapAppBar> {
                     ),
                   ),
                 );
-              }
+              },
             ),
           ),
         ),
