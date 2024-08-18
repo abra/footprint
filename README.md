@@ -18,7 +18,11 @@
   
 - [flutter_map_animations](https://pub.dev/packages/flutter_map_animations) - Animation utilities for markers and controls of the flutter_map package
 
-- [geolocator](https://pub.dev/packages/geolocator) - Geolocation plugin for Flutter. This plugin provides a cross-platform API for generic location (GPS etc.) functions 
+- [geolocator](https://pub.dev/packages/geolocator) - Geolocation plugin for Flutter. This plugin provides a cross-platform API for generic location (GPS etc.) functions
+
+- [geocoding](https://pub.dev/packages/geocoding) - A Flutter Geocoding plugin which provides easy geocoding and reverse-geocoding features
+
+- [osm_nominatim](https://pub.dev/packages/osm_nominatim) - A library to perform OSM Nominatim searches also supporting reverse searches. Used in app as a fallback for `geocoding`
 
 - [sqflite](https://pub.dev/packages/sqflite) - Flutter plugin for SQLite, a self-contained, high-reliability, embedded, SQL database engine
 
