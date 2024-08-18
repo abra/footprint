@@ -32,29 +32,29 @@ class GeocodingCacheStorage {
 
   /// Get the nearest address to the coordinates from the cache.
   ///
-  /// [lat] - latitude<br />
-  /// [lon] - longitude<br />
+  /// [latitude] - latitude<br />
+  /// [longitude] - longitude<br />
   /// [distance] - Maximum distance in meters to the nearest address<br />
   /// [limit] - The maximum number of addresses to return
   ///
   /// Returns the nearest address as [PlaceAddressCM] or null if not found.
   Future<PlaceAddressCM?> getPlaceAddress({
-    required double lat,
-    required double lon,
+    required double latitude,
+    required double longitude,
     double distance = 15,
     double limit = 1,
   }) async {
     final places = await _sqliteStorage.fetchNearestPlaces(
-      lat: lat,
-      lon: lon,
+      lat: latitude,
+      lon: longitude,
     );
 
     if (places.isEmpty) return null;
 
     final nearestPlace = await _getNearestPlaceAddress(
       places,
-      lat,
-      lon,
+      latitude,
+      longitude,
       distance,
       limit,
     );

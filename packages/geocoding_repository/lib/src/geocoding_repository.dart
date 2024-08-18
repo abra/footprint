@@ -28,8 +28,8 @@ class GeocodingRepository {
 
     try {
       final cachedAddress = await _geocodingCacheStorage.getPlaceAddress(
-        lat: latitude,
-        lon: longitude,
+        latitude: latitude,
+        longitude: longitude,
       );
 
       if (cachedAddress != null) {
