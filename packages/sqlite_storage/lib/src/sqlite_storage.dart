@@ -225,7 +225,7 @@ class SqliteStorage {
   /// Returns string with address or null if not found.
   ///
   /// Throws [UnableExecuteQueryDatabaseException] if unable to execute query
-  Future<List<Map<String, dynamic>>> fetchNearestPlaces({
+  Future<List<PlaceAddressCM>> fetchNearestPlaces({
     required double lat,
     required double lon,
   }) async {
@@ -237,6 +237,14 @@ class SqliteStorage {
       // the query fetching from the database
       final result = await db.query(
         _geocodingCacheTableName,
+        columns: [
+          'id',
+          'address',
+          'latitude',
+          'longitude',
+          'usage_frequency',
+          'timestamp'
+        ],
         where: 'latitude_idx BETWEEN ? AND ? AND longitude_idx BETWEEN ? AND ?',
         whereArgs: [
           latitudeIdx - 1,
@@ -250,7 +258,7 @@ class SqliteStorage {
         return [];
       }
 
-      return result;
+      return result.map(PlaceAddressCM.fromMap).toList();
     } on DatabaseException catch (e) {
       throw UnableExecuteQueryDatabaseException(
         message: 'Failed to execute query: $e',

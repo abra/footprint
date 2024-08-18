@@ -50,43 +50,28 @@ class GeocodingCacheStorage {
   }
 
   Future<PlaceAddressCM?> _getNearestPlaceAddress(
-    List<Map<String, dynamic>> cachedPlaces,
+    List<PlaceAddressCM> cachedPlaceList,
     double lat,
     double lon,
     double distance,
     double limit,
   ) async {
-    List<Map<String, dynamic>> filteredPlaces = [];
+    List<PlaceAddressCM> filteredPlaceList = [];
+    double minDistance = distance + 1;
+    PlaceAddressCM? minDistancePlace;
 
-    for (var place in cachedPlaces) {
-      double eLat = place['latitude'] as double;
-      double eLon = place['longitude'] as double;
+    for (var place in cachedPlaceList) {
+      double eLat = place.latitude;
+      double eLon = place.longitude;
       double dist = _calculateDistance(lat, lon, eLat, eLon);
 
-      if (dist <= distance) {
-        Map<String, dynamic> e = <String, dynamic>{
-          ...place,
-          'distance': dist,
-        };
-
-        filteredPlaces.add(e);
+      if (dist <= distance && minDistance >= dist) {
+        minDistance = dist;
+        minDistancePlace = place;
       }
     }
 
-    if (filteredPlaces.isEmpty) {
-      return null;
-    }
-
-    filteredPlaces.sort(
-      (a, b) => (a['distance'] as double).compareTo((b['distance'] as double)),
-    );
-
-    try {
-      return PlaceAddressCM.fromMap(filteredPlaces.first);
-    } catch (e) {
-      print("ERROR: $e");
-      return null;
-    }
+    return minDistancePlace;
   }
 
   double _calculateDistance(
