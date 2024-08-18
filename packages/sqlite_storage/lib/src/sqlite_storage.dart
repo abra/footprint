@@ -219,19 +219,19 @@ class SqliteStorage {
 
   /// Get nearest addresses of specified latitude and longitude from cache storage.
   ///
-  /// [lat] - latitude<br />
-  /// [lon] - longitude<br />
+  /// [latitude] - latitude<br />
+  /// [longitude] - longitude<br />
   ///
   /// Returns string with address or null if not found.
   ///
   /// Throws [UnableExecuteQueryDatabaseException] if unable to execute query
   Future<List<PlaceAddressCM>> fetchNearestPlaces({
-    required double lat,
-    required double lon,
+    required double latitude,
+    required double longitude,
   }) async {
     try {
       final db = await database;
-      final (latitudeIdx, longitudeIdx) = _getScaledValues(lat, lon);
+      final (latitudeIdx, longitudeIdx) = _getScaledValues(latitude, longitude);
 
       // There is some conversion error, but it still allows you to limit
       // the query fetching from the database

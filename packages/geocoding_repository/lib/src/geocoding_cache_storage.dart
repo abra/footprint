@@ -45,8 +45,8 @@ class GeocodingCacheStorage {
     double limit = 1,
   }) async {
     final places = await _sqliteStorage.fetchNearestPlaces(
-      lat: latitude,
-      lon: longitude,
+      latitude: latitude,
+      longitude: longitude,
     );
 
     if (places.isEmpty) return null;
