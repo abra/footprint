@@ -12,6 +12,13 @@ class GeocodingCacheStorage {
   final SqliteStorage _sqliteStorage;
   final Duration _cacheMaxAge;
 
+  /// Add new geocoding cache entry.
+  ///
+  /// [address] - Address of the entry<br />
+  /// [lat] - Latitude of the entry<br />
+  /// [lon] - Longitude of the entry
+  ///
+  /// Returns number of rows affected.
   Future<int> addPlaceAddress({
     required String address,
     required double lat,
@@ -23,6 +30,14 @@ class GeocodingCacheStorage {
         lon: lon,
       );
 
+  /// Get the nearest address to the coordinates from the cache.
+  ///
+  /// [lat] - latitude<br />
+  /// [lon] - longitude<br />
+  /// [distance] - Maximum distance in meters to the nearest address<br />
+  /// [limit] - The maximum number of addresses to return
+  ///
+  /// Returns the nearest address as [PlaceAddressCM] or null if not found.
   Future<PlaceAddressCM?> getPlaceAddress({
     required double lat,
     required double lon,
@@ -110,6 +125,9 @@ class GeocodingCacheStorage {
     return degrees * pi / 180;
   }
 
+  /// Delete all cache entries older than [maxAge].
+  ///
+  /// Returns number of rows affected.
   Future<int> clearCache() async =>
       await _sqliteStorage.deleteOldCacheEntries(maxAge: _cacheMaxAge);
 }
