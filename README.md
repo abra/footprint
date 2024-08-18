@@ -10,7 +10,7 @@
 </p>
 
 
-## Tech stack
+## Tech Stack
 
 ### Packages
 
@@ -33,3 +33,12 @@
  - Repository Pattern
 
  - [ValueNotifier](https://api.flutter.dev/flutter/foundation/ValueNotifier-class.html) + [ValueListenableBuilder](https://api.flutter.dev/flutter/widgets/ValueListenableBuilder-class.html) for a state management
+
+## App Interface
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/9a68be7b-a3f6-4abb-880a-922ed863d4d8" width="240">
+  <img src="https://github.com/user-attachments/assets/078d4fe2-652c-4080-b464-0bfed80e21c0" width="240">
+  <img src="https://github.com/user-attachments/assets/74fb7faa-88b5-465a-849b-2b529eedc8b9" width="240">
+  <img src="https://github.com/user-attachments/assets/09038033-7de1-4993-afc4-68efba39b71f" width="240">
+</div>
