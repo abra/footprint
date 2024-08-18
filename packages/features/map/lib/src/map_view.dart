@@ -39,7 +39,7 @@ class MapView extends StatelessWidget {
               const SizedBox(width: 20),
               // TODO: Temporary for testing
               ValueListenableBuilder<double>(
-                valueListenable: mapNotifier.currentZoomLevel,
+                valueListenable: mapNotifier.zoomLevel,
                 builder: (BuildContext context, double zoom, _) => Text(
                   '[$zoom]',
                 ),
@@ -189,7 +189,7 @@ class _PolylineLayerWidget extends StatelessWidget {
       valueListenable: mapNotifier.routePoints,
       builder: (BuildContext context, List<LatLng> routePoints, _) {
         return ValueListenableBuilder<double>(
-          valueListenable: mapNotifier.currentPolylineWidth,
+          valueListenable: mapNotifier.polylineWidth,
           builder: (BuildContext context, double width, _) {
             return PolylineLayer(
               polylines: <Polyline>[
@@ -218,7 +218,7 @@ class _MarkerLayerWidget extends StatelessWidget {
       valueListenable: mapNotifier.locationState,
       builder: (_, LocationState locationState, __) {
         return ValueListenableBuilder<double>(
-          valueListenable: mapNotifier.currentMarkerSize,
+          valueListenable: mapNotifier.markerSize,
           builder: (BuildContext context, double size, _) {
             return switch (locationState) {
               LocationUpdateSuccess(location: final location) => MarkerLayer(

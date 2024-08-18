@@ -49,10 +49,9 @@ class MapNotifier {
   );
 
   // map view notifiers
-  late final currentZoomLevel = ValueNotifier<double>(_config.defaultZoom);
-  late final currentMarkerSize = ValueNotifier<double>(_config.markerSize);
-  late final currentPolylineWidth =
-      ValueNotifier<double>(_config.polylineWidth);
+  late final zoomLevel = ValueNotifier<double>(_config.defaultZoom);
+  late final markerSize = ValueNotifier<double>(_config.markerSize);
+  late final polylineWidth = ValueNotifier<double>(_config.polylineWidth);
   late final isMapCentered = ValueNotifier<bool>(_config.mapCentered);
 
   void Function(double)? onZoomChanged;
@@ -148,18 +147,18 @@ class MapNotifier {
     }
   }
 
-  Future<void> zoomIn() => _updateZoom(
-      currentZoomLevel.value + _config.zoomStep, onZoomChanged ?? (_) {});
+  Future<void> zoomIn() =>
+      _updateZoom(zoomLevel.value + _config.zoomStep, onZoomChanged ?? (_) {});
 
-  Future<void> zoomOut() => _updateZoom(
-      currentZoomLevel.value - _config.zoomStep, onZoomChanged ?? (_) {});
+  Future<void> zoomOut() =>
+      _updateZoom(zoomLevel.value - _config.zoomStep, onZoomChanged ?? (_) {});
 
   Future<void> _updateZoom(double newZoom, Function(double) callback) async {
     if (newZoom >= _config.minZoom && newZoom <= _config.maxZoom) {
-      currentZoomLevel.value = newZoom;
-      callback(currentZoomLevel.value);
-      await _updateMarkerSize(currentZoomLevel.value);
-      await _updatePolylineWidth(currentZoomLevel.value);
+      zoomLevel.value = newZoom;
+      callback(zoomLevel.value);
+      await _updateMarkerSize(zoomLevel.value);
+      await _updatePolylineWidth(zoomLevel.value);
     }
   }
 
@@ -175,7 +174,7 @@ class MapNotifier {
   }
 
   Future<void> _updatePolylineWidth(double zoom) async {
-    currentPolylineWidth.value = await _calculateMapParameter(
+    polylineWidth.value = await _calculateMapParameter(
       zoom: zoom,
       minValue: _config.polylineMinWidth,
       maxValue: _config.polylineMaxWidth,
@@ -183,7 +182,7 @@ class MapNotifier {
   }
 
   Future<void> _updateMarkerSize(double zoom) async {
-    currentMarkerSize.value = await _calculateMapParameter(
+    markerSize.value = await _calculateMapParameter(
       zoom: zoom,
       minValue: _config.markerMinSize,
       maxValue: _config.markerMaxSize,
