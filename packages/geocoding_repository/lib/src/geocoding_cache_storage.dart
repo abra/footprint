@@ -56,22 +56,24 @@ class GeocodingCacheStorage {
     double distance,
     double limit,
   ) async {
-    List<PlaceAddressCM> filteredPlaceList = [];
-    double minDistance = distance + 1;
-    PlaceAddressCM? minDistancePlace;
+    double minDistance = distance;
+    PlaceAddressCM? nearestPlaceAddress;
 
     for (var place in cachedPlaceList) {
-      double eLat = place.latitude;
-      double eLon = place.longitude;
-      double dist = _calculateDistance(lat, lon, eLat, eLon);
+      double dist = _calculateDistance(
+        lat,
+        lon,
+        place.latitude,
+        place.longitude,
+      );
 
-      if (dist <= distance && minDistance >= dist) {
+      if (dist <= minDistance) {
         minDistance = dist;
-        minDistancePlace = place;
+        nearestPlaceAddress = place;
       }
     }
 
-    return minDistancePlace;
+    return nearestPlaceAddress;
   }
 
   double _calculateDistance(
