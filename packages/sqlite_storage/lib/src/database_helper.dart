@@ -67,7 +67,7 @@ class Routes {
       distance      REAL,
       average_speed REAL,
       status        TEXT NOT NULL CHECK (status IN ('active', 'completed')) 
-    );
+    ) STRICT;
     ''');
   }
 }
@@ -85,7 +85,7 @@ class RoutePoints {
       address         TEXT,
       timestamp       TEXT NOT NULL,
       FOREIGN KEY(route_id) REFERENCES routes(id)
-    );
+    ) STRICT;
     ''');
   }
 }
@@ -105,7 +105,7 @@ class GeocodingCache {
       longitude_idx INTEGER NOT NULL,
       usage_frequency INTEGER DEFAULT 0,
       timestamp TEXT NOT NULL
-    );
+    ) STRICT;
     
     -- Create indexes
     CREATE INDEX IF NOT EXISTS idx_${tableName}_location
