@@ -6,6 +6,8 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
+  flutter:
+    sdk: flutter
   flutter_foreground_task: ^8.3.0
 
 dev_dependencies:
