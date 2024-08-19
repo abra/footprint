@@ -15,27 +15,27 @@ class GeocodingService {
 
   /// Get address from coordinates
   ///
-  /// [lat] - location latitude
-  /// [lon] - location longitude
+  /// [latitude] - location latitude<br />
+  /// [longitude] - location longitude
   ///
   /// Returns address as a [String]
   Future<String?> reverseGeocoding({
-    required double lat,
-    required double lon,
+    required double latitude,
+    required double longitude,
   }) async {
     try {
-      final placemark = await _getPlacemark(lat, lon);
+      final placemark = await _getPlacemark(latitude, longitude);
       if (placemark != null) {
         return _addressBuilder.buildAddressFromPlacemark(placemark);
       }
 
-      final place = await _getPlace(lat, lon);
+      final place = await _getPlace(latitude, longitude);
       if (place != null) {
         return _addressBuilder.buildAddressFromNominatim(place);
       }
-      return '$lat, $lon';
+      return '$latitude, $longitude';
     } on Exception {
-      final place = await _getPlace(lat, lon);
+      final place = await _getPlace(latitude, longitude);
       if (place != null) {
         return _addressBuilder.buildAddressFromNominatim(place);
       }

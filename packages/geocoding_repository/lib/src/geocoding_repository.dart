@@ -37,8 +37,8 @@ class GeocodingRepository {
       }
 
       final geocodedAddress = await _geocodingService.reverseGeocoding(
-        lat: latitude,
-        lon: longitude,
+        latitude: latitude,
+        longitude: longitude,
       );
 
       if (geocodedAddress != null) {
