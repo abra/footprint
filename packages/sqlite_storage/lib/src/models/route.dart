@@ -1,7 +1,7 @@
-import 'route_point_dto.dart';
+import 'route_point.dart';
 
-class RouteDTO {
-  const RouteDTO({
+class Route {
+  const Route({
     required this.id,
     required this.startTime,
     this.endTime,
@@ -17,10 +17,10 @@ class RouteDTO {
   final double? distance;
   final double? averageSpeed;
   final String? status;
-  final List<RoutePointDTO>? routePoints;
+  final List<RoutePoint>? routePoints;
 
-  factory RouteDTO.fromMap(Map<String, dynamic> map) {
-    return RouteDTO(
+  factory Route.fromMap(Map<String, dynamic> map) {
+    return Route(
       id: map['id'] as String,
       startTime: map['start_time'] as String,
       endTime: map['end_time'] as String?,
@@ -28,7 +28,7 @@ class RouteDTO {
       averageSpeed: map['average_speed'] as double?,
       status: map['status'] as String?,
       routePoints: (map['route_points'] as List<dynamic>)
-          .map((map) => RoutePointDTO.fromMap(map as Map<String, dynamic>))
+          .map((map) => RoutePoint.fromMap(map as Map<String, dynamic>))
           .toList(),
     );
   }

@@ -1,5 +1,5 @@
-class RoutePointDTO {
-  const RoutePointDTO({
+class RoutePoint {
+  const RoutePoint({
     required this.id,
     required this.routeId,
     required this.latitude,
@@ -15,7 +15,7 @@ class RoutePointDTO {
   final String address;
   final String timestamp;
 
-  factory RoutePointDTO.fromMap(Map<String, dynamic> map) => RoutePointDTO(
+  factory RoutePoint.fromMap(Map<String, dynamic> map) => RoutePoint(
         id: map['id'] as String,
         routeId: map['route_id'] as String,
         latitude: map['latitude'] as double,

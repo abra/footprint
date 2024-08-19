@@ -113,10 +113,10 @@ class SqliteStorage {
   ///
   /// [routeId] route id
   ///
-  /// Returns [RouteDTO] object with route points
+  /// Returns [Route] object with route points
   ///
   /// Throws [UnableExecuteQueryDatabaseException] if unable to execute query
-  Future<RouteDTO?> fetchRouteWithPoints(int routeId) async {
+  Future<Route?> fetchRouteWithPoints(int routeId) async {
     try {
       final db = await database;
 
@@ -145,7 +145,7 @@ class SqliteStorage {
         'route_points': routePoints,
       };
 
-      return RouteDTO.fromMap(data);
+      return Route.fromMap(data);
     } on DatabaseException catch (e) {
       throw UnableExecuteQueryDatabaseException(
         message: 'Failed to get route points by route id: [$routeId]: $e',
