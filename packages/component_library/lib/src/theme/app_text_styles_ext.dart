@@ -28,5 +28,4 @@ class AppTextStylesExt extends ThemeExtension<AppTextStylesExt> {
       title1: TextStyle.lerp(title1, other.title1, t)!,
     );
   }
-
 }

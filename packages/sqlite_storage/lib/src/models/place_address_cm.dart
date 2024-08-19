@@ -1,5 +1,3 @@
-
-
 /// [PlaceAddressCM] model for caching
 ///
 /// CM stands for 'Cache Model'

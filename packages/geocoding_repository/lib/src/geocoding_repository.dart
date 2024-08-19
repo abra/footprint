@@ -20,8 +20,8 @@ class GeocodingRepository {
   final GeocodingService _geocodingService;
   final GeocodingCacheStorage _geocodingCacheStorage;
 
-  Future<PlaceAddressModel?> getAddressFromCoordinates(
-    LocationModel location,
+  Future<PlaceAddressDM?> getAddressFromCoordinates(
+    LocationDM location,
   ) async {
     final latitude = location.latitude;
     final longitude = location.longitude;
@@ -43,12 +43,12 @@ class GeocodingRepository {
 
       if (geocodedAddress != null) {
         await _geocodingCacheStorage.addPlaceAddress(
-            address: geocodedAddress,
-            lat: latitude,
-            lon: longitude,
+          address: geocodedAddress,
+          lat: latitude,
+          lon: longitude,
         );
 
-        return PlaceAddressModel(
+        return PlaceAddressDM(
           address: geocodedAddress,
           latitude: latitude,
           longitude: longitude,
