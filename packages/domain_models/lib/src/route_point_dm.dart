@@ -1,32 +1,38 @@
 import 'package:equatable/equatable.dart';
-import 'package:meta/meta.dart';
 
-@immutable
-class LocationModel extends Equatable {
-  const LocationModel({
+/// Domain model for route point. DM stands for Domain Model.
+class RoutePointDM extends Equatable {
+  const RoutePointDM({
     required this.id,
+    required this.routeId,
     required this.latitude,
     required this.longitude,
+    required this.address,
     required this.timestamp,
   });
 
-  final String id;
+  final int id;
+  final int routeId;
   final double latitude;
   final double longitude;
+  final String address;
   final DateTime timestamp;
 
-  factory LocationModel.fromMap(Map<String, dynamic> map) => LocationModel(
-        id: map['id'] as String,
+  factory RoutePointDM.fromMap(Map<String, dynamic> map) => RoutePointDM(
+        id: map['id'] as int,
+        routeId: map['route_id'] as int,
         latitude: map['latitude'] as double,
         longitude: map['longitude'] as double,
+        address: map['address'] as String,
         timestamp: DateTime.parse(map['timestamp'] as String),
       );
 
   @override
   List<Object?> get props => [
         id,
+        routeId,
         latitude,
         longitude,
-        timestamp,
+        address,
       ];
 }
