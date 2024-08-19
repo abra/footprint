@@ -19,3 +19,8 @@ class ForegroundTaskServiceProvider extends InheritedWidget {
     return provider!.foregroundTaskService;
   }
 }
+
+extension ForegroundTaskServiceProviderExtension on BuildContext {
+  ForegroundTaskService get foregroundTaskService =>
+      ForegroundTaskServiceProvider.of(this);
+}

@@ -27,6 +27,8 @@ dependencies:
     path: ../../geocoding_repository
   component_library:
     path: ../../component_library
+  foreground_task_service:
+    path: ../../foreground_task_service
 
 dev_dependencies:
   flutter_test:
