@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:component_library/component_library.dart';
 import 'package:flutter/material.dart';
+import 'package:foreground_task_service/foreground_task_service.dart';
 import 'package:geocoding_repository/geocoding_repository.dart';
 import 'package:location_repository/location_repository.dart';
 import 'package:map/map.dart';
@@ -14,7 +15,17 @@ Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
-      runApp(FootprintApp());
+
+      final foregroundTaskService = ForegroundTaskService();
+      foregroundTaskService.initCommunicationPort();
+
+      runApp(
+        ForegroundTaskServiceProvider(
+          foregroundTaskService: foregroundTaskService,
+          child: FootprintApp(),
+        ),
+      );
+      // runApp(FootprintApp());
     },
     (error, stack) {
       log('ZONED ERROR: $error\n$stack');

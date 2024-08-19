@@ -8,6 +8,9 @@ class ForegroundTaskService {
 
   factory ForegroundTaskService() => _instance;
 
+  Future<void> initCommunicationPort() async =>
+      FlutterForegroundTask.initCommunicationPort();
+
   Future<void> initService() async {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(

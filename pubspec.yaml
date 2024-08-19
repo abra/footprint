@@ -27,6 +27,8 @@ dependencies:
     path: packages/features/route_list
   sqlite_storage:
     path: packages/sqlite_storage
+  foreground_task_service:
+    path: packages/foreground_task_service
 
 dev_dependencies:
   flutter_test:
