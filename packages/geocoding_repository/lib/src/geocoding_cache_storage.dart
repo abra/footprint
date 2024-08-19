@@ -15,19 +15,19 @@ class GeocodingCacheStorage {
   /// Add new geocoding cache entry.
   ///
   /// [address] - Address of the entry<br />
-  /// [lat] - Latitude of the entry<br />
-  /// [lon] - Longitude of the entry
+  /// [latitude] - Latitude of the entry<br />
+  /// [longitude] - Longitude of the entry
   ///
   /// Returns number of rows affected.
   Future<int> addPlaceAddress({
     required String address,
-    required double lat,
-    required double lon,
+    required double latitude,
+    required double longitude,
   }) async =>
       await _sqliteStorage.addPlaceAddressToCache(
         address: address,
-        lat: lat,
-        lon: lon,
+        lat: latitude,
+        lon: longitude,
       );
 
   /// Get the nearest address to the coordinates from the cache.

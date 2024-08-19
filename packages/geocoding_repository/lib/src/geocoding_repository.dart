@@ -44,8 +44,8 @@ class GeocodingRepository {
       if (geocodedAddress != null) {
         await _geocodingCacheStorage.addPlaceAddress(
           address: geocodedAddress,
-          lat: latitude,
-          lon: longitude,
+          latitude: latitude,
+          longitude: longitude,
         );
 
         return PlaceAddressDM(
