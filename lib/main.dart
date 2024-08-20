@@ -28,7 +28,8 @@ Future<void> main() async {
       // runApp(FootprintApp());
     },
     (error, stack) {
-      log('ZONED ERROR: $error\n$stack');
+      log('Uncaught error: $error\n$stack');
+      // send uncaught error to crashlytics
     },
   );
 }
