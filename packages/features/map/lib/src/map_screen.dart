@@ -45,7 +45,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Request permissions and initialize the service.
       _foregroundTaskService.addTaskDataCallback(_onReceiveTaskData);
-      _initTaskService();
+      _initForegroundTaskService();
     });
     _listener = AppLifecycleListener(
       onDetach: _onDetach,
@@ -60,7 +60,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _initTaskService() async {
+  void _initForegroundTaskService() async {
     // Request permissions and initialize the service.
     await _foregroundTaskService.initService();
   }
