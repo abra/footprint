@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 class ForegroundTaskService {
@@ -62,6 +64,40 @@ class ForegroundTaskService {
 
   void removeTaskDataCallback(Function(dynamic) callback) {
     FlutterForegroundTask.removeTaskDataCallback(callback);
+  }
+
+  Future<void> requestPermissions() async {
+    // Android 13+, you need to allow notification permission to display foreground service notification.
+    //
+    // iOS: If you need notification, ask for permission.
+    final NotificationPermission notificationPermissionStatus =
+        await FlutterForegroundTask.checkNotificationPermission();
+    if (notificationPermissionStatus != NotificationPermission.granted) {
+      await FlutterForegroundTask.requestNotificationPermission();
+    }
+
+    if (Platform.isAndroid) {
+      // "android.permission.SYSTEM_ALERT_WINDOW" permission must be granted for
+      // onNotificationPressed function to be called.
+      //
+      // When the notification is pressed while permission is denied,
+      // the onNotificationPressed function is not called and the app opens.
+      //
+      // If you do not use the onNotificationPressed or launchApp function,
+      // you do not need to write this code.
+      if (!await FlutterForegroundTask.canDrawOverlays) {
+        // This function requires `android.permission.SYSTEM_ALERT_WINDOW` permission.
+        await FlutterForegroundTask.openSystemAlertWindowSettings();
+      }
+
+      // Android 12+, there are restrictions on starting a foreground service.
+      //
+      // To restart the service on device reboot or unexpected problem, you need to allow below permission.
+      if (!await FlutterForegroundTask.isIgnoringBatteryOptimizations) {
+        // This function requires `android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` permission.
+        await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+      }
+    }
   }
 }
 

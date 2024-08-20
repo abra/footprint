@@ -130,4 +130,6 @@ class GeocodingCacheStorage {
   /// Returns number of rows affected.
   Future<int> clearCache() async =>
       await _sqliteStorage.deleteOldCacheEntries(maxAge: _cacheMaxAge);
+
+  Future<void> closeStorage() async => await _sqliteStorage.close();
 }

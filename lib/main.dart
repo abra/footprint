@@ -17,6 +17,7 @@ Future<void> main() async {
 
     final foregroundTaskService = ForegroundTaskService();
     foregroundTaskService.initCommunicationPort();
+    foregroundTaskService.requestPermissions();
 
     runApp(
       ForegroundTaskServiceProvider(

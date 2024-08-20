@@ -10,14 +10,14 @@ class ForegroundTaskServiceProvider extends InheritedWidget {
     required super.child,
   });
 
-  @override
-  bool updateShouldNotify(InheritedWidget oldWidget) => false;
-
   static ForegroundTaskService of(BuildContext context) {
     final provider = context
         .dependOnInheritedWidgetOfExactType<ForegroundTaskServiceProvider>();
     return provider!.foregroundTaskService;
   }
+
+  @override
+  bool updateShouldNotify(InheritedWidget oldWidget) => false;
 }
 
 extension ForegroundTaskServiceProviderExtension on BuildContext {

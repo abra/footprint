@@ -59,6 +59,7 @@ class MapNotifier {
 
   void dispose() {
     _locationUpdateSubscription.cancel();
+    _geocodingRepository.closeCacheStorage();
   }
 
   Future<void> reInit() async {

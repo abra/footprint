@@ -62,4 +62,8 @@ class GeocodingRepository {
       );
     }
   }
+
+  Future<void> closeCacheStorage() async {
+    await _geocodingCacheStorage.closeStorage();
+  }
 }
