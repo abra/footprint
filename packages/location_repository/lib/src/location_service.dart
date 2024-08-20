@@ -38,10 +38,10 @@ class LocationService {
   }
 
   Stream<Position> getPositionUpdateStream({
-    LocationSettings? locationSettings,
+    LocationSettings? settings,
   }) async* {
     _stream ??= Geolocator.getPositionStream(
-      locationSettings: locationSettings ?? LocationSettings(distanceFilter: 5),
+      locationSettings: settings ?? LocationSettings(distanceFilter: 5),
     );
 
     await for (Position position in _stream!) {
