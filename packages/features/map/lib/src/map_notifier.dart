@@ -34,6 +34,7 @@ class MapNotifier {
 
   Config get viewConfig => _config;
 
+  late Stream<LocationDM> _locationUpdateStream;
   late StreamSubscription<LocationDM> _locationUpdateSubscription;
 
   // map location update notifier
@@ -77,42 +78,51 @@ class MapNotifier {
     }
   }
 
+  Future<Future<void> Function()> get startLocationUpdate async =>
+      _startLocationUpdate;
+
   Future<void> _startLocationUpdate() async {
-    final Stream<LocationDM> stream =
-        _locationRepository.getLocationUpdateStream();
+    _locationUpdateStream = _locationRepository.getLocationUpdateStream();
 
-    _locationUpdateSubscription = stream.listen((LocationDM location) {
-      locationState.value = LocationUpdateSuccess(location: location);
-
-      _updateAddress(location);
-
-      // Center the map on the current location
-      if (isMapCentered.value && onMapCentered != null) {
-        onMapCentered!(location);
-      }
-
-      // Start route recording
-      if (isRouteRecordingActive.value) {
-        // TODO: Replace with routeRepository
-        // TODO: _routesRepository.addRoutePoint(location.toLatLng());
-        routePoints.value = [
-          ...routePoints.value,
-          location.toLatLng(),
-        ];
-      }
-    }, onError: (dynamic error) {
-      // TODO: Add error handling for another exceptions
-      if (error is ServiceDisabledException) {
-        locationState.value = LocationUpdateFailure(error: error);
-        _locationUpdateSubscription.cancel();
-      } else {
-        log('Location update error: $error');
-        locationState.value = LocationUpdateFailure(error: error);
-      }
-    });
+    _locationUpdateSubscription = _locationUpdateStream.listen(
+      onLocationUpdate,
+      onError: onLocationUpdateError,
+    );
   }
 
-  Future<void> _updateAddress(LocationDM location) async {
+  Function(LocationDM) get onLocationUpdate => (LocationDM location) {
+        locationState.value = LocationUpdateSuccess(location: location);
+
+        onPlaceAddressUpdate(location);
+
+        // Center the map on the current location
+        if (isMapCentered.value && onMapCentered != null) {
+          onMapCentered!(location);
+        }
+
+        // Start route recording
+        if (isRouteRecordingActive.value) {
+          // TODO: Replace with routeRepository
+          // TODO: _routesRepository.addRoutePoint(location.toLatLng());
+          routePoints.value = [
+            ...routePoints.value,
+            location.toLatLng(),
+          ];
+        }
+      };
+
+  Function(dynamic) get onLocationUpdateError => (dynamic error) {
+        // TODO: Add error handling for another exceptions
+        if (error is ServiceDisabledException) {
+          locationState.value = LocationUpdateFailure(error: error);
+          _locationUpdateSubscription.cancel();
+        } else {
+          log('Location update error: $error');
+          locationState.value = LocationUpdateFailure(error: error);
+        }
+      };
+
+  Future<void> _placeAddressUpdate(LocationDM location) async {
     try {
       final placeAddressModel =
           await _geocodingRepository.getAddressFromCoordinates(location);
@@ -127,6 +137,8 @@ class MapNotifier {
       placeAddress.value = PlaceAddressFailure(error: e);
     }
   }
+
+  Function(LocationDM) get onPlaceAddressUpdate => _placeAddressUpdate;
 
   Future<void> startRouteRecording() async {
     if (!isRouteRecordingActive.value &&

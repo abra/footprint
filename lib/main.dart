@@ -16,8 +16,7 @@ Future<void> main() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     final foregroundTaskService = ForegroundTaskService();
-    foregroundTaskService.initCommunicationPort();
-    foregroundTaskService.requestPermissions();
+    await foregroundTaskService.initCommunicationPort();
 
     runApp(
       ForegroundTaskServiceProvider(

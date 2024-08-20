@@ -42,11 +42,11 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       geocodingRepository: widget.geocodingRepository,
       viewConfig: const Config(),
     );
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _foregroundTaskService = context.foregroundTaskService;
+      // Request permissions and initialize the service.
+      _foregroundTaskService.addTaskDataCallback(_onReceiveTaskData);
+      _initTaskService();
     });
-
     _listener = AppLifecycleListener(
       onDetach: _onDetach,
       onHide: _onHide,
@@ -56,29 +56,65 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       onResume: _onResume,
       onShow: _onShow,
       onStateChange: _onStateChange,
+      // onExitRequested: _onExitRequested,
     );
+  }
+
+  void _initTaskService() async {
+    // Request permissions and initialize the service.
+    await _foregroundTaskService.initService();
+  }
+
+  void _onReceiveTaskData(dynamic data) {
+    if (data is int) {
+      print('### count: $data');
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    _foregroundTaskService = context.foregroundTaskService;
+    super.didChangeDependencies();
   }
 
   @override
   void dispose() {
     _listener.dispose();
+    _foregroundTaskService.removeTaskDataCallback(_onReceiveTaskData);
     _mapNotifier.dispose();
     super.dispose();
   }
 
   void _onDetach() => print('onDetach');
 
-  void _onHide() => print('onHide');
+  void _onHide() async {
+    print('onHide');
+    await _foregroundTaskService.startService();
+    print(await _foregroundTaskService.isRunningService());
+  }
 
-  void _onInactive() => print('onInactive');
+  void _onInactive() {
+    print('onInactive');
+    _foregroundTaskService.startService();
+  }
 
-  void _onPause() => print('onPause');
+  void _onPause() {
+    print('onPause');
+    _foregroundTaskService.startService();
+  }
 
-  void _onRestart() => print('onRestart');
+  void _onRestart() {
+    print('onRestart');
+  }
 
-  void _onResume() => print('onResume');
+  void _onResume() {
+    print('onResume');
+    _foregroundTaskService.stopService();
+  }
 
-  void _onShow() => print('onShow');
+  void _onShow() {
+    print('onShow');
+  }
 
   void _onStateChange(AppLifecycleState state) =>
       print('onStateChange: $state');
