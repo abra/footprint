@@ -217,7 +217,7 @@ class SqliteStorage {
     }
   }
 
-  /// Get nearest addresses of specified latitude and longitude from cache storage.
+  /// Get nearest addresses of specified latitude and longitude from cache.
   ///
   /// [latitude] - latitude<br />
   /// [longitude] - longitude<br />
