@@ -12,26 +12,23 @@ import 'package:routes_repository/routes_repository.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
 
 Future<void> main() async {
-  await runZonedGuarded<Future<void>>(
-    () async {
-      WidgetsFlutterBinding.ensureInitialized();
+  await runZonedGuarded<Future<void>>(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-      final foregroundTaskService = ForegroundTaskService();
-      foregroundTaskService.initCommunicationPort();
+    final foregroundTaskService = ForegroundTaskService();
+    foregroundTaskService.initCommunicationPort();
 
-      runApp(
-        ForegroundTaskServiceProvider(
-          foregroundTaskService: foregroundTaskService,
-          child: FootprintApp(),
-        ),
-      );
-      // runApp(FootprintApp());
-    },
-    (error, stack) {
-      log('Uncaught error: $error\n$stack');
-      // send uncaught error to crashlytics
-    },
-  );
+    runApp(
+      ForegroundTaskServiceProvider(
+        foregroundTaskService: foregroundTaskService,
+        child: FootprintApp(),
+      ),
+    );
+    // runApp(FootprintApp());
+  }, (error, stack) {
+    log('Uncaught error: $error\n$stack');
+    // send uncaught error to crashlytics
+  });
 }
 
 class FootprintApp extends StatelessWidget {
