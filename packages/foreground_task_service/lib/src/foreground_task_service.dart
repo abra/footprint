@@ -86,7 +86,11 @@ class ForegroundTaskService {
         serviceId: 256,
         notificationTitle: 'Foreground Service is running',
         notificationText: 'Tap to return to the app',
-        notificationIcon: null,
+        notificationIcon: const NotificationIconData(
+          resType: ResourceType.mipmap,
+          resPrefix: ResourcePrefix.ic,
+          name: 'launcher',
+        ),
         notificationButtons: [
           const NotificationButton(id: 'btn_hello', text: 'hello'),
         ],
