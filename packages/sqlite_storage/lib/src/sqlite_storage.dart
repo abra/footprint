@@ -230,8 +230,9 @@ class SqliteStorage {
     required double longitude,
   }) async {
     try {
-      final db = await database;
       final (latitudeIdx, longitudeIdx) = _getScaledValues(latitude, longitude);
+
+      final db = await database;
 
       // There is some conversion error, but it still allows you to limit
       // the query fetching from the database
@@ -324,22 +325,22 @@ class SqliteStorage {
   /// Throws [UnableInsertDatabaseException] if insertion fails.
   Future<int> addPlaceAddressToCache({
     required String address,
-    required double lat,
-    required double lon,
+    required double latitude,
+    required double longitude,
   }) async {
     try {
-      final db = await database;
-
       final (latitudeIdx, longitudeIdx) = _getScaledValues(
-        lat,
-        lon,
+        latitude,
+        longitude,
       );
+
+      final db = await database;
 
       return await db.insert(
         _geocodingCacheTableName,
         <String, dynamic>{
-          'latitude': lat,
-          'longitude': lon,
+          'latitude': latitude,
+          'longitude': longitude,
           'latitude_idx': latitudeIdx,
           'longitude_idx': longitudeIdx,
           'address': address,

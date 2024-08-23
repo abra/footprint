@@ -198,7 +198,7 @@ class _MapAppBarState extends State<MapAppBar> {
               builder: (BuildContext context, LocationState state, _) {
                 return switch (state) {
                   LocationUpdateFailure(error: final error) =>
-                    error is ServicePermissionDeniedException
+                    error is LocationServicePermissionDeniedException
                         ? ExceptionDialog(
                             onTryAgain: _onTryAgain,
                             onDismiss: _onDismiss,

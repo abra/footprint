@@ -21,6 +21,13 @@ class LocationDM extends Equatable {
         timestamp: DateTime.parse(map['timestamp'] as String),
       );
 
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'latitude': latitude,
+        'longitude': longitude,
+        'timestamp': timestamp.toIso8601String(),
+      };
+
   @override
   String toString() {
     return 'LocationDM(id: $id, latitude: $latitude, longitude: $longitude, timestamp: $timestamp)';

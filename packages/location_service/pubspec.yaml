@@ -1,4 +1,4 @@
-name: location_repository
+name: location_service
 publish_to: none
 
 environment:
@@ -6,6 +6,7 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
+  permission_handler: ^11.3.1
   geolocator: ^13.0.1
   meta: ^1.10.0
   uuid: ^4.2.2

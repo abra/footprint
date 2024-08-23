@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:foreground_task_service/foreground_task_service.dart';
 import 'package:geocoding_repository/geocoding_repository.dart';
-import 'package:location_repository/location_repository.dart';
+import 'package:location_service/location_service.dart';
 import 'package:routes_repository/routes_repository.dart';
 
 import 'config.dart';
@@ -13,13 +13,13 @@ import 'map_view.dart';
 class MapScreen extends StatefulWidget {
   const MapScreen({
     super.key,
-    required this.locationRepository,
+    required this.locationService,
     required this.routesRepository,
     required this.geocodingRepository,
     required this.onPageChangeRequested,
   });
 
-  final LocationRepository locationRepository;
+  final LocationService locationService;
   final RoutesRepository routesRepository;
   final GeocodingRepository geocodingRepository;
   final VoidCallback onPageChangeRequested;
@@ -30,94 +30,53 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   late MapNotifier _mapNotifier;
-  late ForegroundTaskService _foregroundTaskService;
+  late ForegroundLocationTaskService _foregroundTaskService;
   late final AppLifecycleListener _listener;
+
+  Future<void> _checkPermissionsAndInitialize() async {
+    await _mapNotifier.ensurePermissions();
+    await _mapNotifier.initLocationUpdate();
+    await _foregroundTaskService.requestPermissions();
+    await _foregroundTaskService.initTaskService();
+  }
 
   @override
   void initState() {
     super.initState();
     _mapNotifier = MapNotifier(
-      locationRepository: widget.locationRepository,
+      locationService: widget.locationService,
       routesRepository: widget.routesRepository,
       geocodingRepository: widget.geocodingRepository,
       viewConfig: const Config(),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Request permissions and initialize the service.
-      _foregroundTaskService.addTaskDataCallback(_onReceiveTaskData);
-      _initForegroundTaskService();
-    });
-    _listener = AppLifecycleListener(
-      onDetach: _onDetach,
-      onHide: _onHide,
-      onInactive: _onInactive,
-      onPause: _onPause,
-      onRestart: _onRestart,
-      onResume: _onResume,
-      onShow: _onShow,
-      onStateChange: _onStateChange,
-      // onExitRequested: _onExitRequested,
-    );
-  }
-
-  void _initForegroundTaskService() async {
-    // Request permissions and initialize the service.
-    await _foregroundTaskService.initService();
-  }
-
-  void _onReceiveTaskData(dynamic data) {
-    if (data is int) {
-      print('### count: $data');
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    _foregroundTaskService = context.foregroundTaskService;
-    super.didChangeDependencies();
+    _foregroundTaskService = ForegroundLocationTaskService();
+    // _foregroundTaskService.initTaskService(this);
+    _checkPermissionsAndInitialize();
+    _foregroundTaskService.addTaskDataCallback(_onReceiveTaskData);
+    _mapNotifier.foregroundTaskCallback = (String data) {
+      _foregroundTaskService.sendDataToTask(data);
+    };
+    // _listener = AppLifecycleListener(
+    // onDetach: _onDetach,
+    // onHide: _onHide,
+    // onInactive: _onInactive,
+    // onPause: _onPause,
+    // onRestart: _onRestart,
+    // onResume: _onResume,
+    // onShow: _onShow,
+    // onStateChange: _onStateChange,
+    // onExitRequested: _onExitRequested,
+    // );
   }
 
   @override
   void dispose() {
     _listener.dispose();
     _foregroundTaskService.removeTaskDataCallback(_onReceiveTaskData);
+    _foregroundTaskService.stopService();
     _mapNotifier.dispose();
     super.dispose();
   }
-
-  void _onDetach() => print('onDetach');
-
-  void _onHide() async {
-    print('onHide');
-    await _foregroundTaskService.startService();
-    print(await _foregroundTaskService.isRunningService());
-  }
-
-  void _onInactive() {
-    print('onInactive');
-    _foregroundTaskService.startService();
-  }
-
-  void _onPause() {
-    print('onPause');
-    _foregroundTaskService.startService();
-  }
-
-  void _onRestart() {
-    print('onRestart');
-  }
-
-  void _onResume() {
-    print('onResume');
-    _foregroundTaskService.stopService();
-  }
-
-  void _onShow() {
-    print('onShow');
-  }
-
-  void _onStateChange(AppLifecycleState state) =>
-      print('onStateChange: $state');
 
   @override
   Widget build(BuildContext context) => MapNotifierProvider(
@@ -130,4 +89,67 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           body: const MapView(),
         ),
       );
+
+  // Future<void> _onDetach() async {
+  //   print('onDetach 1');
+  //   await _foregroundTaskService.stopService();
+  //   print('onDetach 2');
+  // }
+
+  // void _onHide() async {
+  //   print('onHide');
+  //   if (_isFirstBuild) {
+  //     _isFirstBuild = false;
+  //     return;
+  //   }
+  //   // if (!await _foregroundTaskService.isRunningService()) {
+  //   await _foregroundTaskService.startService();
+  //   // }
+  //   print('IS RUNNING: ${await _foregroundTaskService.isRunningService()}');
+  // }
+
+  void _onReceiveTaskData(dynamic data) {
+    if (data is int) {
+      print('### count: $data');
+    }
+  }
+
+// void _onInactive() async {
+//   print('onInactive');
+//   if (_isFirstBuild) {
+//     _isFirstBuild = false;
+//     return;
+//   }
+//   // if (!await _foregroundTaskService.isRunningService()) {
+//   await _foregroundTaskService.startService();
+//   // }
+// }
+
+// void _onPause() async {
+//   print('onPause');
+//   // if (_isFirstBuild) {
+//   //   _isFirstBuild = false;
+//   //   return;
+//   // }
+//   // if (!await _foregroundTaskService.isRunningService()) {
+//   await _foregroundTaskService.startService();
+//   // }
+// }
+
+// void _onRestart() {
+//   print('onRestart');
+// }
+
+// void _onResume() async {
+//   print('onResume');
+//   await _foregroundTaskService.stopService();
+// }
+
+// void _onShow() async {
+//   print('onShow');
+//   await _foregroundTaskService.stopService();
+// }
+
+// void _onStateChange(AppLifecycleState state) =>
+//     print('onStateChange: $state');
 }

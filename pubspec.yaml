@@ -10,11 +10,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  permission_handler: ^11.3.1
 
   domain_models:
     path: packages/domain_models
-  location_repository:
-    path: packages/location_repository
+  location_service:
+    path: packages/location_service
   geocoding_repository:
     path: packages/geocoding_repository
   routes_repository:
@@ -27,8 +28,6 @@ dependencies:
     path: packages/features/route_list
   sqlite_storage:
     path: packages/sqlite_storage
-  foreground_task_service:
-    path: packages/foreground_task_service
 
 dev_dependencies:
   flutter_test:

@@ -27,6 +27,15 @@ class RoutePointDM extends Equatable {
         timestamp: DateTime.parse(map['timestamp'] as String),
       );
 
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'route_id': routeId,
+        'latitude': latitude,
+        'longitude': longitude,
+        'address': address,
+        'timestamp': timestamp.toIso8601String(),
+      };
+
   @override
   List<Object?> get props => [
         id,

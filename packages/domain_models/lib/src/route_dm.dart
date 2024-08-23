@@ -43,6 +43,18 @@ class RouteDM extends Equatable {
     );
   }
 
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'start_point': startPoint.toMap(),
+        'end_point': endPoint.toMap(),
+        'start_time': startTime.toIso8601String(),
+        'end_time': endTime.toIso8601String(),
+        'distance': distance,
+        'average_speed': averageSpeed,
+        'status': status.name,
+        'route_points': routePoints.map((e) => e.toMap()).toList(),
+      };
+
   @override
   List<Object?> get props => [
         id,

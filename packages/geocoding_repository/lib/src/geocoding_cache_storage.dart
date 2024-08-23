@@ -26,8 +26,8 @@ class GeocodingCacheStorage {
   }) async =>
       await _sqliteStorage.addPlaceAddressToCache(
         address: address,
-        lat: latitude,
-        lon: longitude,
+        latitude: latitude,
+        longitude: longitude,
       );
 
   /// Get the nearest address to the coordinates from the cache.

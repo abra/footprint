@@ -16,11 +16,13 @@ dependencies:
   google_fonts: ^6.1.0
   latlong2: ^0.9.0
   flutter_map_animations: ^0.7.0
+  flutter_foreground_task: ^8.3.1
+  permission_handler: ^11.3.1
   meta: ^1.10.0
   domain_models:
     path: ../../domain_models
-  location_repository:
-    path: ../../location_repository
+  location_service:
+    path: ../../location_service
   routes_repository:
     path: ../../routes_repository
   geocoding_repository:
@@ -29,6 +31,7 @@ dependencies:
     path: ../../component_library
   foreground_task_service:
     path: ../../foreground_task_service
+  logger: ^2.4.0
 
 dev_dependencies:
   flutter_test:

@@ -1,14 +1,14 @@
-class ServiceDisabledException implements Exception {
+class LocationServiceDisabledStateException implements Exception {
   @override
   String toString() => 'The location service on the device is disabled.';
 }
 
-class ServicePermissionDeniedException implements Exception {
+class LocationServicePermissionDeniedException implements Exception {
   @override
   String toString() => "Permission to access the device's location is denied.";
 }
 
-class PermissionsPermanentlyDeniedException implements Exception {
+class LocationServicePermanentlyDeniedException implements Exception {
   @override
   String toString() =>
       'Permissions will be permanently denied until you update '

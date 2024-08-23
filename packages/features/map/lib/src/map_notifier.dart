@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:convert';
 
 import 'package:domain_models/domain_models.dart';
 import 'package:equatable/equatable.dart';
@@ -7,27 +8,31 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geocoding_repository/geocoding_repository.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:location_repository/location_repository.dart';
+import 'package:location_service/location_service.dart';
+import 'package:logger/logger.dart';
 import 'package:routes_repository/routes_repository.dart';
 
 import 'config.dart';
 import 'extensions.dart';
 
+final logger = Logger(
+  printer: PrettyPrinter(colors: true),
+);
+
 class MapNotifier {
   MapNotifier({
-    required LocationRepository locationRepository,
+    required LocationService locationService,
     required RoutesRepository routesRepository,
     required GeocodingRepository geocodingRepository,
     required Config viewConfig,
-  })  : _locationRepository = locationRepository,
+  })  : _locationService = locationService,
         _routesRepository = routesRepository,
         _geocodingRepository = geocodingRepository,
         _config = viewConfig {
-    _init();
-    log('--- MapNotifier init $hashCode');
+    logger.i('--- MapNotifier init $hashCode');
   }
 
-  final LocationRepository _locationRepository;
+  final LocationService _locationService;
   final RoutesRepository _routesRepository;
   final GeocodingRepository _geocodingRepository;
   final Config _config;
@@ -45,9 +50,7 @@ class MapNotifier {
   final routePoints = ValueNotifier<List<LatLng>>([]);
 
   // map address retrieval notifier
-  final placeAddress = ValueNotifier<PlaceAddressState>(
-    PlaceAddressLoading(),
-  );
+  final placeAddress = ValueNotifier<PlaceAddressState>(PlaceAddressLoading());
 
   // map view notifiers
   late final zoomLevel = ValueNotifier<double>(_config.defaultZoom);
@@ -57,21 +60,34 @@ class MapNotifier {
 
   void Function(double)? onZoomChanged;
   void Function(LocationDM)? onMapCentered;
+  void Function(String)? foregroundTaskCallback;
 
   void dispose() {
+    logger.i('--- MapNotifier dispose $hashCode');
     _locationUpdateSubscription.cancel();
+    locationState.dispose();
+    isRouteRecordingActive.dispose();
+    routePoints.dispose();
+    placeAddress.dispose();
+    zoomLevel.dispose();
+    markerSize.dispose();
+    polylineWidth.dispose();
+    isMapCentered.dispose();
     _geocodingRepository.closeCacheStorage();
   }
 
   Future<void> reInit() async {
     locationState.value = LocationLoading();
-    await _init();
+    await initLocationUpdate();
   }
 
-  Future<void> _init() async {
+  Future<void> ensurePermissions() async {
+    await _locationService.ensureServiceEnabled();
+    await _locationService.ensurePermissionsGranted();
+  }
+
+  Future<void> initLocationUpdate() async {
     try {
-      await _locationRepository.ensureLocationServiceEnabled();
-      await _locationRepository.ensurePermissionGranted();
       await _startLocationUpdate();
     } catch (e) {
       locationState.value = LocationUpdateFailure(error: e);
@@ -82,18 +98,30 @@ class MapNotifier {
       _startLocationUpdate;
 
   Future<void> _startLocationUpdate() async {
-    _locationUpdateStream = _locationRepository.getLocationUpdateStream();
+    log('--- _startLocationUpdate started');
+    _locationUpdateStream = _locationService.getLocationUpdateStream();
 
     _locationUpdateSubscription = _locationUpdateStream.listen(
       onLocationUpdate,
       onError: onLocationUpdateError,
     );
+    log('--- _startLocationUpdate stopped');
   }
 
   Function(LocationDM) get onLocationUpdate => (LocationDM location) {
         locationState.value = LocationUpdateSuccess(location: location);
 
+        logger.d('Location update: ${jsonEncode(location.toMap())}');
+
         onPlaceAddressUpdate(location);
+
+        if (placeAddress.value is PlaceAddressSuccess) {
+          final place = placeAddress.value as PlaceAddressSuccess;
+
+          if (foregroundTaskCallback != null) {
+            foregroundTaskCallback!(place.address);
+          }
+        }
 
         // Center the map on the current location
         if (isMapCentered.value && onMapCentered != null) {
@@ -113,7 +141,7 @@ class MapNotifier {
 
   Function(dynamic) get onLocationUpdateError => (dynamic error) {
         // TODO: Add error handling for another exceptions
-        if (error is ServiceDisabledException) {
+        if (error is LocationServiceDisabledStateException) {
           locationState.value = LocationUpdateFailure(error: error);
           _locationUpdateSubscription.cancel();
         } else {
