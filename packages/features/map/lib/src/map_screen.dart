@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:foreground_task_service/foreground_task_service.dart';
 import 'package:geocoding_repository/geocoding_repository.dart';
 import 'package:location_service/location_service.dart';
 import 'package:routes_repository/routes_repository.dart';
@@ -30,14 +29,14 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   late MapNotifier _mapNotifier;
-  late ForegroundLocationTaskService _foregroundTaskService;
+  // late ForegroundLocationTaskService _foregroundLocationTaskService;
   late final AppLifecycleListener _listener;
 
   Future<void> _checkPermissionsAndInitialize() async {
     await _mapNotifier.ensurePermissions();
     await _mapNotifier.initLocationUpdate();
-    await _foregroundTaskService.requestPermissions();
-    await _foregroundTaskService.initTaskService();
+    // await _foregroundLocationTaskService.requestPermissions();
+    // await _foregroundLocationTaskService.initTaskService();
   }
 
   @override
@@ -49,13 +48,12 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       geocodingRepository: widget.geocodingRepository,
       viewConfig: const Config(),
     );
-    _foregroundTaskService = ForegroundLocationTaskService();
     // _foregroundTaskService.initTaskService(this);
-    _checkPermissionsAndInitialize();
-    _foregroundTaskService.addTaskDataCallback(_onReceiveTaskData);
-    _mapNotifier.foregroundTaskCallback = (String data) {
-      _foregroundTaskService.sendDataToTask(data);
-    };
+    // _checkPermissionsAndInitialize();
+    // _foregroundTaskService.addTaskDataCallback(_onReceiveTaskData);
+    // _mapNotifier.foregroundTaskCallback = (String data) {
+    //   _foregroundTaskService.sendDataToTask(data);
+    // };
     // _listener = AppLifecycleListener(
     // onDetach: _onDetach,
     // onHide: _onHide,
@@ -72,8 +70,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _listener.dispose();
-    _foregroundTaskService.removeTaskDataCallback(_onReceiveTaskData);
-    _foregroundTaskService.stopService();
+    // _foregroundTaskService.removeTaskDataCallback(_onReceiveTaskData);
+    // _foregroundTaskService.stopService();
     _mapNotifier.dispose();
     super.dispose();
   }

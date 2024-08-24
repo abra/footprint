@@ -6,13 +6,13 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 // Controller
-class ForegroundLocationTaskService {
-  ForegroundLocationTaskService._internal();
+class ForegroundTaskService {
+  ForegroundTaskService._internal();
 
-  static final ForegroundLocationTaskService _instance =
-      ForegroundLocationTaskService._internal();
+  static final ForegroundTaskService _instance =
+      ForegroundTaskService._internal();
 
-  factory ForegroundLocationTaskService() => _instance;
+  factory ForegroundTaskService() => _instance;
 
   State? state;
 
