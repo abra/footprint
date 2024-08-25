@@ -94,6 +94,7 @@ class LocationService {
     }
   }
 
+  // TODO: Rewrite it
   Future<LocationSettings> _getSettings(double speed) async {
     return switch (speed) {
       // Walk (to 5 км/ч)
