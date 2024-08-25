@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:developer';
-import 'dart:convert';
 
 import 'package:domain_models/domain_models.dart';
 import 'package:equatable/equatable.dart';
@@ -9,15 +8,10 @@ import 'package:flutter/foundation.dart';
 import 'package:geocoding_repository/geocoding_repository.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location_service/location_service.dart';
-import 'package:logger/logger.dart';
 import 'package:routes_repository/routes_repository.dart';
 
 import 'config.dart';
 import 'extensions.dart';
-
-final logger = Logger(
-  printer: PrettyPrinter(colors: true),
-);
 
 class MapNotifier {
   MapNotifier({
@@ -29,7 +23,7 @@ class MapNotifier {
         _routesRepository = routesRepository,
         _geocodingRepository = geocodingRepository,
         _config = viewConfig {
-    logger.i('--- MapNotifier init $hashCode');
+    log('init $hashCode', name: 'MapNotifier', time: DateTime.now());
   }
 
   final LocationService _locationService;
@@ -63,7 +57,7 @@ class MapNotifier {
   void Function(String)? foregroundTaskCallback;
 
   void dispose() {
-    logger.i('--- MapNotifier dispose $hashCode');
+    log('dispose $hashCode', name: 'MapNotifier', time: DateTime.now());
     _locationUpdateSubscription.cancel();
     locationState.dispose();
     isRouteRecordingActive.dispose();
@@ -98,20 +92,28 @@ class MapNotifier {
       _startLocationUpdate;
 
   Future<void> _startLocationUpdate() async {
-    log('--- _startLocationUpdate started');
+    log(
+      '_startLocationUpdate started',
+      name: 'MapNotifier',
+      time: DateTime.now(),
+    );
     _locationUpdateStream = _locationService.getLocationUpdateStream();
 
     _locationUpdateSubscription = _locationUpdateStream.listen(
       onLocationUpdate,
       onError: onLocationUpdateError,
     );
-    log('--- _startLocationUpdate stopped');
+    log(
+      '_startLocationUpdate ended',
+      name: 'MapNotifier',
+      time: DateTime.now(),
+    );
   }
 
   Function(LocationDM) get onLocationUpdate => (LocationDM location) {
         locationState.value = LocationUpdateSuccess(location: location);
 
-        logger.d('Location update: ${jsonEncode(location.toMap())}');
+        log('Location update $location', name: 'MapNotifier', time: DateTime.now());
 
         onPlaceAddressUpdate(location);
 
@@ -145,7 +147,11 @@ class MapNotifier {
           locationState.value = LocationUpdateFailure(error: error);
           _locationUpdateSubscription.cancel();
         } else {
-          log('Location update error: $error');
+          log(
+            'Location update error: $error',
+            name: 'MapNotifier',
+            time: DateTime.now(),
+          );
           locationState.value = LocationUpdateFailure(error: error);
         }
       };
@@ -161,7 +167,11 @@ class MapNotifier {
         );
       }
     } on CouldNotGetPlaceAddressException catch (e) {
-      log('Could not get location address: $e');
+      log(
+        'Could not get location address: $e',
+        name: 'MapNotifier',
+        time: DateTime.now(),
+      );
       placeAddress.value = PlaceAddressFailure(error: e);
     }
   }

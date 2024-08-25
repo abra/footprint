@@ -49,7 +49,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       viewConfig: const Config(),
     );
     // _foregroundTaskService.initTaskService(this);
-    // _checkPermissionsAndInitialize();
+    _checkPermissionsAndInitialize();
     // _foregroundTaskService.addTaskDataCallback(_onReceiveTaskData);
     // _mapNotifier.foregroundTaskCallback = (String data) {
     //   _foregroundTaskService.sendDataToTask(data);

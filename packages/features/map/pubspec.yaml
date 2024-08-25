@@ -31,7 +31,6 @@ dependencies:
     path: ../../component_library
   foreground_task_service:
     path: ../../foreground_task_service
-  logger: ^2.4.0
 
 dev_dependencies:
   flutter_test:
