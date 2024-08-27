@@ -14,8 +14,10 @@ dependencies:
 
   domain_models:
     path: packages/domain_models
-  location_service:
-    path: packages/location_service
+  #  location_service:
+  #    path: packages/location_service
+  foreground_location_service:
+    path: packages/foreground_location_service
   geocoding_repository:
     path: packages/geocoding_repository
   routes_repository:

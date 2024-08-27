@@ -5,9 +5,9 @@ import 'package:domain_models/domain_models.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:foreground_location_service/foreground_location_service.dart';
 import 'package:geocoding_repository/geocoding_repository.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:location_service/location_service.dart';
 import 'package:routes_repository/routes_repository.dart';
 
 import 'config.dart';
@@ -15,7 +15,7 @@ import 'extensions.dart';
 
 class MapNotifier {
   MapNotifier({
-    required LocationService locationService,
+    required ForegroundLocationService locationService,
     required RoutesRepository routesRepository,
     required GeocodingRepository geocodingRepository,
     required Config viewConfig,
@@ -26,10 +26,19 @@ class MapNotifier {
     log('init $hashCode', name: 'MapNotifier', time: DateTime.now());
   }
 
-  final LocationService _locationService;
+  final ForegroundLocationService _locationService;
   final RoutesRepository _routesRepository;
   final GeocodingRepository _geocodingRepository;
   final Config _config;
+
+  // late final _foregroundTaskService = ForegroundLocationService(
+  //   onLocationUpdated: (location) {
+  //     locationState.value = LocationUpdateSuccess(location: location);
+  //   },
+  //   onLocationUpdateError: (error) {
+  //     locationState.value = LocationUpdateFailure(error: error);
+  //   },
+  // );
 
   Config get viewConfig => _config;
 
@@ -68,6 +77,7 @@ class MapNotifier {
     polylineWidth.dispose();
     isMapCentered.dispose();
     _geocodingRepository.closeCacheStorage();
+    // _foregroundTaskService.stopService();
   }
 
   Future<void> reInit() async {
@@ -75,14 +85,16 @@ class MapNotifier {
     await initLocationUpdate();
   }
 
-  Future<void> ensurePermissions() async {
-    await _locationService.ensureServiceEnabled();
-    await _locationService.ensurePermissionsGranted();
-  }
+  // // TODO: Leave it here for ensuring permissions
+  // Future<void> ensurePermissions() async {
+  // }
 
   Future<void> initLocationUpdate() async {
     try {
-      await _startLocationUpdate();
+      // await _startLocationUpdate();
+      // await ensurePermissions();
+      // _foregroundTaskService.initTaskService();
+      // _foregroundTaskService.startService();
     } catch (e) {
       locationState.value = LocationUpdateFailure(error: e);
     }
@@ -97,7 +109,7 @@ class MapNotifier {
       name: 'MapNotifier',
       time: DateTime.now(),
     );
-    _locationUpdateStream = _locationService.getLocationUpdateStream();
+    // _locationUpdateStream = _locationService.getLocationUpdateStream();
 
     _locationUpdateSubscription = _locationUpdateStream.listen(
       onLocationUpdate,
@@ -113,7 +125,11 @@ class MapNotifier {
   Function(LocationDM) get onLocationUpdate => (LocationDM location) {
         locationState.value = LocationUpdateSuccess(location: location);
 
-        log('Location update $location', name: 'MapNotifier', time: DateTime.now());
+        log(
+          'Location update $location',
+          name: 'MapNotifier',
+          time: DateTime.now(),
+        );
 
         onPlaceAddressUpdate(location);
 

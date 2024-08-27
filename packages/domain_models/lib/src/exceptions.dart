@@ -1,32 +1,95 @@
 class LocationServiceDisabledStateException implements Exception {
+  LocationServiceDisabledStateException({
+    this.message = 'The location service on the device is disabled.',
+    this.stackTrace,
+  });
+
+  final String message;
+  final StackTrace? stackTrace;
+
   @override
-  String toString() => 'The location service on the device is disabled.';
+  String toString() => message;
 }
 
 class LocationServicePermissionDeniedException implements Exception {
+  LocationServicePermissionDeniedException({
+    this.message = 'Permission to access the device\'s location is denied.',
+    this.stackTrace,
+  });
+
+  final String message;
+  final StackTrace? stackTrace;
+
   @override
-  String toString() => "Permission to access the device's location is denied.";
+  String toString() => message;
 }
 
 class LocationServicePermanentlyDeniedException implements Exception {
+  LocationServicePermanentlyDeniedException({
+    this.message =
+        'Permission to access the device\'s location is permanently denied.',
+    this.stackTrace,
+  });
+
+  final String message;
+  final StackTrace? stackTrace;
+
   @override
-  String toString() =>
-      'Permissions will be permanently denied until you update '
-      'the permission in the App settings of your phone.';
+  String toString() => message;
+}
+
+class NotificationPermissionDeniedException implements Exception {
+  NotificationPermissionDeniedException({
+    this.message = 'Notification permission is denied.',
+    this.stackTrace,
+  });
+
+  final String message;
+  final StackTrace? stackTrace;
+
+  @override
+  String toString() => message;
+}
+
+class NotificationPermissionPermanentlyDeniedException implements Exception {
+  NotificationPermissionPermanentlyDeniedException({
+    this.message = 'Notification permission is permanently denied.',
+    this.stackTrace,
+  });
+
+  final String message;
+  final StackTrace? stackTrace;
+
+  @override
+  String toString() => message;
 }
 
 class RequestForPermissionInProgressException implements Exception {
+  RequestForPermissionInProgressException({
+    this.message =
+        'A request for location permissions is already running, please '
+            'wait for it to complete before doing another request.',
+    this.stackTrace,
+  });
+
+  final String message;
+  final StackTrace? stackTrace;
+
   @override
-  String toString() =>
-      'A request for location permissions is already running, please '
-      'wait for it to complete before doing another request.';
+  String toString() => message;
 }
 
 class DefinitionsForPermissionNotFoundException implements Exception {
+  DefinitionsForPermissionNotFoundException({
+    this.message = 'Definitions for the permission are missing.',
+    this.stackTrace,
+  });
+
+  final String message;
+  final StackTrace? stackTrace;
+
   @override
-  String toString() =>
-      'Configuration is missing (e.g. in the AndroidManifest.xml'
-      ' on Android or the Info.plist on iOS)';
+  String toString() => message;
 }
 
 class CouldNotGetPlaceAddressException implements Exception {

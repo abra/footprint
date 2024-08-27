@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:foreground_location_service/foreground_location_service.dart';
 import 'package:geocoding_repository/geocoding_repository.dart';
-import 'package:location_service/location_service.dart';
 import 'package:routes_repository/routes_repository.dart';
 
 import 'config.dart';
@@ -18,7 +18,7 @@ class MapScreen extends StatefulWidget {
     required this.onPageChangeRequested,
   });
 
-  final LocationService locationService;
+  final ForegroundLocationService locationService;
   final RoutesRepository routesRepository;
   final GeocodingRepository geocodingRepository;
   final VoidCallback onPageChangeRequested;
@@ -29,15 +29,8 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   late MapNotifier _mapNotifier;
-  // late ForegroundLocationTaskService _foregroundLocationTaskService;
-  late final AppLifecycleListener _listener;
 
-  Future<void> _checkPermissionsAndInitialize() async {
-    await _mapNotifier.ensurePermissions();
-    await _mapNotifier.initLocationUpdate();
-    // await _foregroundLocationTaskService.requestPermissions();
-    // await _foregroundLocationTaskService.initTaskService();
-  }
+  late final AppLifecycleListener _listener;
 
   @override
   void initState() {
@@ -48,12 +41,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       geocodingRepository: widget.geocodingRepository,
       viewConfig: const Config(),
     );
-    // _foregroundTaskService.initTaskService(this);
-    _checkPermissionsAndInitialize();
-    // _foregroundTaskService.addTaskDataCallback(_onReceiveTaskData);
-    // _mapNotifier.foregroundTaskCallback = (String data) {
-    //   _foregroundTaskService.sendDataToTask(data);
-    // };
     // _listener = AppLifecycleListener(
     // onDetach: _onDetach,
     // onHide: _onHide,
@@ -70,8 +57,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _listener.dispose();
-    // _foregroundTaskService.removeTaskDataCallback(_onReceiveTaskData);
-    // _foregroundTaskService.stopService();
     _mapNotifier.dispose();
     super.dispose();
   }
@@ -87,67 +72,4 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           body: const MapView(),
         ),
       );
-
-  // Future<void> _onDetach() async {
-  //   print('onDetach 1');
-  //   await _foregroundTaskService.stopService();
-  //   print('onDetach 2');
-  // }
-
-  // void _onHide() async {
-  //   print('onHide');
-  //   if (_isFirstBuild) {
-  //     _isFirstBuild = false;
-  //     return;
-  //   }
-  //   // if (!await _foregroundTaskService.isRunningService()) {
-  //   await _foregroundTaskService.startService();
-  //   // }
-  //   print('IS RUNNING: ${await _foregroundTaskService.isRunningService()}');
-  // }
-
-  void _onReceiveTaskData(dynamic data) {
-    if (data is int) {
-      print('### count: $data');
-    }
-  }
-
-// void _onInactive() async {
-//   print('onInactive');
-//   if (_isFirstBuild) {
-//     _isFirstBuild = false;
-//     return;
-//   }
-//   // if (!await _foregroundTaskService.isRunningService()) {
-//   await _foregroundTaskService.startService();
-//   // }
-// }
-
-// void _onPause() async {
-//   print('onPause');
-//   // if (_isFirstBuild) {
-//   //   _isFirstBuild = false;
-//   //   return;
-//   // }
-//   // if (!await _foregroundTaskService.isRunningService()) {
-//   await _foregroundTaskService.startService();
-//   // }
-// }
-
-// void _onRestart() {
-//   print('onRestart');
-// }
-
-// void _onResume() async {
-//   print('onResume');
-//   await _foregroundTaskService.stopService();
-// }
-
-// void _onShow() async {
-//   print('onShow');
-//   await _foregroundTaskService.stopService();
-// }
-
-// void _onStateChange(AppLifecycleState state) =>
-//     print('onStateChange: $state');
 }

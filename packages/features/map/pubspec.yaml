@@ -1,5 +1,6 @@
 name: map
 publish_to: none
+version: 0.1.0
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -21,16 +22,14 @@ dependencies:
   meta: ^1.10.0
   domain_models:
     path: ../../domain_models
-  location_service:
-    path: ../../location_service
   routes_repository:
     path: ../../routes_repository
   geocoding_repository:
     path: ../../geocoding_repository
   component_library:
     path: ../../component_library
-  foreground_task_service:
-    path: ../../foreground_task_service
+  foreground_location_service:
+    path: ../../foreground_location_service
 
 dev_dependencies:
   flutter_test:

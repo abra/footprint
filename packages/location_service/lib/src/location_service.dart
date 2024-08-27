@@ -4,8 +4,6 @@ import 'package:domain_models/domain_models.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'mappers/position_to_domain.dart';
-
 /// Location service wrapper for [Geolocator]
 class LocationService {
   const LocationService._();
@@ -18,7 +16,9 @@ class LocationService {
   static Position? _lastPosition;
   static DateTime? _lastPositionTimestamp;
 
-  Future<void> ensureServiceEnabled() async {
+  static Stream<Position> get stream => _stream ??= getLocationUpdateStream();
+
+  static Future<void> ensureServiceEnabled() async {
     final serviceStatus = await Permission.location.serviceStatus;
 
     if (!serviceStatus.isEnabled) {
@@ -26,7 +26,7 @@ class LocationService {
     }
   }
 
-  Future<void> ensurePermissionsGranted() async {
+  static Future<void> ensurePermissionsGranted() async {
     var status = await Permission.location.status;
 
     if (status.isDenied) {
@@ -52,7 +52,7 @@ class LocationService {
     }
   }
 
-  Stream<LocationDM> getLocationUpdateStream() async* {
+  static Stream<Position> getLocationUpdateStream() async* {
     var settings = LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 5,
@@ -63,7 +63,7 @@ class LocationService {
     );
 
     await for (final position in _stream!) {
-      yield position.toDomainModel();
+      yield position;
 
       if (_lastPosition != null && _lastPositionTimestamp != null) {
         final speed = await _calculateSpeed(
@@ -73,16 +73,6 @@ class LocationService {
           endTimestamp: DateTime.now(),
         );
         settings = await _getSettings(speed);
-        // log(
-        //   'speed: $speed, settings: ${settings.accuracy}, ${settings.distanceFilter}',
-        //   name: 'LocationService',
-        //   time: DateTime.now(),
-        // );
-        // log(
-        //   'Stream reinitialized: ${_stream.hashCode}',
-        //   name: 'LocationService',
-        //   time: DateTime.now(),
-        // );
         _stream = Geolocator.getPositionStream(
           locationSettings: settings,
         );
@@ -95,7 +85,7 @@ class LocationService {
   }
 
   // TODO: Rewrite it
-  Future<LocationSettings> _getSettings(double speed) async {
+  static Future<LocationSettings> _getSettings(double speed) async {
     return switch (speed) {
       // Walk (to 5 км/ч)
       <= 1.39 => LocationSettings(
@@ -144,12 +134,12 @@ class LocationService {
     };
   }
 
-  Future<LocationDM> determineLocation() async {
+  static Future<Position> determineLocation() async {
     final position = await Geolocator.getCurrentPosition();
-    return position.toDomainModel();
+    return position;
   }
 
-  Future<double> _calculateSpeed({
+  static Future<double> _calculateSpeed({
     required Position startPosition,
     required DateTime startTimestamp,
     required Position endPosition,
@@ -168,7 +158,7 @@ class LocationService {
     return distance / duration.inSeconds;
   }
 
-  Future<double> _calculateDistance({
+  static Future<double> _calculateDistance({
     required double startLatitude,
     required double startLongitude,
     required double endLatitude,
