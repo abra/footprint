@@ -43,8 +43,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
     _mapNotifier.init();
     widget.locationService.attach(this);
-    // _listener = AppLifecycleListener(
-    // onDetach: _onDetach,
+    _listener = AppLifecycleListener(
+      onDetach: _onDetach,
+    );
     // onHide: _onHide,
     // onInactive: _onInactive,
     // onPause: _onPause,
@@ -54,6 +55,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     // onStateChange: _onStateChange,
     // onExitRequested: _onExitRequested,
     // );
+  }
+
+  void _onDetach() {
+    widget.locationService.detach();
   }
 
   @override

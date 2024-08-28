@@ -92,6 +92,7 @@ class MapNotifier {
     polylineWidth.dispose();
     isMapCentered.dispose();
     _geocodingRepository.closeCacheStorage();
+    _foregroundLocationService.dispose();
   }
 
   Future<void> _placeAddressUpdate(LocationDM location) async {

@@ -38,6 +38,8 @@ class ForegroundLocationService {
           await Permission.systemAlertWindow.request();
         }
       }
+
+      return;
     }
 
     if (status.isDenied) {
@@ -80,9 +82,6 @@ class ForegroundLocationService {
     );
   }
 
-  Future<bool> isRunningService() async =>
-      await FlutterForegroundTask.isRunningService;
-
   Future<void> _startService() async {
     final result = await FlutterForegroundTask.startService(
       serviceId: 256,
@@ -103,6 +102,18 @@ class ForegroundLocationService {
       throw result.error ??
           Exception(
             'An error occurred and the service could not be started.',
+          );
+    }
+  }
+
+  Future<void> _stopService() async {
+    final ServiceRequestResult result =
+        await FlutterForegroundTask.stopService();
+
+    if (!result.success) {
+      throw result.error ??
+          Exception(
+            'An error occurred and the service could not be stopped.',
           );
     }
   }
@@ -157,6 +168,7 @@ class ForegroundLocationService {
 
   @mustCallSuper
   void detach() async {
+    log('[$runtimeType] detach');
     _state = null;
     FlutterForegroundTask.removeTaskDataCallback(_onReceiveTaskData);
   }
@@ -164,6 +176,7 @@ class ForegroundLocationService {
   @mustCallSuper
   void dispose() {
     detach();
+    _stopService();
   }
 
   // TODO: Refactor this method
@@ -244,6 +257,7 @@ class ForegroundLocationTaskHandler extends TaskHandler {
   // Called when the task is destroyed.
   @override
   void onDestroy(DateTime timestamp) {
+    log('[$runtimeType] onDestroy', name: 'ForegroundLocationTaskHandler');
     _positionStreamSubscription?.cancel();
     _positionStreamSubscription = null;
   }

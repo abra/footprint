@@ -27,6 +27,10 @@ class LocationService {
   static Future<void> ensurePermissionsGranted() async {
     var status = await Permission.location.status;
 
+    if (status.isGranted) {
+      return;
+    }
+
     if (status.isDenied) {
       status = await Permission.location.request();
 
