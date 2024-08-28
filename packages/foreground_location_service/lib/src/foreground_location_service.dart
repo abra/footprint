@@ -61,11 +61,6 @@ class ForegroundLocationService {
     }
   }
 
-  Future<void> _requestLocationPermissions() async {
-    await LocationService.ensureServiceEnabled();
-    await LocationService.ensurePermissionsGranted();
-  }
-
   Future<void> _initService() async {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
@@ -118,7 +113,9 @@ class ForegroundLocationService {
         try {
           final Map<String, dynamic> locationJson = jsonDecode(data);
           final location = LocationDM.fromMap(locationJson);
-          onLocationUpdated?.call(location);
+          if (onLocationUpdated != null && _state != null) {
+            onLocationUpdated!.call(location);
+          }
         } catch (e) {
           log('Error decoding location data: $e');
         }
@@ -126,7 +123,9 @@ class ForegroundLocationService {
         try {
           final errorJson = data.substring(6); // remove 'Error: ' prefix
           final exception = _ExceptionSerializer.deserialize(errorJson);
-          onLocationUpdateError?.call(exception);
+          if (onLocationUpdateError != null && _state != null) {
+            onLocationUpdateError!.call(exception);
+          }
         } catch (e) {
           log('Error decoding exception data: $e');
         }
@@ -140,16 +139,15 @@ class ForegroundLocationService {
     FlutterForegroundTask.addTaskDataCallback(_onReceiveTaskData);
 
     try {
-      // check permissions -> if granted -> start service
-      _requestNotificationPermissions().then((_) {
-        _requestLocationPermissions().then((_) async {
-          // already started
-          if (await FlutterForegroundTask.isRunningService) {
-            return;
-          }
-
-          await _initService();
-          _startService();
+      LocationService.ensureServiceEnabled().then((_) {
+        LocationService.ensurePermissionsGranted().then((_) {
+          _requestNotificationPermissions().then((_) async {
+            if (await FlutterForegroundTask.isRunningService) {
+              return;
+            }
+            await _initService();
+            _startService();
+          });
         });
       });
     } catch (e, s) {
@@ -158,19 +156,17 @@ class ForegroundLocationService {
   }
 
   @mustCallSuper
-  void detach() {
-    log('detach', name: 'ExamplePageController', time: DateTime.now());
+  void detach() async {
     _state = null;
     FlutterForegroundTask.removeTaskDataCallback(_onReceiveTaskData);
   }
 
   @mustCallSuper
   void dispose() {
-    log('dispose', name: 'ExamplePageController', time: DateTime.now());
     detach();
   }
 
-  // TODO: Refactor this method to handle errors in the foreground service
+  // TODO: Refactor this method
   void _handleError(Object e, StackTrace s) {
     String errorMessage;
     if (e is PlatformException) {
@@ -180,7 +176,11 @@ class ForegroundLocationService {
     }
 
     // print error to console.
-    // log('$errorMessage\n${s.toString()}');
+    log(
+      '$errorMessage\n${s.toString()}',
+      name: 'ExamplePageController(_handleError)',
+      time: DateTime.now(),
+    );
 
     // show error to user.
     // final State? state = _state;
@@ -196,8 +196,6 @@ class ForegroundLocationService {
 void startCallback() async {
   // The setTaskHandler function must be called to handle
   // the task in the background.
-  log('@pragma[vm:entry-point] startCallback');
-  // FlutterForegroundTask.setTaskHandler(ForegroundTaskHandler());
   FlutterForegroundTask.setTaskHandler(
     ForegroundLocationTaskHandler(),
   );
@@ -209,7 +207,8 @@ class ForegroundLocationTaskHandler extends TaskHandler {
   // Called when the task is started.
   @override
   void onStart(DateTime timestamp) async {
-    _positionStreamSubscription = LocationService.stream.listen(
+    _positionStreamSubscription =
+        LocationService.getLocationUpdateStream().listen(
       (position) {
         final location = jsonEncode(position.toDomainModel().toMap());
         FlutterForegroundTask.sendDataToMain(
@@ -245,7 +244,6 @@ class ForegroundLocationTaskHandler extends TaskHandler {
   // Called when the task is destroyed.
   @override
   void onDestroy(DateTime timestamp) {
-    log('[$runtimeType] onDestroy');
     _positionStreamSubscription?.cancel();
     _positionStreamSubscription = null;
   }

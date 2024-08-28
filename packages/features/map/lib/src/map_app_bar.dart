@@ -170,7 +170,7 @@ class _MapAppBarState extends State<MapAppBar> {
   }
 
   Future<void> _onTryAgain() async {
-    await _mapNotifier.reInit();
+    // await _mapNotifier.reInit();
     setState(() {
       _shouldShowExceptionDialog = true;
     });

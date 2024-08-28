@@ -41,6 +41,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       geocodingRepository: widget.geocodingRepository,
       viewConfig: const Config(),
     );
+    _mapNotifier.init();
+    widget.locationService.attach(this);
     // _listener = AppLifecycleListener(
     // onDetach: _onDetach,
     // onHide: _onHide,

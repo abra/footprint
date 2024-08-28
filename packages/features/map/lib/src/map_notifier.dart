@@ -19,31 +19,20 @@ class MapNotifier {
     required RoutesRepository routesRepository,
     required GeocodingRepository geocodingRepository,
     required Config viewConfig,
-  })  : _locationService = locationService,
+  })  : _foregroundLocationService = locationService,
         _routesRepository = routesRepository,
         _geocodingRepository = geocodingRepository,
         _config = viewConfig {
     log('init $hashCode', name: 'MapNotifier', time: DateTime.now());
   }
 
-  final ForegroundLocationService _locationService;
+  final ForegroundLocationService _foregroundLocationService;
   final RoutesRepository _routesRepository;
   final GeocodingRepository _geocodingRepository;
   final Config _config;
 
-  // late final _foregroundTaskService = ForegroundLocationService(
-  //   onLocationUpdated: (location) {
-  //     locationState.value = LocationUpdateSuccess(location: location);
-  //   },
-  //   onLocationUpdateError: (error) {
-  //     locationState.value = LocationUpdateFailure(error: error);
-  //   },
-  // );
-
+  // map view config
   Config get viewConfig => _config;
-
-  late Stream<LocationDM> _locationUpdateStream;
-  late StreamSubscription<LocationDM> _locationUpdateSubscription;
 
   // map location update notifier
   late final locationState = ValueNotifier<LocationState>(LocationLoading());
@@ -61,13 +50,39 @@ class MapNotifier {
   late final polylineWidth = ValueNotifier<double>(_config.polylineWidth);
   late final isMapCentered = ValueNotifier<bool>(_config.mapCentered);
 
+  // map view callbacks
   void Function(double)? onZoomChanged;
   void Function(LocationDM)? onMapCentered;
-  void Function(String)? foregroundTaskCallback;
+
+  void init() async {
+    _foregroundLocationService.onLocationUpdated = ((LocationDM location) {
+      locationState.value = LocationUpdateSuccess(location: location);
+
+      onPlaceAddressUpdate(location);
+
+      // Center the map on the current location
+      if (isMapCentered.value && onMapCentered != null) {
+        onMapCentered!(location);
+      }
+
+      // Start route recording
+      if (isRouteRecordingActive.value) {
+        // TODO: Replace with routeRepository
+        // TODO: _routesRepository.addRoutePoint(location.toLatLng());
+        routePoints.value = [
+          ...routePoints.value,
+          location.toLatLng(),
+        ];
+      }
+    });
+
+    _foregroundLocationService.onLocationUpdateError = ((Exception exception) {
+      locationState.value = LocationUpdateFailure(error: exception);
+    });
+  }
 
   void dispose() {
     log('dispose $hashCode', name: 'MapNotifier', time: DateTime.now());
-    _locationUpdateSubscription.cancel();
     locationState.dispose();
     isRouteRecordingActive.dispose();
     routePoints.dispose();
@@ -77,100 +92,7 @@ class MapNotifier {
     polylineWidth.dispose();
     isMapCentered.dispose();
     _geocodingRepository.closeCacheStorage();
-    // _foregroundTaskService.stopService();
   }
-
-  Future<void> reInit() async {
-    locationState.value = LocationLoading();
-    await initLocationUpdate();
-  }
-
-  // // TODO: Leave it here for ensuring permissions
-  // Future<void> ensurePermissions() async {
-  // }
-
-  Future<void> initLocationUpdate() async {
-    try {
-      // await _startLocationUpdate();
-      // await ensurePermissions();
-      // _foregroundTaskService.initTaskService();
-      // _foregroundTaskService.startService();
-    } catch (e) {
-      locationState.value = LocationUpdateFailure(error: e);
-    }
-  }
-
-  Future<Future<void> Function()> get startLocationUpdate async =>
-      _startLocationUpdate;
-
-  Future<void> _startLocationUpdate() async {
-    log(
-      '_startLocationUpdate started',
-      name: 'MapNotifier',
-      time: DateTime.now(),
-    );
-    // _locationUpdateStream = _locationService.getLocationUpdateStream();
-
-    _locationUpdateSubscription = _locationUpdateStream.listen(
-      onLocationUpdate,
-      onError: onLocationUpdateError,
-    );
-    log(
-      '_startLocationUpdate ended',
-      name: 'MapNotifier',
-      time: DateTime.now(),
-    );
-  }
-
-  Function(LocationDM) get onLocationUpdate => (LocationDM location) {
-        locationState.value = LocationUpdateSuccess(location: location);
-
-        log(
-          'Location update $location',
-          name: 'MapNotifier',
-          time: DateTime.now(),
-        );
-
-        onPlaceAddressUpdate(location);
-
-        if (placeAddress.value is PlaceAddressSuccess) {
-          final place = placeAddress.value as PlaceAddressSuccess;
-
-          if (foregroundTaskCallback != null) {
-            foregroundTaskCallback!(place.address);
-          }
-        }
-
-        // Center the map on the current location
-        if (isMapCentered.value && onMapCentered != null) {
-          onMapCentered!(location);
-        }
-
-        // Start route recording
-        if (isRouteRecordingActive.value) {
-          // TODO: Replace with routeRepository
-          // TODO: _routesRepository.addRoutePoint(location.toLatLng());
-          routePoints.value = [
-            ...routePoints.value,
-            location.toLatLng(),
-          ];
-        }
-      };
-
-  Function(dynamic) get onLocationUpdateError => (dynamic error) {
-        // TODO: Add error handling for another exceptions
-        if (error is LocationServiceDisabledStateException) {
-          locationState.value = LocationUpdateFailure(error: error);
-          _locationUpdateSubscription.cancel();
-        } else {
-          log(
-            'Location update error: $error',
-            name: 'MapNotifier',
-            time: DateTime.now(),
-          );
-          locationState.value = LocationUpdateFailure(error: error);
-        }
-      };
 
   Future<void> _placeAddressUpdate(LocationDM location) async {
     try {

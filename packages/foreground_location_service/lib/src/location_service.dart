@@ -16,8 +16,6 @@ class LocationService {
   static Position? _lastPosition;
   static DateTime? _lastPositionTimestamp;
 
-  static Stream<Position> get stream => _stream ??= getLocationUpdateStream();
-
   static Future<void> ensureServiceEnabled() async {
     final serviceStatus = await Permission.location.serviceStatus;
 
