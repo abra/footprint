@@ -13,18 +13,10 @@ import 'package:permission_handler/permission_handler.dart';
 import 'location_service.dart';
 import 'mappers/position_to_domain.dart';
 
-final List<Exception> exceptions = [
-  LocationServiceDisabledStateException(),
-  LocationServicePermissionDeniedException(),
-  LocationServicePermanentlyDeniedException(),
-  NotificationPermissionDeniedException(),
-  NotificationPermissionPermanentlyDeniedException(),
-  RequestForPermissionInProgressException(),
-  DefinitionsForPermissionNotFoundException(),
-];
-
 class ForegroundLocationService {
   State? _state;
+  void Function(LocationDM)? onLocationUpdated;
+  void Function(Exception)? onLocationUpdateError;
 
   static Future<void> initCommunicationPort() async =>
       FlutterForegroundTask.initCommunicationPort();
@@ -114,26 +106,31 @@ class ForegroundLocationService {
 
     if (!result.success) {
       throw result.error ??
-          Exception('An error occurred and the service could not be started.');
+          Exception(
+            'An error occurred and the service could not be started.',
+          );
     }
   }
 
   void _onReceiveTaskData(Object data) {
-    if (data is String && !data.startsWith('Error:')) {
-      final Map<String, dynamic> locationJson = jsonDecode(data);
-      final location = LocationDM.fromMap(locationJson);
-      // onLocationUpdated(location);
-      // locationState.value = LocationUpdateSuccess(location: location);
-    }
-    if (data is String && data.startsWith('Error:')) {
-      final parts = data.split(':');
-      final code = parts[1].trim();
-      final exception = exceptions.firstWhere(
-        (ex) => ex.runtimeType.toString() == code,
-        orElse: () => Exception(data),
-      );
-      // onLocationUpdateError(exception);
-      // locationState.value = LocationUpdateFailure(error: exception);
+    if (data is String) {
+      if (data.startsWith('{')) {
+        try {
+          final Map<String, dynamic> locationJson = jsonDecode(data);
+          final location = LocationDM.fromMap(locationJson);
+          onLocationUpdated?.call(location);
+        } catch (e) {
+          log('Error decoding location data: $e');
+        }
+      } else if (data.startsWith('Error:')) {
+        try {
+          final errorJson = data.substring(6); // remove 'Error: ' prefix
+          final exception = _ExceptionSerializer.deserialize(errorJson);
+          onLocationUpdateError?.call(exception);
+        } catch (e) {
+          log('Error decoding exception data: $e');
+        }
+      }
     }
   }
 
@@ -183,14 +180,14 @@ class ForegroundLocationService {
     }
 
     // print error to console.
-    log('$errorMessage\n${s.toString()}');
+    // log('$errorMessage\n${s.toString()}');
 
     // show error to user.
-    final State? state = _state;
-    if (state != null && state.mounted) {
-      final SnackBar snackBar = SnackBar(content: Text(errorMessage));
-      ScaffoldMessenger.of(state.context).showSnackBar(snackBar);
-    }
+    // final State? state = _state;
+    // if (state != null && state.mounted) {
+    //   final SnackBar snackBar = SnackBar(content: Text(errorMessage));
+    //   ScaffoldMessenger.of(state.context).showSnackBar(snackBar);
+    // }
   }
 }
 
@@ -212,32 +209,30 @@ class ForegroundLocationTaskHandler extends TaskHandler {
   // Called when the task is started.
   @override
   void onStart(DateTime timestamp) async {
-    _positionStreamSubscription = LocationService.stream.listen((position) {
-      final location = jsonEncode(position.toDomainModel().toMap());
-      FlutterForegroundTask.sendDataToMain(
-        location,
-      );
-    }, onError: (error) async {
-      final exception = switch (error) {
-        LocationServiceDisabledStateException() =>
-          LocationServiceDisabledStateException(),
-        LocationServicePermissionDeniedException() =>
-          LocationServicePermissionDeniedException(),
-        LocationServicePermanentlyDeniedException() =>
-          LocationServicePermanentlyDeniedException(),
-        NotificationPermissionDeniedException() =>
-          NotificationPermissionDeniedException(),
-        NotificationPermissionPermanentlyDeniedException() =>
-          NotificationPermissionPermanentlyDeniedException(),
-        RequestForPermissionInProgressException() =>
-          RequestForPermissionInProgressException(),
-        DefinitionsForPermissionNotFoundException() =>
-          DefinitionsForPermissionNotFoundException(),
-        _ => Exception(error.toString()),
-      };
-
-      FlutterForegroundTask.sendDataToMain('Error:${exception.runtimeType}');
-    });
+    _positionStreamSubscription = LocationService.stream.listen(
+      (position) {
+        final location = jsonEncode(position.toDomainModel().toMap());
+        FlutterForegroundTask.sendDataToMain(
+          location,
+        );
+      },
+      onError: (error, stackTrace) async {
+        if (error is Exception) {
+          final serializedError = _ExceptionSerializer.serialize(
+            error,
+            stackTrace,
+          );
+          FlutterForegroundTask.sendDataToMain('Error:$serializedError');
+        } else {
+          final unknownError = Exception(error.toString());
+          final serializedError = _ExceptionSerializer.serialize(
+            unknownError,
+            stackTrace,
+          );
+          FlutterForegroundTask.sendDataToMain('Error:$serializedError');
+        }
+      },
+    );
   }
 
   // Called every [ForegroundTaskOptions.interval] milliseconds.
@@ -288,5 +283,53 @@ class ForegroundLocationTaskHandler extends TaskHandler {
   @override
   void onNotificationDismissed() {
     log('[$runtimeType] onNotificationDismissed');
+  }
+}
+
+class _ExceptionSerializer {
+  static String serialize(Exception exception, StackTrace? stackTrace) {
+    return jsonEncode({
+      'type': exception.runtimeType.toString(),
+      'message': exception.toString(),
+      'stackTrace': stackTrace?.toString(),
+    });
+  }
+
+  static Exception deserialize(String jsonString) {
+    final Map<String, dynamic> json = jsonDecode(jsonString);
+    final String type = json['type'];
+    final String message = json['message'];
+    final StackTrace? stackTrace = json['stackTrace'] != null
+        ? StackTrace.fromString(json['stackTrace'])
+        : null;
+
+    switch (type) {
+      case 'LocationServiceDisabledStateException':
+        return LocationServiceDisabledStateException(
+            message: message, stackTrace: stackTrace);
+      case 'LocationServicePermissionDeniedException':
+        return LocationServicePermissionDeniedException(
+            message: message, stackTrace: stackTrace);
+      case 'LocationServicePermanentlyDeniedException':
+        return LocationServicePermanentlyDeniedException(
+            message: message, stackTrace: stackTrace);
+      case 'NotificationPermissionDeniedException':
+        return NotificationPermissionDeniedException(
+            message: message, stackTrace: stackTrace);
+      case 'NotificationPermissionPermanentlyDeniedException':
+        return NotificationPermissionPermanentlyDeniedException(
+            message: message, stackTrace: stackTrace);
+      case 'RequestForPermissionInProgressException':
+        return RequestForPermissionInProgressException(
+            message: message, stackTrace: stackTrace);
+      case 'DefinitionsForPermissionNotFoundException':
+        return DefinitionsForPermissionNotFoundException(
+            message: message, stackTrace: stackTrace);
+      case 'CouldNotGetPlaceAddressException':
+        return CouldNotGetPlaceAddressException(
+            message: message, stackTrace: stackTrace);
+      default:
+        return Exception('Unknown exception: $message');
+    }
   }
 }
