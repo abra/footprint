@@ -13,6 +13,8 @@ import 'package:routes_repository/routes_repository.dart';
 import 'config.dart';
 import 'extensions.dart';
 
+part 'map_state.dart';
+
 class MapNotifier {
   MapNotifier({
     required ForegroundLocationService locationService,
@@ -57,30 +59,34 @@ class MapNotifier {
   void Function(LocationDM)? onMapCentered;
 
   void init() async {
-    _foregroundLocationService.onLocationUpdated = ((LocationDM location) {
-      locationState.value = LocationUpdateSuccess(location: location);
+    _foregroundLocationService.onLocationUpdated = _handleLocationUpdate;
 
-      onPlaceAddressUpdate.call(location);
+    _foregroundLocationService.onLocationUpdateError = _handleLocationError;
+  }
 
-      // Center the map on the current location
-      if (isMapCentered.value && onMapCentered != null) {
-        onMapCentered!.call(location);
-      }
+  void _handleLocationUpdate(LocationDM location) {
+    locationState.value = LocationUpdateSuccess(location: location);
 
-      // Start route recording
-      if (isRouteRecordingActive.value) {
-        // TODO: Replace with routeRepository
-        // TODO: _routesRepository.addRoutePoint(location.toLatLng());
-        routePoints.value = [
-          ...routePoints.value,
-          location.toLatLng(),
-        ];
-      }
-    });
+    onPlaceAddressUpdate.call(location);
 
-    _foregroundLocationService.onLocationUpdateError = ((Exception exception) {
-      locationState.value = LocationUpdateFailure(error: exception);
-    });
+    // Center the map on the current location
+    if (isMapCentered.value && onMapCentered != null) {
+      onMapCentered!.call(location);
+    }
+
+    // Start route recording
+    if (isRouteRecordingActive.value) {
+      // TODO: Replace with routeRepository
+      // TODO: _routesRepository.addRoutePoint(location.toLatLng());
+      routePoints.value = [
+        ...routePoints.value,
+        location.toLatLng(),
+      ];
+    }
+  }
+
+  void _handleLocationError(Exception exception) {
+    locationState.value = LocationUpdateFailure(error: exception);
   }
 
   void dispose() {
@@ -95,6 +101,10 @@ class MapNotifier {
     isMapCentered.dispose();
     _geocodingManager.closeCacheStorage();
     _foregroundLocationService.dispose();
+    _foregroundLocationService.onLocationUpdated = null;
+    _foregroundLocationService.onLocationUpdateError = null;
+    onZoomChanged = null;
+    onMapCentered = null;
   }
 
   Future<void> _placeAddressUpdate(LocationDM location) async {
@@ -138,18 +148,22 @@ class MapNotifier {
     }
   }
 
-  Future<void> zoomIn() =>
-      _updateZoom(zoomLevel.value + _config.zoomStep, onZoomChanged ?? (_) {});
+  Future<void> zoomIn() => _updateZoom(
+        zoomLevel.value + _config.zoomStep,
+        onZoomChanged ?? (_) {},
+      );
 
-  Future<void> zoomOut() =>
-      _updateZoom(zoomLevel.value - _config.zoomStep, onZoomChanged ?? (_) {});
+  Future<void> zoomOut() => _updateZoom(
+        zoomLevel.value - _config.zoomStep,
+        onZoomChanged ?? (_) {},
+      );
 
   Future<void> _updateZoom(double newZoom, Function(double) callback) async {
     if (newZoom >= _config.minZoom && newZoom <= _config.maxZoom) {
       zoomLevel.value = newZoom;
       callback(zoomLevel.value);
-      await _updateMarkerSize(zoomLevel.value);
-      await _updatePolylineWidth(zoomLevel.value);
+      _updateMarkerSize(zoomLevel.value);
+      _updatePolylineWidth(zoomLevel.value);
     }
   }
 
@@ -164,12 +178,12 @@ class MapNotifier {
     }
   }
 
-  Future<void> _updatePolylineWidth(double zoom) async {
+  void _updatePolylineWidth(double zoom) {
     if (_polylineWidthCache.containsKey(zoom)) {
       polylineWidth.value = _polylineWidthCache[zoom]!;
       return;
     }
-    polylineWidth.value = await _calculateMapParameter(
+    polylineWidth.value = _calculateMapParameter(
       zoom: zoom,
       minValue: _config.polylineMinWidth,
       maxValue: _config.polylineMaxWidth,
@@ -177,12 +191,12 @@ class MapNotifier {
     _polylineWidthCache[zoom] = polylineWidth.value;
   }
 
-  Future<void> _updateMarkerSize(double zoom) async {
+  void _updateMarkerSize(double zoom) {
     if (_markerSizeCache.containsKey(zoom)) {
       markerSize.value = _markerSizeCache[zoom]!;
       return;
     }
-    markerSize.value = await _calculateMapParameter(
+    markerSize.value = _calculateMapParameter(
       zoom: zoom,
       minValue: _config.markerMinSize,
       maxValue: _config.markerMaxSize,
@@ -190,86 +204,14 @@ class MapNotifier {
     _markerSizeCache[zoom] = markerSize.value;
   }
 
-  Future<double> _calculateMapParameter({
+  double _calculateMapParameter({
     required double zoom,
     required double minValue,
     required double maxValue,
-  }) async {
+  }) {
     return minValue +
         (zoom - _config.minZoom) *
             (maxValue - minValue) /
             (_config.maxZoom - _config.minZoom);
   }
-}
-
-sealed class LocationState extends Equatable {
-  const LocationState();
-}
-
-class LocationLoading extends LocationState {
-  @override
-  List<Object?> get props => [];
-}
-
-class LocationUpdateSuccess extends LocationState {
-  const LocationUpdateSuccess({
-    required this.location,
-    this.locationUpdateError,
-  });
-
-  final LocationDM location;
-  final dynamic locationUpdateError;
-
-  @override
-  List<Object?> get props => [
-        location,
-        locationUpdateError,
-      ];
-}
-
-class LocationUpdateFailure extends LocationState {
-  const LocationUpdateFailure({
-    required this.error,
-  }) : errorMessage = '$error';
-
-  final dynamic error;
-  final String errorMessage;
-
-  @override
-  List<Object?> get props => [
-        error,
-        errorMessage,
-      ];
-}
-
-sealed class PlaceAddressState extends Equatable {
-  const PlaceAddressState();
-}
-
-class PlaceAddressLoading extends PlaceAddressState {
-  @override
-  List<Object?> get props => [];
-}
-
-class PlaceAddressSuccess extends PlaceAddressState {
-  const PlaceAddressSuccess({
-    required this.address,
-  });
-
-  final String address;
-
-  @override
-  List<Object?> get props => [address];
-}
-
-class PlaceAddressFailure extends PlaceAddressState {
-  const PlaceAddressFailure({
-    required this.error,
-  }) : errorMessage = '$error';
-
-  final dynamic error;
-  final String errorMessage;
-
-  @override
-  List<Object?> get props => [error, errorMessage];
 }
