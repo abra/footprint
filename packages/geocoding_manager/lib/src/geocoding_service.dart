@@ -8,7 +8,8 @@ import 'utils/address_builder.dart';
 /// [GeocodingService] class used as a wrapper for geocoding services
 ///
 /// Provides platform geocoding services from [geocoding] package if available,
-/// otherwise it provides services from [osm_nominatim] (Nominatim API) as a fallback
+/// otherwise it provides services from [osm_nominatim] (Nominatim API)
+/// as a fallback
 class GeocodingService {
   static DateTime? _lastNominatimCall;
   final _addressBuilder = AddressBuilder();
@@ -51,8 +52,9 @@ class GeocodingService {
   }
 
   Future<Place?> _getPlace(double lat, double lon) async {
-    final inRateLimit = (_lastNominatimCall != null &&
-        DateTime.now().difference(_lastNominatimCall!).inMilliseconds >= 1200);
+    final acceptableDelay =
+        DateTime.now().difference(_lastNominatimCall!).inMilliseconds >= 1200;
+    final inRateLimit = (_lastNominatimCall != null && acceptableDelay);
     final canCallNominatimAPI = inRateLimit || _lastNominatimCall == null;
 
     /// Delays Nominatim API call if it has been called less than
