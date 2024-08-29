@@ -1,0 +1,22 @@
+name: route_list
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.5.1
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  routes_repository:
+    path: ../../routes_repository
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+

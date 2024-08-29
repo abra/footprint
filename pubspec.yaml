@@ -1,0 +1,35 @@
+name: footprint
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: ^3.5.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  domain_models:
+    path: packages/domain_models
+  foreground_location_service:
+    path: packages/foreground_location_service
+  geocoding_manager:
+    path: packages/geocoding_manager
+  routes_repository:
+    path: packages/routes_repository
+  component_library:
+    path: packages/component_library
+  map:
+    path: packages/features/map
+  route_list:
+    path: packages/features/route_list
+  sqlite_storage:
+    path: packages/sqlite_storage
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
