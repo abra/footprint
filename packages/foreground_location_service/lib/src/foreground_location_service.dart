@@ -153,9 +153,8 @@ class ForegroundLocationService {
     LocationService.ensureServiceEnabled().then((_) {
       LocationService.ensurePermissionsGranted().then((_) {
         _requestNotificationPermissions().then((_) async {
-          if (await FlutterForegroundTask.isRunningService) {
-            return;
-          }
+          if (await FlutterForegroundTask.isRunningService) return;
+
           await _initService();
           _startService();
         }, onError: _handleError);
