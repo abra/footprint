@@ -137,8 +137,7 @@ class LocationService {
   }
 
   static Future<Position> determineLocation() async {
-    final position = await Geolocator.getCurrentPosition();
-    return position;
+    return await Geolocator.getCurrentPosition();
   }
 
   static Future<double> _calculateSpeed({
