@@ -59,12 +59,14 @@ class MapNotifier {
   void Function(LocationDM)? onMapCentered;
 
   void init() async {
+    log('init', name: '$this', time: DateTime.now());
     _foregroundLocationService.onLocationUpdated = _handleLocationUpdate;
 
     _foregroundLocationService.onLocationUpdateError = _handleLocationError;
   }
 
   void _handleLocationUpdate(LocationDM location) {
+    log('_handleLocationUpdate', name: '$runtimeType', time: DateTime.now());
     locationState.value = LocationUpdateSuccess(location: location);
 
     onPlaceAddressUpdate.call(location);
@@ -86,11 +88,12 @@ class MapNotifier {
   }
 
   void _handleLocationError(Exception exception) {
+    log('_handleLocationError', name: '$runtimeType', time: DateTime.now());
     locationState.value = LocationUpdateFailure(error: exception);
   }
 
   void dispose() {
-    log('dispose $hashCode', name: 'MapNotifier', time: DateTime.now());
+    log('dispose', name: '$runtimeType', time: DateTime.now());
     locationState.dispose();
     isRouteRecordingActive.dispose();
     routePoints.dispose();
@@ -108,6 +111,7 @@ class MapNotifier {
   }
 
   Future<void> _placeAddressUpdate(LocationDM location) async {
+    log('_placeAddressUpdate', name: '$runtimeType', time: DateTime.now());
     try {
       final placeAddressModel =
           await _geocodingManager.getAddressFromCoordinates(location);
@@ -129,6 +133,7 @@ class MapNotifier {
   Function(LocationDM) get onPlaceAddressUpdate => _placeAddressUpdate;
 
   Future<void> startRouteRecording() async {
+    log('startRouteRecording', name: '$runtimeType', time: DateTime.now());
     if (!isRouteRecordingActive.value &&
         locationState.value is LocationUpdateSuccess) {
       final location = (locationState.value as LocationUpdateSuccess).location;
@@ -140,6 +145,7 @@ class MapNotifier {
   }
 
   Future<void> stopRouteRecording() async {
+    log('stopRouteRecording', name: '$runtimeType', time: DateTime.now());
     // TODO: Replace with proper handling for routeRepository
     if (isRouteRecordingActive.value) {
       // await _routesRepository.finishCurrentRoute();
@@ -159,6 +165,7 @@ class MapNotifier {
       );
 
   Future<void> _updateZoom(double newZoom, Function(double) callback) async {
+    log('_updateZoom', name: '$runtimeType', time: DateTime.now());
     if (newZoom >= _config.minZoom && newZoom <= _config.maxZoom) {
       zoomLevel.value = newZoom;
       callback(zoomLevel.value);
@@ -168,6 +175,7 @@ class MapNotifier {
   }
 
   Future<void> toggleMapCenter(bool value) async {
+    log('toggleMapCenter', name: '$runtimeType', time: DateTime.now());
     if (onMapCentered != null) {
       isMapCentered.value = value;
 
@@ -179,6 +187,7 @@ class MapNotifier {
   }
 
   void _updatePolylineWidth(double zoom) {
+    log('_updatePolylineWidth', name: '$runtimeType', time: DateTime.now());
     if (_polylineWidthCache.containsKey(zoom)) {
       polylineWidth.value = _polylineWidthCache[zoom]!;
       return;
@@ -192,6 +201,7 @@ class MapNotifier {
   }
 
   void _updateMarkerSize(double zoom) {
+    log('_updateMarkerSize', name: '$runtimeType', time: DateTime.now());
     if (_markerSizeCache.containsKey(zoom)) {
       markerSize.value = _markerSizeCache[zoom]!;
       return;
@@ -209,6 +219,7 @@ class MapNotifier {
     required double minValue,
     required double maxValue,
   }) {
+    log('_calculateMapParameter', name: '$runtimeType', time: DateTime.now());
     return minValue +
         (zoom - _config.minZoom) *
             (maxValue - minValue) /

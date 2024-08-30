@@ -27,9 +27,7 @@ class LocationService {
   static Future<void> ensurePermissionsGranted() async {
     var status = await Permission.location.status;
 
-    if (status.isGranted) {
-      return;
-    }
+    if (status.isGranted) return;
 
     if (status.isDenied) {
       status = await Permission.location.request();
@@ -60,9 +58,7 @@ class LocationService {
       distanceFilter: 5,
     );
 
-    _stream ??= Geolocator.getPositionStream(
-      locationSettings: settings,
-    );
+    _stream ??= Geolocator.getPositionStream(locationSettings: settings);
 
     await for (final position in _stream!) {
       yield position;

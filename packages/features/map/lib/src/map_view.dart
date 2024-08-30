@@ -14,7 +14,7 @@ class MapView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    log('>>> _MapView build $runtimeType $hashCode');
+    log('build', name: '$this', time: DateTime.now(), level: 12);
     final mapNotifier = context.notifier;
     return Stack(
       children: [
@@ -105,6 +105,7 @@ class _FlutterMapWidgetState extends State<_FlutterMapWidget>
 
   @override
   void initState() {
+    log('initState', name: '$this', time: DateTime.now());
     super.initState();
     _animatedMapController = AnimatedMapController(
       vsync: this,
@@ -115,12 +116,14 @@ class _FlutterMapWidgetState extends State<_FlutterMapWidget>
 
   @override
   void dispose() {
+    log('dispose', name: '$this', time: DateTime.now());
     _animatedMapController.dispose();
     super.dispose();
   }
 
   @override
   void didChangeDependencies() {
+    log('didChangeDependencies', name: '$this', time: DateTime.now());
     super.didChangeDependencies();
     _mapNotifier = context.notifier;
     _mapNotifier.onZoomChanged = ((zoom) {
@@ -135,6 +138,7 @@ class _FlutterMapWidgetState extends State<_FlutterMapWidget>
 
   @override
   Widget build(BuildContext context) {
+    log('build', name: '$this', time: DateTime.now());
     super.build(context);
     return FlutterMap(
       mapController: _animatedMapController.mapController,
@@ -163,7 +167,7 @@ class _TileLayerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    log('>>> _TileLayerWidget build $runtimeType $hashCode');
+    log('build', name: '$this', time: DateTime.now());
     final mapNotifier = context.notifier;
     // TODO: Implement handler for errors via errorTileCallback
     return TileLayer(
@@ -174,6 +178,9 @@ class _TileLayerWidget extends StatelessWidget {
       subdomains: const ['a', 'b', 'c'],
       maxZoom: mapNotifier.viewConfig.maxZoom,
       minZoom: mapNotifier.viewConfig.minZoom,
+      errorTileCallback: (tile, object, error) {
+        log('errorTileCallback', name: 'TileLayer', error: error);
+      },
     );
   }
 }
@@ -183,7 +190,7 @@ class _PolylineLayerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    log('>>> _PolylineLayerWidget build $runtimeType $hashCode');
+    log('build', name: '$this', time: DateTime.now());
     final mapNotifier = context.notifier;
     return ValueListenableBuilder<List<LatLng>>(
       valueListenable: mapNotifier.routePoints,
@@ -212,7 +219,7 @@ class _MarkerLayerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    log('>>> _MarkerLayerWidget build $runtimeType $hashCode');
+    log('build', name: '$this', time: DateTime.now());
     final mapNotifier = context.notifier;
     return ValueListenableBuilder<LocationState>(
       valueListenable: mapNotifier.locationState,
@@ -224,6 +231,7 @@ class _MarkerLayerWidget extends StatelessWidget {
               LocationUpdateSuccess(location: final location) => MarkerLayer(
                   markers: <Marker>[
                     Marker(
+                      alignment: Alignment.center,
                       width: size,
                       height: size,
                       point: location.toLatLng(),

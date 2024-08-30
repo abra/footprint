@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:foreground_location_service/foreground_location_service.dart';
 import 'package:geocoding_manager/geocoding_manager.dart';
@@ -34,6 +36,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   @override
   void initState() {
+    log('initState', name: '$this', time: DateTime.now());
     super.initState();
     _mapNotifier = MapNotifier(
       locationService: widget.locationService,
@@ -63,20 +66,24 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    log('dispose', name: '$this', time: DateTime.now());
     _listener.dispose();
     _mapNotifier.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => MapNotifierProvider(
-        notifier: _mapNotifier,
-        child: Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: MapAppBar(
-            onPageChange: widget.onPageChangeRequested,
-          ),
-          body: const MapView(),
+  Widget build(BuildContext context) {
+    log('build', name: '$this', time: DateTime.now());
+    return MapNotifierProvider(
+      notifier: _mapNotifier,
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: MapAppBar(
+          onPageChange: widget.onPageChangeRequested,
         ),
-      );
+        body: const MapView(),
+      ),
+    );
+  }
 }

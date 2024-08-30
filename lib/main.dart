@@ -35,37 +35,40 @@ class FootprintApp extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        home: HomeScreen(
-          pages: [
-            MapScreen(
-              locationService: _foregroundLocationService,
-              routesRepository: _routesRepository,
-              geocodingManager: _geocodingManager,
-              onPageChangeRequested: () => _PageManager.goToPage(
-                _Pages.routeList,
-              ),
+  Widget build(BuildContext context) {
+    log('build', name: '$this', time: DateTime.now());
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
+      home: HomeScreen(
+        pages: [
+          MapScreen(
+            locationService: _foregroundLocationService,
+            routesRepository: _routesRepository,
+            geocodingManager: _geocodingManager,
+            onPageChangeRequested: () => _PageManager.goToPage(
+              _Pages.routeList,
             ),
-            RouteListScreen(
-              routesRepository: _routesRepository,
-              onPageChangeRequested: () => _PageManager.goToPage(
-                _Pages.map,
-              ),
-              // onRouteSelected: (routeId) {
-              //   MaterialPage(
-              //     name: 'route-details',
-              //     child: RouteDetailsScreen(
-              //       routeId: routeId,
-              //       routeRepository: _routeRepository,
-              //     ),
-              //   );
-              // }
+          ),
+          RouteListScreen(
+            routesRepository: _routesRepository,
+            onPageChangeRequested: () => _PageManager.goToPage(
+              _Pages.map,
             ),
-          ],
-        ),
-      );
+            // onRouteSelected: (routeId) {
+            //   MaterialPage(
+            //     name: 'route-details',
+            //     child: RouteDetailsScreen(
+            //       routeId: routeId,
+            //       routeRepository: _routeRepository,
+            //     ),
+            //   );
+            // }
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Home screen of FootprintApp
@@ -83,17 +86,21 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   @override
-  Widget build(BuildContext context) => Scaffold(
-        body: PageView(
-          allowImplicitScrolling: true,
-          physics: const NeverScrollableScrollPhysics(),
-          controller: _PageManager.pageController,
-          children: widget.pages,
-        ),
-      );
+  Widget build(BuildContext context) {
+    log('build', name: '$this', time: DateTime.now());
+    return Scaffold(
+      body: PageView(
+        allowImplicitScrolling: true,
+        physics: const NeverScrollableScrollPhysics(),
+        controller: _PageManager.pageController,
+        children: widget.pages,
+      ),
+    );
+  }
 
   @override
   void dispose() {
+    log('dispose', name: '$this', time: DateTime.now());
     _PageManager.pageController.dispose();
     super.dispose();
   }

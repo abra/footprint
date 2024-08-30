@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:routes_repository/routes_repository.dart';
 
@@ -13,6 +15,7 @@ class RouteListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    log('build', name: '$this', time: DateTime.now());
     return Scaffold(
       appBar: AppBar(
         title: const Text('Route List'),

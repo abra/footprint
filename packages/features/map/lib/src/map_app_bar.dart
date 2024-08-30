@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/cupertino.dart';
@@ -32,6 +34,7 @@ class _MapAppBarState extends State<MapAppBar> {
 
   @override
   void didChangeDependencies() {
+    log('didChangeDependencies', name: '$this', time: DateTime.now());
     super.didChangeDependencies();
     _mapNotifier = context.notifier;
     _mapNotifier.locationState.addListener(
@@ -41,6 +44,7 @@ class _MapAppBarState extends State<MapAppBar> {
 
   @override
   void dispose() {
+    log('dispose', name: '$this', time: DateTime.now());
     _mapNotifier.locationState.removeListener(
       _handleLocationUpdateException,
     );
@@ -49,7 +53,7 @@ class _MapAppBarState extends State<MapAppBar> {
 
   @override
   Widget build(BuildContext context) {
-    // log('>>> _MapAppBar build $runtimeType $hashCode');
+    log('build', name: '$this', time: DateTime.now());
     return AppBar(
       surfaceTintColor: Colors.transparent,
       title: DecoratedBox(
