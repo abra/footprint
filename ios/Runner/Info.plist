@@ -34,7 +34,7 @@
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>This app needs access to location when in the background for continuous activity tracking.</string>
 	<key>NSLocationUsageDescription</key>
-	<string></string>
+	<string>This app needs access to location.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs access to location when open for tracking your activities.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

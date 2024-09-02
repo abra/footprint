@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:domain_models/domain_models.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 /// Location service wrapper for [Geolocator]
 class LocationService {
@@ -17,35 +16,33 @@ class LocationService {
   static DateTime? _lastPositionTimestamp;
 
   static Future<void> ensureServiceEnabled() async {
-    final serviceStatus = await Permission.location.serviceStatus;
+    final isEnabled = await Geolocator.isLocationServiceEnabled();
 
-    if (!serviceStatus.isEnabled) {
+    if (!isEnabled) {
       throw LocationServiceDisabledStateException();
     }
   }
 
   static Future<void> ensurePermissionsGranted() async {
-    var status = await Permission.location.status;
+    var permission = await Geolocator.checkPermission();
 
-    if (status.isGranted) return;
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
 
-    if (status.isDenied) {
-      status = await Permission.location.request();
-
-      if (status.isDenied) {
+      if (permission == LocationPermission.denied) {
         throw LocationServicePermissionDeniedException();
-      } else if (status.isPermanentlyDenied) {
+      } else if (permission == LocationPermission.deniedForever) {
         throw LocationServicePermanentlyDeniedException();
       }
     }
 
-    if (status.isPermanentlyDenied) {
-      final result = await openAppSettings();
+    if (permission == LocationPermission.deniedForever) {
+      final result = await Geolocator.openAppSettings();
       if (result) {
-        status = await Permission.location.status;
-        if (status.isDenied) {
+        permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
           throw LocationServicePermissionDeniedException();
-        } else if (status.isPermanentlyDenied) {
+        } else if (permission == LocationPermission.deniedForever) {
           throw LocationServicePermanentlyDeniedException();
         }
       }

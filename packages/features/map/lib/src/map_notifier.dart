@@ -4,7 +4,6 @@ import 'dart:developer';
 import 'package:domain_models/domain_models.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:foreground_location_service/foreground_location_service.dart';
 import 'package:geocoding_manager/geocoding_manager.dart';
 import 'package:latlong2/latlong.dart';
@@ -225,4 +224,20 @@ class MapNotifier {
             (maxValue - minValue) /
             (_config.maxZoom - _config.minZoom);
   }
+}
+
+class MapNotifierProvider extends InheritedWidget {
+  const MapNotifierProvider({
+    super.key,
+    required this.notifier,
+    required super.child,
+  });
+
+  final MapNotifier notifier;
+
+  static MapNotifierProvider of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<MapNotifierProvider>()!;
+
+  @override
+  bool updateShouldNotify(MapNotifierProvider oldWidget) => false;
 }

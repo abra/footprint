@@ -26,30 +26,11 @@ class MapAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _MapAppBarState extends State<MapAppBar> {
-  late MapNotifier _mapNotifier;
+  MapNotifier get _mapNotifier => context.notifier;
 
   bool _isErrorPresent = false;
 
   bool _shouldShowExceptionDialog = true;
-
-  @override
-  void didChangeDependencies() {
-    log('didChangeDependencies', name: '$this', time: DateTime.now());
-    super.didChangeDependencies();
-    _mapNotifier = context.notifier;
-    _mapNotifier.locationState.addListener(
-      _handleLocationUpdateException,
-    );
-  }
-
-  @override
-  void dispose() {
-    log('dispose', name: '$this', time: DateTime.now());
-    _mapNotifier.locationState.removeListener(
-      _handleLocationUpdateException,
-    );
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {

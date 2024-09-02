@@ -8,7 +8,6 @@ import 'package:routes_repository/routes_repository.dart';
 import 'config.dart';
 import 'map_app_bar.dart';
 import 'map_notifier.dart';
-import 'map_notifier_provider.dart';
 import 'map_view.dart';
 
 class MapScreen extends StatefulWidget {
