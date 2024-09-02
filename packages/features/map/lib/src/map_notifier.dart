@@ -30,6 +30,8 @@ class MapNotifier {
   // public properties
 
   Config get viewConfig => _config;
+
+  Function(LocationDM) get onPlaceAddressUpdate => _placeAddressUpdate;
   late final locationState = ValueNotifier<LocationState>(LocationLoading());
   final isRouteRecordingActive = ValueNotifier<bool>(false);
   final routePoints = ValueNotifier<List<LatLng>>([]);
@@ -221,8 +223,6 @@ class MapNotifier {
             (maxValue - minValue) /
             (_config.maxZoom - _config.minZoom);
   }
-
-  Function(LocationDM) get onPlaceAddressUpdate => _placeAddressUpdate;
 }
 
 class MapNotifierProvider extends InheritedWidget {
