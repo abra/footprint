@@ -103,6 +103,18 @@ class MapNotifier {
         onZoomChanged ?? (_) {},
       );
 
+  Future<void> toggleMapCenter(bool value) async {
+    log('toggleMapCenter', name: '$runtimeType', time: DateTime.now());
+    if (onMapCentered != null) {
+      isMapCentered.value = value;
+
+      if (locationState.value is LocationUpdateSuccess) {
+        final state = locationState.value as LocationUpdateSuccess;
+        onMapCentered!.call(state.location);
+      }
+    }
+  }
+
   void _updatePolylineWidth(double zoom) {
     log('_updatePolylineWidth', name: '$runtimeType', time: DateTime.now());
     if (_polylineWidthCache.containsKey(zoom)) {
