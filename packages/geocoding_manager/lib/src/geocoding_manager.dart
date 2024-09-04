@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:domain_models/domain_models.dart';
 import 'package:meta/meta.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
@@ -20,6 +22,11 @@ class GeocodingManager {
   final GeocodingService _geocodingService;
   final GeocodingCacheStorage _geocodingCacheStorage;
 
+  /// Get address from coordinates
+  ///
+  /// [location] - LocationDM object with latitude and longitude
+  ///
+  /// throws [CouldNotGetPlaceAddressException] if address is not found
   Future<PlaceAddressDM?> getAddressFromCoordinates(
     LocationDM location,
   ) async {
@@ -54,8 +61,10 @@ class GeocodingManager {
           longitude: longitude,
         );
       }
+      developer.log('address is null');
       return null;
     } catch (e, s) {
+      developer.log('$e: $s', name: 'GeocodingManager', time: DateTime.now());
       throw CouldNotGetPlaceAddressException(
         message: 'Could not get place address from $latitude, $longitude: $e',
         stackTrace: s,

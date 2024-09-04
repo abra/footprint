@@ -11,7 +11,7 @@ import 'utils/address_builder.dart';
 /// otherwise it provides services from [osm_nominatim] (Nominatim API)
 /// as a fallback
 class GeocodingService {
-  static DateTime? _lastNominatimCall;
+  static DateTime _lastNominatimCall = DateTime.now();
   final _addressBuilder = AddressBuilder();
 
   /// Get address from coordinates
@@ -34,7 +34,6 @@ class GeocodingService {
       if (place != null) {
         return _addressBuilder.buildAddressFromNominatim(place);
       }
-      return '$latitude, $longitude';
     } on Exception {
       final place = await _getPlace(latitude, longitude);
       if (place != null) {
@@ -52,20 +51,16 @@ class GeocodingService {
   }
 
   Future<Place?> _getPlace(double lat, double lon) async {
-    final acceptableDelay =
-        DateTime.now().difference(_lastNominatimCall!).inMilliseconds >= 1200;
-    final inRateLimit = (_lastNominatimCall != null && acceptableDelay);
-    final canCallNominatimAPI = inRateLimit || _lastNominatimCall == null;
+    final inRateLimit =
+        DateTime.now().difference(_lastNominatimCall).inMilliseconds >= 1200;
 
     /// Delays Nominatim API call if it has been called less than
     /// 1200 milliseconds ago to avoid rate limiting
-    if (!canCallNominatimAPI) {
-      final timeSinceLastCall = DateTime.now().difference(_lastNominatimCall!);
+    if (!inRateLimit) {
+      final timeSinceLastCall = DateTime.now().difference(_lastNominatimCall);
       if (timeSinceLastCall.inMilliseconds <= 1200) {
         await Future.delayed(
-          Duration(
-            milliseconds: (1200 - timeSinceLastCall.inMilliseconds),
-          ),
+          Duration(milliseconds: (1200 - timeSinceLastCall.inMilliseconds)),
         );
       }
     }

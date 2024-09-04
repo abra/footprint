@@ -180,7 +180,14 @@ class MapNotifier {
       }
     } on CouldNotGetPlaceAddressException catch (e) {
       log(
-        'Could not get location address: $e',
+        '1 Could not get location address: $e',
+        name: 'MapNotifier',
+        time: DateTime.now(),
+      );
+      placeAddress.value = PlaceAddressFailure(error: e);
+    } catch (e) {
+      log(
+        '2 Unknown error while getting location address: $e',
         name: 'MapNotifier',
         time: DateTime.now(),
       );
