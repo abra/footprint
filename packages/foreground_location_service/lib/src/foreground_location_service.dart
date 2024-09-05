@@ -295,7 +295,7 @@ class ForegroundLocationTaskHandler extends TaskHandler {
   // for this function to be called.
   @override
   void onNotificationPressed() {
-    FlutterForegroundTask.launchApp('/');
+    // FlutterForegroundTask.launchApp('/');
     log('[$runtimeType] onNotificationPressed');
   }
 
