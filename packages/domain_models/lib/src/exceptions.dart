@@ -92,8 +92,8 @@ class DefinitionsForPermissionNotFoundException implements Exception {
   String toString() => message;
 }
 
-class CouldNotGetPlaceAddressException implements Exception {
-  const CouldNotGetPlaceAddressException({
+class UnableGetPlaceAddressException implements Exception {
+  const UnableGetPlaceAddressException({
     this.message = 'Could not get the place address.',
     this.stackTrace,
   });

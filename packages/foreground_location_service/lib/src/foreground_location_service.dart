@@ -296,6 +296,7 @@ class ForegroundLocationTaskHandler extends TaskHandler {
   @override
   void onNotificationPressed() {
     // FlutterForegroundTask.launchApp('/');
+    FlutterForegroundTask.launchApp();
     log('[$runtimeType] onNotificationPressed');
   }
 
@@ -363,7 +364,7 @@ class _ExceptionSerializer {
           stackTrace: stackTrace,
         );
       case 'CouldNotGetPlaceAddressException':
-        return CouldNotGetPlaceAddressException(
+        return UnableGetPlaceAddressException(
           message: message,
           stackTrace: stackTrace,
         );

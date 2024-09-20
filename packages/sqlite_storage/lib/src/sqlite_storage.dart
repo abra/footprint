@@ -18,9 +18,13 @@ class SqliteStorage {
   Database? _database;
 
   Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _dbHelper.database;
-    return _database!;
+    try {
+      if (_database != null) return _database!;
+      _database = await _dbHelper.database;
+      return _database!;
+    } catch (e, s) {
+      rethrow;
+    }
   }
 
   /// Initialize database
@@ -68,9 +72,10 @@ class SqliteStorage {
 
         return routeId;
       });
-    } on DatabaseException catch (e) {
-      throw UnableInsertDatabaseException(
+    } catch (e, s) {
+      throw SqliteStorageDatabaseException(
         message: "Failed to insert route and route point: $e",
+        stackTrace: s,
       );
     }
   }
@@ -102,9 +107,10 @@ class SqliteStorage {
           'timestamp': timestamp.toIso8601String(),
         },
       );
-    } on DatabaseException catch (e) {
-      throw UnableInsertDatabaseException(
+    } catch (e, s) {
+      throw SqliteStorageDatabaseException(
         message: "Failed to insert route point for route id $routeId: $e",
+        stackTrace: s,
       );
     }
   }
@@ -146,9 +152,10 @@ class SqliteStorage {
       };
 
       return Route.fromMap(data);
-    } on DatabaseException catch (e) {
-      throw UnableExecuteQueryDatabaseException(
+    } catch (e, s) {
+      throw SqliteStorageDatabaseException(
         message: 'Failed to get route points by route id: [$routeId]: $e',
+        stackTrace: s,
       );
     }
   }
@@ -183,9 +190,10 @@ class SqliteStorage {
           whereArgs: [routeId],
         );
       });
-    } on DatabaseException catch (e) {
-      throw UnableDeleteDatabaseException(
+    } catch (e, s) {
+      throw SqliteStorageDatabaseException(
         message: 'Failed to delete route by id: [$routeId]: $e',
+        stackTrace: s,
       );
     }
   }
@@ -210,9 +218,10 @@ class SqliteStorage {
           'status': status,
         },
       );
-    } on DatabaseException catch (e) {
-      throw UnableUpdateDatabaseException(
+    } catch (e, s) {
+      throw SqliteStorageDatabaseException(
         message: 'Failed to update route [$routeId] status to [$status]: $e',
+        stackTrace: s,
       );
     }
   }
@@ -260,9 +269,10 @@ class SqliteStorage {
       }
 
       return result.map(PlaceAddressCM.fromMap).toList();
-    } on DatabaseException catch (e) {
-      throw UnableExecuteQueryDatabaseException(
+    } catch (e, s) {
+      throw SqliteStorageDatabaseException(
         message: 'Failed to execute query: $e',
+        stackTrace: s,
       );
     }
   }
@@ -308,10 +318,11 @@ class SqliteStorage {
         where: 'id = ?',
         whereArgs: [placeAddressId],
       );
-    } on DatabaseException catch (e) {
-      throw UnableUpdateDatabaseException(
-        message:
-            "Failed to update usage frequency to [$newValue] of address [$placeAddressId]: $e",
+    } catch (e, s) {
+      throw SqliteStorageDatabaseException(
+        message: "Failed to update usage frequency to [$newValue] "
+            "of address [$placeAddressId]: $e",
+        stackTrace: s,
       );
     }
   }
@@ -347,9 +358,10 @@ class SqliteStorage {
           'timestamp': DateTime.now().toIso8601String(),
         },
       );
-    } on DatabaseException catch (e) {
-      throw UnableInsertDatabaseException(
+    } catch (e, s) {
+      throw SqliteStorageDatabaseException(
         message: "Failed to add new address to cache: $e",
+        stackTrace: s,
       );
     }
   }
@@ -370,9 +382,10 @@ class SqliteStorage {
         where: 'timestamp < ?',
         whereArgs: [timestamp.toIso8601String()],
       );
-    } on DatabaseException catch (e) {
-      throw UnableDeleteDatabaseException(
+    } catch (e, s) {
+      throw SqliteStorageDatabaseException(
         message: "Failed to clear geocoding cache: $e",
+        stackTrace: s,
       );
     }
   }

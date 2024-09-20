@@ -178,7 +178,7 @@ class MapNotifier {
           address: placeAddressModel.address,
         );
       }
-    } on CouldNotGetPlaceAddressException catch (e) {
+    } on UnableGetPlaceAddressException catch (e) {
       log(
         '1 Could not get location address: $e',
         name: 'MapNotifier',

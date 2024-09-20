@@ -26,7 +26,7 @@ class GeocodingManager {
   ///
   /// [location] - LocationDM object with latitude and longitude
   ///
-  /// throws [CouldNotGetPlaceAddressException] if address is not found
+  /// throws [UnableGetPlaceAddressException] if address is not found
   Future<PlaceAddressDM?> getAddressFromCoordinates(
     LocationDM location,
   ) async {
@@ -63,9 +63,9 @@ class GeocodingManager {
       }
       developer.log('address is null');
       return null;
-    } catch (e, s) {
+    } on SqliteStorageDatabaseException catch (e, s) {
       developer.log('$e: $s', name: 'GeocodingManager', time: DateTime.now());
-      throw CouldNotGetPlaceAddressException(
+      throw UnableGetPlaceAddressException(
         message: 'Could not get place address from $latitude, $longitude: $e',
         stackTrace: s,
       );
