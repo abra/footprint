@@ -22,7 +22,7 @@ class SqliteStorage {
       if (_database != null) return _database!;
       _database = await _dbHelper.database;
       return _database!;
-    } catch (e, s) {
+    } catch (e, _) {
       rethrow;
     }
   }
