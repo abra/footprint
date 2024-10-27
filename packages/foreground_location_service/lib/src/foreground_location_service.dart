@@ -219,7 +219,7 @@ class ForegroundLocationService {
 
 // The callback function should always be a top-level function.
 @pragma('vm:entry-point')
-void startCallback() async {
+void startCallback() {
   // The setTaskHandler function must be called to handle
   // the task in the background.
   FlutterForegroundTask.setTaskHandler(
@@ -232,7 +232,7 @@ class ForegroundLocationTaskHandler extends TaskHandler {
 
   // Called when the task is started.
   @override
-  void onStart(DateTime timestamp) async {
+  Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     _positionStreamSubscription =
         LocationService.getLocationUpdateStream().listen(
       (position) {
@@ -260,14 +260,14 @@ class ForegroundLocationTaskHandler extends TaskHandler {
 
   // Called every [ForegroundTaskOptions.interval] milliseconds.
   @override
-  void onRepeatEvent(DateTime timestamp) async {
+  void onRepeatEvent(DateTime timestamp) {
     // // Send data to main isolate.
     // FlutterForegroundTask.sendDataToMain('[$runtimeType] FROM TASK: location');
   }
 
   // Called when the task is destroyed.
   @override
-  void onDestroy(DateTime timestamp) {
+  Future<void> onDestroy(DateTime timestamp) async {
     log('[$runtimeType] onDestroy', name: 'ForegroundLocationTaskHandler');
     _positionStreamSubscription?.cancel();
     _positionStreamSubscription = null;
