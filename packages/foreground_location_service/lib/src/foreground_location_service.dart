@@ -17,7 +17,7 @@ class ForegroundLocationService {
   void Function(LocationDM)? onLocationUpdated;
   void Function(Exception)? onLocationUpdateError;
 
-  static Future<void> initCommunicationPort() async =>
+  static void initCommunicationPort() =>
       FlutterForegroundTask.initCommunicationPort();
 
   Future<void> _requestNotificationPermissions() async {

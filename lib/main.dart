@@ -13,7 +13,7 @@ import 'package:sqlite_storage/sqlite_storage.dart';
 Future<void> main() async {
   await runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
-    await ForegroundLocationService.initCommunicationPort();
+    ForegroundLocationService.initCommunicationPort();
 
     runApp(FootprintApp());
   }, (error, stack) {
