@@ -239,7 +239,10 @@ class SqliteStorage {
     required double longitude,
   }) async {
     try {
-      final (latitudeIdx, longitudeIdx) = _getScaledValues(latitude, longitude);
+      final scaledCoordinates = _calculateScaledCoordinates(
+        latitude,
+        longitude,
+      );
 
       final db = await database;
 
@@ -257,10 +260,10 @@ class SqliteStorage {
         ],
         where: 'latitude_idx BETWEEN ? AND ? AND longitude_idx BETWEEN ? AND ?',
         whereArgs: [
-          latitudeIdx - 1,
-          latitudeIdx + 1,
-          longitudeIdx - 1,
-          longitudeIdx + 1,
+          scaledCoordinates.latitudeIdx - 1,
+          scaledCoordinates.latitudeIdx + 1,
+          scaledCoordinates.longitudeIdx - 1,
+          scaledCoordinates.longitudeIdx + 1,
         ],
       );
 
@@ -277,7 +280,7 @@ class SqliteStorage {
     }
   }
 
-  (int, int) _getScaledValues(
+  ScaledCoordinates _calculateScaledCoordinates(
     double latitude,
     double longitude, [
     int distanceInMeters = 50,
@@ -294,7 +297,7 @@ class SqliteStorage {
         1 / (distanceInMeters / metersPerDegreeLongitude);
     final longitudeIdx = (longitude * longitudeScaleFactor).round();
 
-    return (latitudeIdx, longitudeIdx);
+    return ScaledCoordinates(latitudeIdx, longitudeIdx);
   }
 
   /// Update usage frequency and timestamp of geocoding cache entry.
@@ -340,7 +343,7 @@ class SqliteStorage {
     required double longitude,
   }) async {
     try {
-      final (latitudeIdx, longitudeIdx) = _getScaledValues(
+      final scaledCoordinates = _calculateScaledCoordinates(
         latitude,
         longitude,
       );
@@ -352,8 +355,8 @@ class SqliteStorage {
         <String, dynamic>{
           'latitude': latitude,
           'longitude': longitude,
-          'latitude_idx': latitudeIdx,
-          'longitude_idx': longitudeIdx,
+          'latitude_idx': scaledCoordinates.latitudeIdx,
+          'longitude_idx': scaledCoordinates.longitudeIdx,
           'address': address,
           'timestamp': DateTime.now().toIso8601String(),
         },
@@ -389,4 +392,11 @@ class SqliteStorage {
       );
     }
   }
+}
+
+class ScaledCoordinates {
+  final int latitudeIdx;
+  final int longitudeIdx;
+
+  ScaledCoordinates(this.latitudeIdx, this.longitudeIdx);
 }
