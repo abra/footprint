@@ -31,7 +31,8 @@ class MapNotifier {
 
   Config get viewConfig => _config;
 
-  Function(LocationDM) get onPlaceAddressUpdate => _placeAddressUpdate;
+  late final void Function(LocationDM) onPlaceAddressUpdate =
+      _updatePlaceAddress;
   late final locationState = ValueNotifier<LocationState>(LocationLoading());
   final isRouteRecordingActive = ValueNotifier<bool>(false);
   final routePoints = ValueNotifier<List<LatLng>>([]);
@@ -168,7 +169,7 @@ class MapNotifier {
     locationState.value = LocationUpdateFailure(error: exception);
   }
 
-  Future<void> _placeAddressUpdate(LocationDM location) async {
+  Future<void> _updatePlaceAddress(LocationDM location) async {
     log('_placeAddressUpdate', name: '$runtimeType', time: DateTime.now());
     try {
       final placeAddressModel =
