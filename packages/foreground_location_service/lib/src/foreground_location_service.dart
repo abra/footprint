@@ -88,26 +88,23 @@ class ForegroundLocationService {
   }
 
   Future<void> _startService() async {
-    final result = await FlutterForegroundTask.startService(
+    final ServiceRequestResult result =
+        await FlutterForegroundTask.startService(
       serviceId: 256,
       notificationTitle: 'Foreground Service is running',
       notificationText: 'Tap to return to the app',
-      notificationIcon: const NotificationIconData(
-        resType: ResourceType.mipmap,
-        resPrefix: ResourcePrefix.ic,
-        name: 'launcher',
-      ),
+      notificationIcon: null,
       // notificationButtons: [
       //   const NotificationButton(id: 'btn_hello', text: 'hello'),
       // ],
       callback: startCallback,
     );
 
-    if (!result.success) {
-      throw result.error ??
-          Exception(
-            'An error occurred and the service could not be started.',
-          );
+    if (result is ServiceRequestFailure) {
+      throw result.error;
+          // ?? Exception(
+          //   'An error occurred and the service could not be started.',
+          // );
     }
   }
 
@@ -115,11 +112,11 @@ class ForegroundLocationService {
     final ServiceRequestResult result =
         await FlutterForegroundTask.stopService();
 
-    if (!result.success) {
-      throw result.error ??
-          Exception(
-            'An error occurred and the service could not be stopped.',
-          );
+    if (result is ServiceRequestFailure) {
+      throw result.error;
+          // ?? Exception(
+          //   'An error occurred and the service could not be stopped.',
+          // );
     }
   }
 

@@ -5,9 +5,9 @@ import 'package:domain_models/domain_models.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:map/src/extensions.dart';
 
 import 'exception_dialog.dart';
-import 'extensions.dart';
 import 'map_notifier.dart';
 
 class MapAppBar extends StatefulWidget implements PreferredSizeWidget {

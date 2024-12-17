@@ -9,7 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_foreground_task: ^8.6.0
+  flutter_foreground_task: ^8.17.0
   geolocator: ^13.0.1
   uuid: ^4.4.2
   domain_models:
