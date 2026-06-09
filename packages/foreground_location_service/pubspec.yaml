@@ -9,8 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_foreground_task: ^8.17.0
-  geolocator: ^13.0.1
+  flutter_foreground_task: ^9.2.2
+  geolocator: ^14.0.2
   uuid: ^4.4.2
   domain_models:
     path: ../domain_models
@@ -18,7 +18,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
 

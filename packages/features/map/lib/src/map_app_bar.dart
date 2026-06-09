@@ -1,13 +1,10 @@
 import 'dart:developer';
 
 import 'package:component_library/component_library.dart';
-import 'package:domain_models/domain_models.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:map/src/extensions.dart';
 
-import 'exception_dialog.dart';
 import 'map_notifier.dart';
 
 class MapAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -28,10 +25,6 @@ class MapAppBar extends StatefulWidget implements PreferredSizeWidget {
 class _MapAppBarState extends State<MapAppBar> {
   MapNotifier get _mapNotifier => context.notifier;
 
-  bool _isErrorPresent = false;
-
-  bool _shouldShowExceptionDialog = true;
-
   @override
   Widget build(BuildContext context) {
     log('build', name: '$this', time: DateTime.now());
@@ -39,11 +32,11 @@ class _MapAppBarState extends State<MapAppBar> {
       surfaceTintColor: Colors.transparent,
       title: DecoratedBox(
         decoration: BoxDecoration(
-          color: context.appColors.grayBlue.withOpacity(0.8),
+          color: context.appColors.grayBlue.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(25),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: context.appColors.grayBlue.withOpacity(0.3),
+              color: context.appColors.grayBlue.withValues(alpha: 0.3),
               spreadRadius: 0,
               blurRadius: 5,
               offset: const Offset(0, 2),
@@ -72,9 +65,10 @@ class _MapAppBarState extends State<MapAppBar> {
                       PlaceAddressSuccess(address: final address) => address,
                       PlaceAddressFailure() => 'Error',
                     },
-                    style: GoogleFonts.robotoCondensed(
+                    style: TextStyle(
                       fontSize: 16,
                       color: context.appColors.appWhite,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 );
@@ -88,7 +82,7 @@ class _MapAppBarState extends State<MapAppBar> {
           gradient: LinearGradient(
             colors: <double>[1.0, 0.8, 0.6, 0.4, 0.2, 0.0]
                 .map((double opacity) =>
-                    context.appColors.simpleWhite.withOpacity(opacity))
+                    context.appColors.simpleWhite.withValues(alpha: opacity))
                 .toList(),
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -97,25 +91,9 @@ class _MapAppBarState extends State<MapAppBar> {
         child: const SizedBox.expand(),
       ),
       elevation: 0,
-      backgroundColor: context.appColors.simpleWhite.withOpacity(0.0),
+      backgroundColor: context.appColors.simpleWhite.withValues(alpha: 0.0),
       centerTitle: true,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 8.0),
-        child: _isErrorPresent && !_shouldShowExceptionDialog
-            ? FittedBox(
-                child: IconButton(
-                  onPressed: () async {
-                    setState(() {
-                      _shouldShowExceptionDialog = true;
-                    });
-                    await _displayExceptionDialog(context);
-                  },
-                  icon: const ExceptionIcon(),
-                  alignment: Alignment.center,
-                ),
-              )
-            : const SizedBox.shrink(),
-      ),
+      leading: const SizedBox.shrink(),
       actions: <Widget>[
         Padding(
           padding: const EdgeInsets.only(right: 8.0),
@@ -136,68 +114,4 @@ class _MapAppBarState extends State<MapAppBar> {
       ],
     );
   }
-
-  // TODO: Ugly code, refactor
-  Future<void> _handleLocationUpdateException() async {
-    if (_mapNotifier.locationState.value is LocationUpdateFailure) {
-      setState(() {
-        _isErrorPresent = true;
-      });
-      if (_shouldShowExceptionDialog) {
-        await _displayExceptionDialog(context);
-      }
-    } else {
-      setState(() {
-        _isErrorPresent = false;
-        _shouldShowExceptionDialog = false;
-      });
-    }
-  }
-
-  Future<void> _onTryAgain() async {
-    // await _mapNotifier.reInit();
-    setState(() {
-      _shouldShowExceptionDialog = true;
-    });
-  }
-
-  void _onDismiss() {
-    setState(() {
-      _shouldShowExceptionDialog = false;
-    });
-  }
-
-  Future<void> _displayExceptionDialog(BuildContext context) async =>
-      showDialog<void>(
-        barrierDismissible: false,
-        context: context,
-        builder: (BuildContext context) => Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width - 96,
-              maxHeight: 250,
-              minHeight: 150,
-            ),
-            child: ValueListenableBuilder<LocationState>(
-              valueListenable: _mapNotifier.locationState,
-              builder: (BuildContext context, LocationState state, _) {
-                return switch (state) {
-                  LocationUpdateFailure(error: final error) =>
-                    error is LocationServicePermissionDeniedException
-                        ? ExceptionDialog(
-                            onTryAgain: _onTryAgain,
-                            onDismiss: _onDismiss,
-                            message: error.toString(),
-                          )
-                        : ExceptionDialog(
-                            onDismiss: _onDismiss,
-                            message: error.toString(),
-                          ),
-                  _ => const SizedBox.shrink(),
-                };
-              },
-            ),
-          ),
-        ),
-      );
 }

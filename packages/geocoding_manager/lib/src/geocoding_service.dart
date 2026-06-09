@@ -12,6 +12,7 @@ import 'utils/address_builder.dart';
 /// as a fallback
 class GeocodingService {
   static DateTime _lastNominatimCall = DateTime.now();
+  final _nominatim = Nominatim(userAgent: 'footprint');
   final _addressBuilder = AddressBuilder();
 
   /// Get address from coordinates
@@ -65,7 +66,7 @@ class GeocodingService {
       }
     }
 
-    final reverseSearch = await Nominatim.reverseSearch(
+    final reverseSearch = await _nominatim.reverseSearch(
       lat: lat,
       lon: lon,
       addressDetails: true,

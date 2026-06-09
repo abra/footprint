@@ -174,13 +174,14 @@ class _TileLayerWidget extends StatelessWidget {
       retinaMode: true,
       userAgentPackageName: mapNotifier.viewConfig.userAgentPackageName,
       urlTemplate: mapNotifier.viewConfig.urlTemplate,
-      fallbackUrl: mapNotifier.viewConfig.fallbackUrl,
+      additionalOptions: {
+        'domain': mapNotifier.viewConfig.tileDomain,
+      },
       subdomains: const ['a', 'b', 'c'],
       maxZoom: mapNotifier.viewConfig.maxZoom,
       minZoom: mapNotifier.viewConfig.minZoom,
-      errorTileCallback: (tile, object, error) {
-        log('errorTileCallback', name: 'TileLayer', error: error);
-      },
+      tileProvider: NetworkTileProvider(silenceExceptions: true),
+      evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
     );
   }
 }
@@ -195,6 +196,10 @@ class _PolylineLayerWidget extends StatelessWidget {
     return ValueListenableBuilder<List<LatLng>>(
       valueListenable: mapNotifier.routePoints,
       builder: (BuildContext context, List<LatLng> routePoints, _) {
+        if (routePoints.length < 2) {
+          return const SizedBox.shrink();
+        }
+
         return ValueListenableBuilder<double>(
           valueListenable: mapNotifier.polylineWidth,
           builder: (BuildContext context, double width, _) {
@@ -238,7 +243,7 @@ class _MarkerLayerWidget extends StatelessWidget {
                       child: Icon(
                         Icons.circle,
                         size: size,
-                        color: Colors.deepPurple.withOpacity(0.8),
+                        color: Colors.deepPurple.withValues(alpha: 0.8),
                       ),
                     ),
                   ],

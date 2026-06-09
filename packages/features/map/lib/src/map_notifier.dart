@@ -21,7 +21,6 @@ class MapNotifier {
     required GeocodingManager geocodingManager,
     required Config viewConfig,
   })  : _foregroundLocationService = locationService,
-        _routesRepository = routesRepository,
         _geocodingManager = geocodingManager,
         _config = viewConfig {
     log('init $hashCode', name: 'MapNotifier', time: DateTime.now());
@@ -52,7 +51,6 @@ class MapNotifier {
   void init() async {
     log('init', name: '$this', time: DateTime.now());
     _foregroundLocationService.onLocationUpdated = _handleLocationUpdate;
-
     _foregroundLocationService.onLocationUpdateError = _handleLocationError;
   }
 
@@ -135,7 +133,6 @@ class MapNotifier {
   // private fields
 
   final ForegroundLocationService _foregroundLocationService;
-  final RoutesRepository _routesRepository;
   final GeocodingManager _geocodingManager;
   final Config _config;
   final Map<double, double> _polylineWidthCache = {};

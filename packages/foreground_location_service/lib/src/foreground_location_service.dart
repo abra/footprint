@@ -102,9 +102,9 @@ class ForegroundLocationService {
 
     if (result is ServiceRequestFailure) {
       throw result.error;
-          // ?? Exception(
-          //   'An error occurred and the service could not be started.',
-          // );
+      // ?? Exception(
+      //   'An error occurred and the service could not be started.',
+      // );
     }
   }
 
@@ -114,9 +114,9 @@ class ForegroundLocationService {
 
     if (result is ServiceRequestFailure) {
       throw result.error;
-          // ?? Exception(
-          //   'An error occurred and the service could not be stopped.',
-          // );
+      // ?? Exception(
+      //   'An error occurred and the service could not be stopped.',
+      // );
     }
   }
 
@@ -264,7 +264,7 @@ class ForegroundLocationTaskHandler extends TaskHandler {
 
   // Called when the task is destroyed.
   @override
-  Future<void> onDestroy(DateTime timestamp) async {
+  Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {
     log('[$runtimeType] onDestroy', name: 'ForegroundLocationTaskHandler');
     _positionStreamSubscription?.cancel();
     _positionStreamSubscription = null;

@@ -3,7 +3,7 @@ import 'package:sqlite_storage/sqlite_storage.dart';
 class RoutesRepository {
   RoutesRepository({
     SqliteStorage? sqliteStorage,
-  }) : _storage = sqliteStorage ?? SqliteStorage();
+  }) : sqliteStorage = sqliteStorage ?? SqliteStorage();
 
-  final SqliteStorage _storage;
+  final SqliteStorage sqliteStorage;
 }
