@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:component_library/component_library.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:routes_repository/routes_repository.dart';
 
@@ -10,14 +11,22 @@ class RouteListScreen extends StatelessWidget {
     super.key,
     required this.routesRepository,
     required this.onPageChangeRequested,
+    this.config = const MapTileConfig(),
+    this.onRouteRequested,
   });
 
   final RoutesRepository routesRepository;
   final VoidCallback onPageChangeRequested;
+  final MapTileConfig config;
+  final Future<void> Function(int)? onRouteRequested;
 
   @override
   Widget build(BuildContext context) => BlocProvider(
     create: (_) => RouteListCubit(routesRepository: routesRepository)..load(),
-    child: RouteListView(onMapRequested: onPageChangeRequested),
+    child: RouteListView(
+      onMapRequested: onPageChangeRequested,
+      config: config,
+      onRouteRequested: onRouteRequested,
+    ),
   );
 }

@@ -4,6 +4,7 @@ import 'package:sqlite_storage/sqlite_storage.dart' as storage;
 extension RouteToDomain on storage.Route {
   RouteDM toDomain() => RouteDM(
     id: id,
+    name: name,
     startTime: DateTime.parse(startTime),
     endTime: endTime == null ? null : DateTime.parse(endTime!),
     distance: distance,

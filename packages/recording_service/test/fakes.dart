@@ -12,6 +12,23 @@ LocationDM location(int index) => LocationDM(
   timestamp: DateTime.utc(2026, 9, 6, 10, 0, index),
 );
 
+class FakeRoutePhotosRepository extends Fake implements RoutePhotosRepository {
+  final photos = <RoutePhotoDM>[];
+  @override
+  Stream<int> get changes => const Stream.empty();
+  @override
+  Future<void> initialize() async {}
+  @override
+  Future<void> retryPending() async {}
+  @override
+  Future<void> discardPending() async {}
+  @override
+  Future<List<RoutePhotoDM>> getPhotos(int id) async =>
+      photos.where((photo) => photo.routeId == id).toList();
+  @override
+  Future<void> dispose() async {}
+}
+
 class FakeLocationService implements LocationService {
   final controller = StreamController<LocationDM>.broadcast();
   final modes = <LocationMode>[];
@@ -68,6 +85,28 @@ class FakeRoutesRepository extends Fake implements RoutesRepository {
       activeGate == null ? active : activeGate!.future;
   @override
   Future<List<RouteDM>> getRoutes() async => [?active, ...saved.values];
+  @override
+  Future<List<RouteDM>> getRoutePage({
+    String query = '',
+    RouteSort sort = RouteSort.newest,
+    int offset = 0,
+    int limit = 20,
+  }) async => (await getRoutes()).skip(offset).take(limit).toList();
+  @override
+  Future<void> renameRoute(int id, String name) async {
+    final route = saved[id]!;
+    saved[id] = RouteDM(
+      id: id,
+      name: name,
+      startTime: route.startTime,
+      endTime: route.endTime,
+      status: route.status,
+      routePoints: route.routePoints,
+    );
+  }
+
+  @override
+  Future<void> deleteRoute(int id) async => saved.remove(id);
   @override
   Future<RouteDM?> getRoute(int id) async =>
       active?.id == id ? active : saved[id];

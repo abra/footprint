@@ -12,6 +12,7 @@ class DependenciesContainer {
     required this.foregroundLocationService,
     required this.sqliteStorage,
     required this.routesRepository,
+    required this.photosRepository,
     required this.geocodingManager,
     required this.recordingService,
     required this.config,
@@ -21,6 +22,7 @@ class DependenciesContainer {
   final LocationService foregroundLocationService;
   final SqliteStorage sqliteStorage;
   final RoutesRepository routesRepository;
+  final RoutePhotosRepository photosRepository;
   final GeocodingManager geocodingManager;
   final RecordingService recordingService;
   final ApplicationConfig config;

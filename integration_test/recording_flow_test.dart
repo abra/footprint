@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:component_library/component_library.dart';
+import 'package:domain_models/domain_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:footprint/app/composition.dart';
 import 'package:footprint/app/config/application_config.dart';
@@ -16,6 +18,7 @@ import 'package:recording_service/recording_service.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
 
 import '../packages/features/map/test/fakes.dart';
+import '../packages/features/map/test/pump_recording_ui.dart';
 
 Future<Uint8List> fixtureTile() async {
   final recorder = ui.PictureRecorder();
@@ -47,6 +50,15 @@ class FixtureConfig extends ApplicationConfig {
   );
 }
 
+class FixturePhotoPicker implements PhotoPicker {
+  FixturePhotoPicker(this.path);
+  final String path;
+  @override
+  Future<String?> pick(PhotoSource source) async => path;
+  @override
+  Future<String?> recover() async => null;
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -72,14 +84,24 @@ void main() {
       await request.response.close();
     });
     final storage = await SqliteStorage.open(path: path);
+    final photoFile = await File('${directory.path}/source.png')
+        .writeAsBytes(pixel);
+    final photos = RoutePhotosRepository(
+      dao: storage.routePhotos,
+      picker: FixturePhotoPicker(photoFile.path),
+      files: LocalPhotoFiles(
+        directory: () async => Directory('${directory.path}/photos'),
+      ),
+    );
     final service = FakeLocationService()..lastLocation = location(1);
-    final repository = RoutesRepository(sqliteStorage: storage);
+    final repository = RoutesRepository(sqliteStorage: storage, photos: photos);
     final recording = RecordingService(
       locationService: service,
       routesRepository: repository,
     );
     final resources = ResourceDisposer()
       ..add('database', storage.close)
+      ..add('photos', photos.dispose)
       ..add('location', service.dispose)
       ..add('recording', recording.dispose);
     addTearDown(() async {
@@ -89,6 +111,7 @@ void main() {
       await directory.delete(recursive: true);
     });
     final dependencies = DependenciesContainer(
+      photosRepository: photos,
       foregroundLocationService: service,
       sqliteStorage: storage,
       routesRepository: repository,
@@ -105,13 +128,13 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpRecordingUi(tester);
     await pumpUntil(
       tester,
       () => find.text('Map tiles could not be loaded.').evaluate().isNotEmpty,
     );
     failTiles = false;
-    await tester.tap(find.text('Retry'));
+    await tester.tap(find.byTooltip('Retry'));
     await pumpUntil(
       tester,
       () => tester
@@ -121,31 +144,65 @@ void main() {
     expect(find.text('Map tiles could not be loaded.'), findsNothing);
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('Record route'));
-    await tester.pumpAndSettle();
+    await pumpRecordingUi(tester);
+    final statsPanel = find.byKey(const ValueKey('recording-stats-panel'));
+    await tester.tap(statsPanel);
+    await pumpRecordingUi(tester);
+    expect(tester.widget<RouteStats>(find.byType(RouteStats)).columns, 2);
     service.send(location(2));
-    await tester.pumpAndSettle();
+    await pumpRecordingUi(tester);
+    await tester.tap(find.byTooltip('Add route photo'));
+    await pumpRecordingUi(tester);
+    await tester.tap(find.text('Choose photo'));
+    await pumpUntil(
+      tester,
+      () => tester
+          .widgetList<RoutePhotoMarkers>(find.byType(RoutePhotoMarkers))
+          .any((layer) => layer.photos.length == 1),
+    );
     await tester.tap(find.byTooltip('Routes'));
-    await tester.pumpAndSettle();
+    await pumpRecordingUi(tester);
     expect(find.text('Recording'), findsOneWidget);
     service.send(location(3));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Back to map'));
-    await tester.pumpAndSettle();
+    await pumpRecordingUi(tester);
+    if (Platform.isIOS) {
+      final size = tester.view.physicalSize / tester.view.devicePixelRatio;
+      await tester.dragFrom(
+        Offset(4, size.height / 2),
+        Offset(size.width * 0.8, 0),
+      );
+    } else {
+      await tester.tap(find.byTooltip('Back to map'));
+    }
+    await pumpRecordingUi(tester);
+    expect(tester.widget<RouteStats>(find.byType(RouteStats)).columns, 2);
+    await tester.tap(statsPanel);
+    await pumpRecordingUi(tester);
+    expect(tester.widget<RouteStats>(find.byType(RouteStats)).columns, isNull);
     await tester.tap(find.text('Stop recording'));
-    await tester.pumpAndSettle();
+    await pumpRecordingUi(tester);
+    expect(find.text('SAVE ROUTE'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'Morning walk');
+    await tester.tap(find.byTooltip('Save route name'));
+    await pumpRecordingUi(tester);
     final route = (await repository.getRoutes()).single;
+    final savedPhoto = (await photos.getPhotos(route.id)).single;
+    expect(savedPhoto.latitude, location(2).latitude);
+    expect(await File(savedPhoto.path).readAsBytes(), pixel);
     expect((await repository.getRoute(route.id))!.routePoints, hasLength(3));
     await tester.tap(find.byTooltip('Routes'));
-    await tester.pumpAndSettle();
-    expect(find.text('Saved'), findsOneWidget);
+    await pumpRecordingUi(tester);
+    expect(find.text('Morning walk'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pumpAndSettle();
+    await pumpRecordingUi(tester);
     await resources.dispose();
     final reopened = await SqliteStorage.open(path: path);
     try {
       final saved = (await reopened.routes.getById(route.id))!;
       expect(saved.status, 'completed');
+      expect(saved.name, 'Morning walk');
       expect(saved.routePoints, hasLength(3));
+      expect(await reopened.routePhotos.getForRoute(route.id), hasLength(1));
     } finally {
       await reopened.close();
     }

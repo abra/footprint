@@ -25,7 +25,11 @@ void main() {
       locationService: service,
       routesRepository: repository,
     );
-    cubit = MapCubit(recordingService: recording, geocodingManager: geocoding);
+    cubit = MapCubit(
+      photosRepository: FakeRoutePhotosRepository(),
+      recordingService: recording,
+      geocodingManager: geocoding,
+    );
   });
   tearDown(() async {
     await cubit.close();
@@ -70,6 +74,7 @@ void main() {
       }
       expect(service.mode, LocationMode.recording);
       cubit = MapCubit(
+        photosRepository: FakeRoutePhotosRepository(),
         recordingService: recording,
         geocodingManager: geocoding,
       );

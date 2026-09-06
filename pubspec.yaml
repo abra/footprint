@@ -11,6 +11,7 @@ workspace:
   - packages/domain_models
   - packages/features/map
   - packages/features/route_list
+  - packages/features/route_details
   - packages/foreground_location_service
   - packages/geocoding_manager
   - packages/routes_repository
@@ -37,12 +38,16 @@ dependencies:
     path: packages/features/map
   route_list:
     path: packages/features/route_list
+  route_details:
+    path: packages/features/route_details
   sqlite_storage:
     path: packages/sqlite_storage
   go_router: ^18.0.1
   flutter_bloc: ^9.1.1
 
 dev_dependencies:
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
   integration_test:
     sdk: flutter
   sqflite_common_ffi: ^2.4.2

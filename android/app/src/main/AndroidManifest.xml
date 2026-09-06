@@ -13,6 +13,10 @@
         android:label="Footprint"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Both Flutter engines must open SQLite in the same journal mode. -->
+        <meta-data
+            android:name="com.tekartik.sqflite.wal_enabled"
+            android:value="true" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

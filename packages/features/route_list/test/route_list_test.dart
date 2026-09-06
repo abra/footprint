@@ -10,7 +10,12 @@ import 'package:routes_repository/routes_repository.dart';
 class TestRoutes extends Fake implements RoutesRepository {
   Future<List<RouteDM>> Function() response = () async => [];
   @override
-  Future<List<RouteDM>> getRoutes() => response();
+  Future<List<RouteDM>> getRoutePage({
+    String query = '',
+    RouteSort sort = RouteSort.newest,
+    int offset = 0,
+    int limit = 20,
+  }) => response();
 }
 
 void main() {
@@ -45,6 +50,7 @@ void main() {
       ..response = () async => [
         RouteDM(
           id: 1,
+          name: 'Morning walk',
           startTime: DateTime(2026, 9, 6),
           status: Status.completed,
         ),
@@ -59,7 +65,12 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Saved'), findsOneWidget);
+    expect(find.text('Morning walk'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Recording'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
     expect(find.text('Recording'), findsOneWidget);
     await tester.tap(find.byTooltip('Back to map'));
     expect(navigated, isTrue);

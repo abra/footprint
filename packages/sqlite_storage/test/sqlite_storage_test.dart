@@ -133,7 +133,7 @@ void main() {
     },
   );
 
-  for (final legacyVersion in [1, 2]) {
+  for (final legacyVersion in [1, 2, 3, 4]) {
     test(
       'version $legacyVersion migration preserves existing route data and repairs indexes',
       () async {
@@ -162,6 +162,17 @@ void main() {
                 'address TEXT, latitude REAL, longitude REAL, latitude_idx INTEGER, '
                 "longitude_idx INTEGER, usage_frequency INTEGER DEFAULT 0, timestamp TEXT)${legacyVersion == 1 ? ' STRICT' : ''}",
               );
+              if (legacyVersion >= 3) {
+                await db.execute(
+                  'ALTER TABLE route_points ADD COLUMN source_id TEXT',
+                );
+              }
+              if (legacyVersion >= 4) {
+                await db.execute('ALTER TABLE routes ADD COLUMN name TEXT');
+                await db.execute(
+                  'ALTER TABLE routes ADD COLUMN name_search TEXT',
+                );
+              }
               await db.insert('routes', {
                 'id': 7,
                 'start_time': timestamp.toIso8601String(),
@@ -209,7 +220,7 @@ void main() {
         expect((await migrated.routes.getById(7))!.routePoints, hasLength(2));
         await migrated.close();
         final check = await databaseFactoryFfi.openDatabase(path);
-        expect(await check.getVersion(), 3);
+        expect(await check.getVersion(), 5);
         expect(
           await check.rawQuery(
             "SELECT name FROM sqlite_master WHERE type = 'index' "

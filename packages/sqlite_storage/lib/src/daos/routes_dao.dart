@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 
+import '../database_retry.dart';
 import '../models/route.dart';
 
 class RoutesDao {
@@ -12,7 +13,7 @@ class RoutesDao {
     required double longitude,
     required DateTime timestamp,
     String? sourceId,
-  }) => _db.transaction((txn) async {
+  }) => _db.retryTransaction((txn) async {
     final active = await txn.query(
       'routes',
       columns: ['id'],
@@ -43,7 +44,7 @@ class RoutesDao {
     required double longitude,
     required DateTime timestamp,
     String? sourceId,
-  }) => _db.transaction((txn) async {
+  }) => _db.retryTransaction((txn) async {
     final active = await txn.query(
       'routes',
       columns: ['id'],
@@ -84,9 +85,48 @@ class RoutesDao {
     return rows.isEmpty ? null : getById(rows.single['id'] as int);
   }
 
-  Future<List<Route>> getAll() async {
-    final rows = await _db.query('routes', orderBy: 'start_time DESC, id DESC');
-    return rows.map(Route.fromMap).toList(growable: false);
+  Future<List<Route>> getAll({
+    String query = '',
+    String orderBy = 'start_time DESC, id DESC',
+    int? limit,
+    int offset = 0,
+  }) async => _db.retryTransaction((txn) async {
+    final rows = await txn.query(
+      'routes',
+      where: query.isEmpty ? null : "instr(coalesce(name_search, ''), ?) > 0 OR instr(start_time, ?) > 0",
+      whereArgs: query.isEmpty ? null : [query.toLowerCase(), query],
+      orderBy: orderBy,
+      limit: limit,
+      offset: offset,
+    );
+    if (rows.isEmpty) return [];
+    final ids = rows.map((row) => row['id'] as int).toList();
+    final points = await txn.query(
+      'route_points',
+      where: 'route_id IN (${List.filled(ids.length, '?').join(',')})',
+      whereArgs: ids,
+      orderBy: 'id ASC',
+    );
+    final grouped = <int, List<Map<String, Object?>>>{};
+    for (final point in points) {
+      (grouped[point['route_id'] as int] ??= []).add(point);
+    }
+    return [
+      for (final row in rows)
+        Route.fromMap({...row, 'route_points': grouped[row['id']] ?? []}),
+    ];
+  });
+
+  Future<void> rename(int id, String name) async {
+    final count = await retryOnDatabaseBusy(
+      () => _db.update(
+        'routes',
+        {'name': name, 'name_search': name.toLowerCase()},
+        where: 'id = ? AND status = ?',
+        whereArgs: [id, 'completed'],
+      ),
+    );
+    if (count != 1) throw StateError('Only a saved route can be renamed.');
   }
 
   Future<Route?> getById(int id) async {
@@ -101,7 +141,7 @@ class RoutesDao {
     return Route.fromMap({...rows.single, 'route_points': points});
   }
 
-  Future<void> complete(int id, DateTime endTime) => _db.transaction((
+  Future<void> complete(int id, DateTime endTime) => _db.retryTransaction((
     txn,
   ) async {
     final rows = await txn.query('routes', where: 'id = ?', whereArgs: [id]);
@@ -127,7 +167,17 @@ class RoutesDao {
     );
   });
 
-  Future<void> delete(int id) => _db.transaction((txn) async {
+  Future<void> delete(int id) => _db.retryTransaction((txn) async {
+    final active = await txn.query(
+      'routes',
+      columns: ['id'],
+      where: 'id = ? AND status = ?',
+      whereArgs: [id, 'active'],
+      limit: 1,
+    );
+    if (active.isNotEmpty) {
+      throw StateError('An active route cannot be deleted.');
+    }
     await txn.delete('route_points', where: 'route_id = ?', whereArgs: [id]);
     await txn.delete('routes', where: 'id = ?', whereArgs: [id]);
   });

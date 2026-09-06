@@ -1,3 +1,13 @@
 export 'src/exception_icon.dart';
 export 'src/theme/app_theme.dart';
 export 'src/theme/extensions.dart';
+export 'src/map/map_tile_config.dart';
+export 'src/map/map_tiles.dart';
+export 'src/map/route_preview.dart';
+export 'src/map/map_attribution.dart';
+export 'src/route_stats.dart';
+export 'src/photos/route_photo_image.dart';
+export 'src/photos/route_photo_markers.dart';
+export 'src/photos/route_photo_viewer.dart';
+export 'src/route_labels.dart';
+export 'src/map_surface.dart';

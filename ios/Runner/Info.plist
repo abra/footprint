@@ -35,6 +35,10 @@
 	<string>This app needs access to location when in the background for continuous activity tracking.</string>
 	<key>NSLocationUsageDescription</key>
 	<string>This app needs access to location.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Attach a photograph to the current point on your recorded route.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Select a photograph to attach to the current point on your route.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs access to location when open for tracking your activities.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

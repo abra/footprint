@@ -26,11 +26,14 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(textScaler: const TextScaler.linear(2)),
+            data: MediaQuery.of(context).copyWith(
+              textScaler: const TextScaler.linear(2),
+              disableAnimations: true,
+            ),
             child: child!,
           ),
           home: MapScreen(
+            photosRepository: FakeRoutePhotosRepository(),
             recordingService: recording,
             geocodingManager: FakeGeocodingManager(),
             onPageChangeRequested: () {},
@@ -43,7 +46,7 @@ void main() {
       cubit.tilesFailed();
       await tester.pumpAndSettle();
       expect(find.text('Map tiles could not be loaded.'), findsOneWidget);
-      await tester.tap(find.text('Retry'));
+      await tester.tap(find.byTooltip('Retry'));
       await tester.pump();
       expect(cubit.state.tileGeneration, 1);
       final record = tester.getRect(
@@ -54,6 +57,26 @@ void main() {
       expect(record.left, greaterThanOrEqualTo(0));
       expect(record.right, lessThanOrEqualTo(size.width));
       expect(record.bottom, lessThanOrEqualTo(size.height));
+      expect(
+        record.overlaps(tester.getRect(find.byTooltip('Attributions'))),
+        isFalse,
+      );
+      await cubit.startRecording();
+      await tester.pumpAndSettle();
+      cubit.emit(
+        cubit.state.copyWith(
+          photoError:
+              'Photo could not be saved. Retry or discard the pending photo.',
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Add route photo').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Attributions').hitTestable(), findsOneWidget);
+      await tester.tap(find.byTooltip('Attributions'));
+      await tester.pumpAndSettle();
+      expect(find.text('Map data'), findsOneWidget);
+      await tester.tap(find.byTooltip('Close attribution'));
+      await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();

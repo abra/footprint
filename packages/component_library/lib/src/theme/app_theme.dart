@@ -4,16 +4,23 @@ import 'app_colors_ext.dart';
 import 'app_spacing_ext.dart';
 import 'app_text_styles_ext.dart';
 
-class AppTheme {
+abstract final class AppTheme {
+  static const ink = Color(0xFF5D6A80);
+  static const muted = Color(0xFF68758A);
+  static const route = Color(0xFFA37BFF);
+  static const coral = Color(0xFFE65D65);
+  static const surface = Color(0xFFF5F7F9);
+  static const border = Color(0xFFE8EDF1);
+  static const success = Color(0xFF64CB54);
+
   static const appColors = AppColorsExt(
     darkCyan: Color(0xFF055C5C),
-    appWhite: Color(0xFFE7E3E3),
-    simpleWhite: Color(0xFFFFFFFF),
-    grayBlue: Color(0xFF47556B),
-    darkPurple: Color(0xFF6B36DC),
-    lightPurple: Color(0xFF885EE1),
+    appWhite: surface,
+    simpleWhite: Colors.white,
+    grayBlue: ink,
+    darkPurple: Color(0xFF7850CF),
+    lightPurple: route,
   );
-
   static const appSpacing = AppSpacingExt(
     xSmall: 4,
     small: 8,
@@ -24,77 +31,61 @@ class AppTheme {
     xxLarge: 48,
     xxxLarge: 64,
   );
+  static const appStyles = AppTextStylesExt(title1: TextStyle(fontSize: 24));
 
-  // TODO: add app text styles
-  static const appStyles = AppTextStylesExt(title1: TextStyle());
-
-  // TODO: add app themes
-  static final ThemeData light = ThemeData.light().copyWith(
-    scaffoldBackgroundColor: appColors.appWhite,
-    splashColor: Colors.transparent,
-    inputDecorationTheme: const InputDecorationTheme(
-      isDense: true,
-      // hintStyle: appStyles.buttonText.copyWith(
-      //   color: appColors.grey6,
-      //   fontWeight: FontWeight.w600,
-      // ),
-      border: InputBorder.none,
-      contentPadding: EdgeInsets.zero,
+  static final light = ThemeData(
+    useMaterial3: true,
+    fontFamily: 'RobotoCondensed',
+    package: 'component_library',
+    colorScheme: ColorScheme.fromSeed(seedColor: route).copyWith(
+      primary: const Color(0xFF7850CF),
+      onPrimary: Colors.white,
+      surface: Colors.white,
+      onSurface: ink,
+      onSurfaceVariant: muted,
+      outlineVariant: border,
+      error: const Color(0xFFBD3942),
     ),
-    // textTheme: TextTheme(
-    //   displayLarge: appStyles.title1.copyWith(
-    //     color: appColors.white,
-    //   ),
-    //   displayMedium: appStyles.title2.copyWith(
-    //     color: appColors.white,
-    //   ),
-    // ),
-    // switchTheme: SwitchThemeData(
-    //   thumbColor: WidgetStateProperty.all(
-    //     appColors.blue,
-    //   ),
-    // ),
-    // outlinedButtonTheme: OutlinedButtonThemeData(
-    //   // remove border
-    //   style: ButtonStyle(
-    //     textStyle: WidgetStateProperty.all(appStyles.buttonText),
-    //     backgroundColor: WidgetStateProperty.all(appColors.blue),
-    //     foregroundColor: WidgetStateProperty.all(appColors.white),
-    //     side: WidgetStateProperty.all(
-    //       BorderSide.none,
-    //     ),
-    //     shape: WidgetStateProperty.all(
-    //       const RoundedRectangleBorder(
-    //         borderRadius: BorderRadius.all(
-    //           Radius.circular(4),
-    //         ),
-    //       ),
-    //     ),
-    //   ),
-    // ),
-    // bottomSheetTheme: BottomSheetThemeData(
-    //   surfaceTintColor: Colors.transparent,
-    //   backgroundColor: appColors.grey2,
-    //   modalBackgroundColor: appColors.grey2,
-    //   shape: const RoundedRectangleBorder(
-    //     borderRadius: BorderRadius.vertical(
-    //       top: Radius.circular(16),
-    //     ),
-    //   ),
-    // ),
-    // bottomNavigationBarTheme: BottomNavigationBarThemeData(
-    //   type: BottomNavigationBarType.fixed,
-    //   elevation: 0,
-    //   backgroundColor: appColors.black,
-    //   selectedItemColor: appColors.blue,
-    //   unselectedItemColor: appColors.grey6,
-    //   selectedLabelStyle: appStyles.tabText.copyWith(
-    //     color: appColors.blue,
-    //   ),
-    //   unselectedLabelStyle: appStyles.tabText.copyWith(
-    //     color: appColors.grey6,
-    //   ),
-    // ),
-    extensions: [appColors, appStyles, appSpacing],
+    scaffoldBackgroundColor: Colors.white,
+    appBarTheme: const AppBarTheme(
+      centerTitle: true,
+      backgroundColor: Colors.white,
+      foregroundColor: ink,
+      surfaceTintColor: Colors.transparent,
+      titleTextStyle: TextStyle(
+        fontFamily: 'packages/component_library/RobotoCondensed',
+        fontSize: 24,
+        fontWeight: FontWeight.w500,
+        color: ink,
+      ),
+    ),
+    inputDecorationTheme: const InputDecorationTheme(
+      filled: true,
+      fillColor: surface,
+      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(16)),
+        borderSide: BorderSide(color: border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(16)),
+        borderSide: BorderSide(color: border),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(48, 56),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        textStyle: const TextStyle(
+          fontFamily: 'packages/component_library/RobotoCondensed',
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
+    ),
+    extensions: const [appColors, appStyles, appSpacing],
   );
 }

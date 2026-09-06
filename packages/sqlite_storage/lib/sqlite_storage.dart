@@ -4,3 +4,5 @@ export 'src/models/route.dart';
 export 'src/sqlite_storage.dart';
 export 'src/daos/routes_dao.dart';
 export 'src/daos/geocoding_cache_dao.dart';
+export 'src/daos/route_photos_dao.dart';
+export 'src/models/route_photo.dart';

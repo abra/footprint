@@ -14,6 +14,7 @@ Future<CompositionResult> composeDependencies({
   ApplicationConfig config = const ApplicationConfig(),
   Future<SqliteStorage> Function() openStorage = SqliteStorage.open,
   LocationService Function()? createLocation,
+  RoutePhotosRepository Function(SqliteStorage)? createPhotos,
 }) async {
   final stopwatch = Stopwatch()..start();
   log('Initializing dependencies...', name: 'Composition');
@@ -22,6 +23,7 @@ Future<CompositionResult> composeDependencies({
   final dependencies = await createDependenciesContainer(
     config: config,
     openStorage: openStorage,
+    createPhotos: createPhotos,
     createLocation:
         createLocation ??
         () => ForegroundLocationService(
@@ -45,6 +47,7 @@ Future<DependenciesContainer> createDependenciesContainer({
   required ApplicationConfig config,
   required Future<SqliteStorage> Function() openStorage,
   required LocationService Function() createLocation,
+  RoutePhotosRepository Function(SqliteStorage)? createPhotos,
 }) async {
   final resources = ResourceDisposer();
   try {
@@ -52,7 +55,18 @@ Future<DependenciesContainer> createDependenciesContainer({
     resources.add('database', sqliteStorage.close);
     final locationService = createLocation();
     resources.add('location service', locationService.dispose);
-    final routes = RoutesRepository(sqliteStorage: sqliteStorage);
+    final photos =
+        createPhotos?.call(sqliteStorage) ??
+        RoutePhotosRepository(
+          dao: sqliteStorage.routePhotos,
+          picker: NativePhotoPicker(),
+          files: LocalPhotoFiles(),
+        );
+    resources.add('photos', photos.dispose);
+    final routes = RoutesRepository(
+      sqliteStorage: sqliteStorage,
+      photos: photos,
+    );
     final geocoding = GeocodingManager(sqliteStorage: sqliteStorage);
     resources.add('geocoding', geocoding.dispose);
     final recording = RecordingService(
@@ -62,6 +76,7 @@ Future<DependenciesContainer> createDependenciesContainer({
     resources.add('recording', recording.dispose);
     await recording.initialize();
     return DependenciesContainer(
+      photosRepository: photos,
       foregroundLocationService: locationService,
       sqliteStorage: sqliteStorage,
       routesRepository: routes,

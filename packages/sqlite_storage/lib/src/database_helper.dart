@@ -6,7 +6,7 @@ abstract final class DatabaseHelper {
       CREATE TABLE routes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         start_point TEXT, end_point TEXT,
-        start_time TEXT NOT NULL, end_time TEXT,
+        start_time TEXT NOT NULL, end_time TEXT, name TEXT, name_search TEXT,
         distance REAL, average_speed REAL,
         status TEXT NOT NULL CHECK (status IN ('active', 'completed'))
       )
@@ -28,6 +28,7 @@ abstract final class DatabaseHelper {
         usage_frequency INTEGER DEFAULT 0, timestamp TEXT NOT NULL
       )
     ''');
+    await createPhotoTables(db);
     await createIndexes(db);
   }
 
@@ -39,7 +40,37 @@ abstract final class DatabaseHelper {
     if (oldVersion < 3) {
       await db.execute('ALTER TABLE route_points ADD COLUMN source_id TEXT');
     }
+    if (oldVersion < 4) {
+      await db.execute('ALTER TABLE routes ADD COLUMN name TEXT');
+      await db.execute('ALTER TABLE routes ADD COLUMN name_search TEXT');
+    }
+    if (oldVersion < 5) await createPhotoTables(db);
     await createIndexes(db);
+  }
+
+  static Future<void> createPhotoTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE route_photos (
+        id TEXT PRIMARY KEY NOT NULL,
+        route_id INTEGER NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
+        file_name TEXT NOT NULL UNIQUE,
+        latitude REAL NOT NULL, longitude REAL NOT NULL,
+        captured_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_route_photos_route ON route_photos(route_id)',
+    );
+    await db.execute('''
+      CREATE TABLE pending_photo (
+        slot INTEGER PRIMARY KEY CHECK (slot = 1),
+        id TEXT NOT NULL UNIQUE,
+        route_id INTEGER NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
+        file_name TEXT NOT NULL,
+        latitude REAL NOT NULL, longitude REAL NOT NULL,
+        captured_at TEXT NOT NULL, source_path TEXT
+      )
+    ''');
   }
 
   static Future<void> createIndexes(Database db) async {

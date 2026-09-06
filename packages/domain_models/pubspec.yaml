@@ -9,7 +9,7 @@ environment:
 # Add regular dependencies here.
 dependencies:
   equatable: ^2.1.0
-  # path: ^1.8.0
+  latlong2: ^0.10.1
 
 dev_dependencies:
   lints: ^6.1.0

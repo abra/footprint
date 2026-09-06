@@ -2,17 +2,21 @@ import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
 import 'database_helper.dart';
+import 'database_retry.dart';
 import 'daos/geocoding_cache_dao.dart';
 import 'daos/routes_dao.dart';
+import 'daos/route_photos_dao.dart';
 
 /// The composition root owns the connection; features only borrow its DAOs.
 class SqliteStorage {
   SqliteStorage._(this._database)
     : routes = RoutesDao(_database),
+      routePhotos = RoutePhotosDao(_database),
       geocodingCache = GeocodingCacheDao(_database);
 
   final Database _database;
   final RoutesDao routes;
+  final RoutePhotosDao routePhotos;
   final GeocodingCacheDao geocodingCache;
   Future<void>? _closeFuture;
 
@@ -24,14 +28,22 @@ class SqliteStorage {
     final databasePath =
         path ??
         p.join(await selectedFactory.getDatabasesPath(), 'footprint.db');
-    final database = await selectedFactory.openDatabase(
-      databasePath,
-      options: OpenDatabaseOptions(
-        version: 3,
-        singleInstance: false,
-        onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
-        onCreate: DatabaseHelper.create,
-        onUpgrade: DatabaseHelper.upgrade,
+    final database = await retryOnDatabaseBusy(
+      () => selectedFactory.openDatabase(
+        databasePath,
+        options: OpenDatabaseOptions(
+          version: 5,
+          singleInstance: false,
+          onConfigure: (db) async {
+            // Native busy waits can block sqflite's shared Android worker and
+            // prevent the other connection from committing. Retry in Dart instead.
+            await db.rawQuery('PRAGMA busy_timeout = 0');
+            await db.setJournalMode('WAL');
+            await db.execute('PRAGMA foreign_keys = ON');
+          },
+          onCreate: DatabaseHelper.create,
+          onUpgrade: DatabaseHelper.upgrade,
+        ),
       ),
     );
     return SqliteStorage._(database);

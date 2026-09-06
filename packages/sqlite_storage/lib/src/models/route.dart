@@ -4,6 +4,7 @@ class Route {
   const Route({
     required this.id,
     required this.startTime,
+    this.name,
     this.endTime,
     this.distance,
     this.averageSpeed,
@@ -12,6 +13,7 @@ class Route {
   });
 
   final int id;
+  final String? name;
   final String startTime;
   final String? endTime;
   final double? distance;
@@ -22,6 +24,7 @@ class Route {
   factory Route.fromMap(Map<String, dynamic> map) {
     return Route(
       id: map['id'] as int,
+      name: map['name'] as String?,
       startTime: map['start_time'] as String,
       endTime: map['end_time'] as String?,
       distance: (map['distance'] as num?)?.toDouble(),

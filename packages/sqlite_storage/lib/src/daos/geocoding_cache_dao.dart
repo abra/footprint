@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:sqflite/sqflite.dart';
 
+import '../database_retry.dart';
 import '../models/place_address_cm.dart';
 
 class GeocodingCacheDao {
@@ -13,15 +14,17 @@ class GeocodingCacheDao {
     required String address,
     required double latitude,
     required double longitude,
-  }) => _db.insert('geocoding_cache', {
-    'address': address,
-    'latitude': latitude,
-    'longitude': longitude,
-    // Retain the version 1 columns for existing databases.
-    'latitude_idx': (latitude * 2222.4).round(),
-    'longitude_idx': (longitude * 2222.4 * cos(latitude * pi / 180)).round(),
-    'timestamp': DateTime.now().toIso8601String(),
-  });
+  }) => retryOnDatabaseBusy(
+    () => _db.insert('geocoding_cache', {
+      'address': address,
+      'latitude': latitude,
+      'longitude': longitude,
+      // Retain the version 1 columns for existing databases.
+      'latitude_idx': (latitude * 2222.4).round(),
+      'longitude_idx': (longitude * 2222.4 * cos(latitude * pi / 180)).round(),
+      'timestamp': DateTime.now().toIso8601String(),
+    }),
+  );
 
   Future<List<PlaceAddressCM>> nearby({
     required double latitude,
@@ -52,15 +55,19 @@ class GeocodingCacheDao {
   }
 
   Future<void> markUsed(int id) async {
-    await _db.rawUpdate(
-      'UPDATE geocoding_cache SET usage_frequency = usage_frequency + 1 WHERE id = ?',
-      [id],
+    await retryOnDatabaseBusy(
+      () => _db.rawUpdate(
+        'UPDATE geocoding_cache SET usage_frequency = usage_frequency + 1 WHERE id = ?',
+        [id],
+      ),
     );
   }
 
-  Future<int> clearOlderThan(Duration maxAge) => _db.delete(
-    'geocoding_cache',
-    where: 'timestamp < ?',
-    whereArgs: [DateTime.now().subtract(maxAge).toIso8601String()],
+  Future<int> clearOlderThan(Duration maxAge) => retryOnDatabaseBusy(
+    () => _db.delete(
+      'geocoding_cache',
+      where: 'timestamp < ?',
+      whereArgs: [DateTime.now().subtract(maxAge).toIso8601String()],
+    ),
   );
 }

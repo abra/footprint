@@ -2,15 +2,47 @@ import 'package:domain_models/domain_models.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
 
 import 'mappers/route_to_domain.dart';
+import 'photos/route_photos_repository.dart';
 
 class RoutesRepository {
-  RoutesRepository({required SqliteStorage sqliteStorage})
+  RoutesRepository({required SqliteStorage sqliteStorage, this._photos})
     : _routes = sqliteStorage.routes;
 
   final RoutesDao _routes;
+  final RoutePhotosRepository? _photos;
 
   Future<List<RouteDM>> getRoutes() async =>
       (await _routes.getAll()).map((route) => route.toDomain()).toList();
+
+  Future<List<RouteDM>> getRoutePage({
+    String query = '',
+    RouteSort sort = RouteSort.newest,
+    int offset = 0,
+    int limit = 20,
+  }) async {
+    if (offset < 0 || limit < 1 || limit > 100) {
+      throw ArgumentError('Invalid route page.');
+    }
+    final rows = await _routes.getAll(
+      query: query.trim(),
+      offset: offset,
+      limit: limit,
+      orderBy: switch (sort) {
+        RouteSort.newest => 'start_time DESC, id DESC',
+        RouteSort.oldest => 'start_time ASC, id ASC',
+        RouteSort.name => "coalesce(name_search, start_time) ASC, id ASC",
+      },
+    );
+    return rows.map((route) => route.toDomain()).toList();
+  }
+
+  Future<void> renameRoute(int id, String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty || trimmed.runes.length > 80) {
+      throw ArgumentError('Route name must contain 1 to 80 characters.');
+    }
+    return _routes.rename(id, trimmed);
+  }
 
   Future<RouteDM?> getRoute(int id) async =>
       (await _routes.getById(id))?.toDomain();
@@ -35,5 +67,8 @@ class RoutesRepository {
 
   Future<void> finishRoute(int id, DateTime endTime) =>
       _routes.complete(id, endTime);
-  Future<void> deleteRoute(int id) => _routes.delete(id);
+  Future<void> deleteRoute(int id) async {
+    await _routes.delete(id);
+    await _photos?.collectGarbage();
+  }
 }
