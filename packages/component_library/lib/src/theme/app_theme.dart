@@ -95,10 +95,6 @@ class AppTheme {
     //     color: appColors.grey6,
     //   ),
     // ),
-    extensions: [
-      appColors,
-      appStyles,
-      appSpacing,
-    ],
+    extensions: [appColors, appStyles, appSpacing],
   );
 }

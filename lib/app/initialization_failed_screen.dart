@@ -28,16 +28,10 @@ class InitializationFailedScreen extends StatelessWidget {
                   const Text(
                     'Initialization failed',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    error.toString(),
-                    textAlign: TextAlign.center,
-                  ),
+                  Text(error.toString(), textAlign: TextAlign.center),
                   const SizedBox(height: 24),
                   FilledButton(
                     onPressed: onRetryInitialization,

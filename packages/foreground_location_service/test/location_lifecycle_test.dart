@@ -1,0 +1,152 @@
+import 'dart:async';
+
+import 'package:domain_models/domain_models.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:foreground_location_service/foreground_location_service.dart';
+
+class FakeBackend implements LocationBackend {
+  StreamController<LocationDM> controller = StreamController.broadcast();
+  final calls = <String>[];
+  Completer<void>? startGate;
+  bool failStart = false;
+  bool failStop = false;
+  @override
+  Stream<LocationDM> get locations => controller.stream;
+  @override
+  Future<void> start({required bool background}) async {
+    calls.add(background ? 'recording' : 'preview');
+    await startGate?.future;
+    if (failStart) throw StateError('Permission denied');
+  }
+
+  @override
+  Future<void> stop() async {
+    calls.add('stop');
+    if (failStop) throw StateError('Stop failed');
+  }
+
+  @override
+  Future<void> dispose() async {
+    calls.add('dispose');
+    await controller.close();
+  }
+}
+
+Future<void> tick() => Future<void>.delayed(Duration.zero);
+
+void main() {
+  late FakeBackend backend;
+  late ForegroundLocationService service;
+  late StreamSubscription<LocationDM> subscription;
+  late List<Object> errors;
+  setUp(() {
+    backend = FakeBackend();
+    service = ForegroundLocationService(backend: backend);
+    errors = [];
+    subscription = service.locations.listen((_) {}, onError: errors.add);
+  });
+  tearDown(() async {
+    await subscription.cancel();
+    await service.dispose();
+  });
+
+  test(
+    'mode transitions serialize and repeated requests are idempotent',
+    () async {
+      await Future.wait([
+        service.setMode(LocationMode.preview),
+        service.setMode(LocationMode.preview),
+        service.setMode(LocationMode.recording),
+        service.setMode(LocationMode.stopped),
+      ]);
+      expect(backend.calls, ['preview', 'stop', 'recording', 'stop']);
+    },
+  );
+
+  test('startup failure can be retried with the same mode', () async {
+    backend.failStart = true;
+    await expectLater(service.setMode(LocationMode.preview), throwsStateError);
+    backend.failStart = false;
+    await service.setMode(LocationMode.preview);
+    expect(backend.calls, ['preview', 'stop', 'preview']);
+  });
+
+  test('stream error invalidates previous successful startup', () async {
+    await service.setMode(LocationMode.preview);
+    backend.controller.addError(StateError('GPS disabled'));
+    await tick();
+    expect(errors, hasLength(1));
+    await service.setMode(LocationMode.preview);
+    expect(backend.calls, ['preview', 'stop', 'preview']);
+  });
+
+  test('error emitted during startup cannot be reported as success', () async {
+    backend.startGate = Completer<void>();
+    final starting = service.setMode(LocationMode.preview);
+    final failed = expectLater(starting, throwsStateError);
+    await tick();
+    backend.controller.addError(StateError('GPS failed during startup'));
+    await tick();
+    backend.startGate!.complete();
+    await failed;
+    expect(errors, hasLength(1));
+    await service.setMode(LocationMode.preview);
+    expect(backend.calls, ['preview', 'stop', 'preview']);
+  });
+
+  test(
+    'stream completion is visible and a new stream is subscribed on retry',
+    () async {
+      await service.setMode(LocationMode.preview);
+      await backend.controller.close();
+      await tick();
+      expect(errors, hasLength(1));
+      backend.controller = StreamController.broadcast();
+      await service.setMode(LocationMode.preview);
+      final point = LocationDM(
+        id: '1',
+        latitude: 56,
+        longitude: 60,
+        timestamp: DateTime.now(),
+      );
+      backend.controller.add(point);
+      await tick();
+      expect(service.lastLocation, point);
+      expect(backend.calls, ['preview', 'stop', 'preview']);
+    },
+  );
+
+  test('explicit retry restarts even without a stream error', () async {
+    await service.setMode(LocationMode.preview);
+    await service.setMode(LocationMode.preview, restart: true);
+    expect(backend.calls, ['preview', 'stop', 'preview']);
+  });
+
+  test('failed stop does not falsely commit the requested new mode', () async {
+    await service.setMode(LocationMode.recording);
+    backend.failStop = true;
+    await expectLater(service.setMode(LocationMode.preview), throwsStateError);
+    backend.failStop = false;
+    await service.setMode(LocationMode.preview);
+    expect(backend.calls, ['recording', 'stop', 'stop', 'preview']);
+  });
+
+  test(
+    'disposal waits for startup and never restarts from queued commands',
+    () async {
+      backend.startGate = Completer<void>();
+      final starting = service.setMode(LocationMode.preview);
+      await tick();
+      final queued = service.setMode(LocationMode.recording);
+      final closing = service.dispose();
+      expect(service.dispose(), same(closing));
+      backend.startGate!.complete();
+      await Future.wait([starting, queued, closing]);
+      expect(backend.calls, ['preview', 'stop', 'dispose']);
+      await expectLater(
+        service.setMode(LocationMode.preview),
+        throwsStateError,
+      );
+    },
+  );
+}

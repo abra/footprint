@@ -3,6 +3,10 @@ import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'bloc/app_bloc_observer.dart';
+
 import 'package:footprint/app/composition.dart';
 import 'package:footprint/app/initialization_failed_screen.dart';
 import 'package:footprint/app/root_context.dart';
@@ -13,6 +17,7 @@ Future<void> starter() async {
     () async {
       WidgetsFlutterBinding.ensureInitialized();
       ForegroundLocationService.initCommunicationPort();
+      Bloc.observer = const AppBlocObserver();
 
       FlutterError.onError = (details) {
         FlutterError.presentError(details);
@@ -28,7 +33,10 @@ Future<void> starter() async {
         return true;
       };
 
+      var initializing = false;
       Future<void> composeAndRun() async {
+        if (initializing) return;
+        initializing = true;
         try {
           final compositionResult = await composeDependencies();
           runApp(RootContext(compositionResult: compositionResult));
@@ -41,6 +49,8 @@ Future<void> starter() async {
               onRetryInitialization: composeAndRun,
             ),
           );
+        } finally {
+          initializing = false;
         }
       }
 

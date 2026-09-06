@@ -13,16 +13,16 @@ class PlaceAddressDM extends Equatable {
   final double longitude;
 
   factory PlaceAddressDM.fromMap(Map<String, dynamic> map) => PlaceAddressDM(
-        address: map['address'] as String,
-        latitude: map['latitude'] as double,
-        longitude: map['longitude'] as double,
-      );
+    address: map['address'] as String,
+    latitude: map['latitude'] as double,
+    longitude: map['longitude'] as double,
+  );
 
   Map<String, dynamic> toMap() => {
-        'address': address,
-        'latitude': latitude,
-        'longitude': longitude,
-      };
+    'address': address,
+    'latitude': latitude,
+    'longitude': longitude,
+  };
 
   @override
   String toString() {
@@ -30,9 +30,5 @@ class PlaceAddressDM extends Equatable {
   }
 
   @override
-  List<Object?> get props => [
-        address,
-        latitude,
-        longitude,
-      ];
+  List<Object?> get props => [address, latitude, longitude];
 }

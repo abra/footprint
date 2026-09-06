@@ -1,48 +1,63 @@
-<p align="center">
-  🚧 Currently under development 🚧
-</p>
-<h1 align="center">
-  <img width="200" height="200" src="https://github.com/abra/footprint/assets/55690/ffc51268-b16c-4160-88ec-7645ef3ccbf9">
-  <br/>Footprint
-</h1>
-<p align="center">
-  Footprint allows you to record, save and share your route
-</p>
+# Footprint
 
+A Flutter application for recording routes on a map. The current implementation
+records GPS points in SQLite and lists active and saved routes.
 
-## Tech Stack
+## Development
 
-### Packages
+Requires FVM, Flutter 3.47.2, and the platform tools for Android or iOS.
 
-- [flutter_map](https://pub.dev/packages/flutter_map) - A versatile mapping package for Flutter
-  
-- [flutter_map_animations](https://pub.dev/packages/flutter_map_animations) - Animation utilities for markers and controls of the flutter_map package
+```sh
+fvm use 3.47.2
+make get
+make verify
+make run
+```
 
-- [geolocator](https://pub.dev/packages/geolocator) - Geolocation plugin for Flutter. This plugin provides a cross-platform API for generic location (GPS etc.) functions
+The repository is a Dart pub workspace. Resolve dependencies from the root;
+commit the root lockfile together with dependency changes.
 
-- [geocoding](https://pub.dev/packages/geocoding) - A Flutter Geocoding plugin which provides easy geocoding and reverse-geocoding features
+## Verification
 
-- [osm_nominatim](https://pub.dev/packages/osm_nominatim) - A library to perform OSM Nominatim searches also supporting reverse searches. Used in app as a fallback for `geocoding`
+```sh
+make test
+make build-android
+make build-ios
+fvm flutter devices
+make integration DEVICE=<simulator-or-device-id>
+```
 
-- [sqflite](https://pub.dev/packages/sqflite) - Flutter plugin for SQLite, a self-contained, high-reliability, embedded, SQL database engine
+Tests cover domain values, GPS modes/recovery, recording failures and retries,
+bounded geocoding, Cubits, SQLite CRUD/migrations/reopening, shutdown ordering,
+widget states, and recording without a mounted map. A background-writer test
+closes the UI database connection and verifies that subsequent samples survive.
+The integration test uses native SQLite, simulated locations, and local tiles.
 
-### Architecture
+## Map Provider
 
- - Clean Architecture (mixed approach)
-   
-   - Layers are used for files that aren't tied to a single feature (database, network,...)
-  
-   - Features are used for files that are rarely used (screens, state managers,....)
- 
- - Repository Pattern
+The default is OpenStreetMap. Override the provider and its attribution together:
 
- - [ValueNotifier](https://api.flutter.dev/flutter/foundation/ValueNotifier-class.html) + [ValueListenableBuilder](https://api.flutter.dev/flutter/widgets/ValueListenableBuilder-class.html) for a state management
+```sh
+fvm flutter run \
+  --dart-define='TILE_URL_TEMPLATE=https://your-provider.example/{z}/{x}/{y}.png' \
+  --dart-define='TILE_ATTRIBUTION=Your provider attribution' \
+  --dart-define='TILE_ATTRIBUTION_URL=https://your-provider.example/attribution'
+```
 
-## App Interface
+The OSM development warning is informational. Failed downloads show a retry
+banner; they are not hidden as successful transparent tiles. Check the
+[OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/)
+when selecting a provider.
 
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/9a68be7b-a3f6-4abb-880a-922ed863d4d8" width="200">
-  <img src="https://github.com/user-attachments/assets/078d4fe2-652c-4080-b464-0bfed80e21c0" width="200">
-  <img src="https://github.com/user-attachments/assets/74fb7faa-88b5-465a-849b-2b529eedc8b9" width="200">
-  <img src="https://github.com/user-attachments/assets/09038033-7de1-4993-afc4-68efba39b71f" width="200">
-</div>
+## Architecture And Status
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for package responsibilities and the
+Readflex conventions adopted here.
+
+Android recording persists points in its foreground task before notifying the
+UI. iOS uses app-owned recording with background location updates. Neither is a
+promise of execution after force-stop; long background trips and real permission
+flows still need physical-device testing.
+
+Route details, sharing/export, and statistics remain product work. Android
+release builds still require production signing.

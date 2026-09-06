@@ -3,7 +3,19 @@ publish_to: 'none'
 version: 1.0.0
 
 environment:
-  sdk: ^3.5.1
+  sdk: ^3.13.2
+  flutter: '>=3.47.2'
+
+workspace:
+  - packages/component_library
+  - packages/domain_models
+  - packages/features/map
+  - packages/features/route_list
+  - packages/foreground_location_service
+  - packages/geocoding_manager
+  - packages/routes_repository
+  - packages/recording_service
+  - packages/sqlite_storage
 
 dependencies:
   flutter:
@@ -17,6 +29,8 @@ dependencies:
     path: packages/geocoding_manager
   routes_repository:
     path: packages/routes_repository
+  recording_service:
+    path: packages/recording_service
   component_library:
     path: packages/component_library
   map:
@@ -25,9 +39,13 @@ dependencies:
     path: packages/features/route_list
   sqlite_storage:
     path: packages/sqlite_storage
-  go_router: ^17.3.0
+  go_router: ^18.0.1
+  flutter_bloc: ^9.1.1
 
 dev_dependencies:
+  integration_test:
+    sdk: flutter
+  sqflite_common_ffi: ^2.4.2
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0

@@ -43,21 +43,22 @@ class AppSpacingExt extends ThemeExtension<AppSpacingExt> {
     double? xLarge,
     double? xxLarge,
     double? xxxLarge,
-  }) =>
-      AppSpacingExt(
-        xSmall: xSmall ?? this.xSmall,
-        small: small ?? this.small,
-        medium: medium ?? this.medium,
-        mediumLarge: mediumLarge ?? this.mediumLarge,
-        large: large ?? this.large,
-        xLarge: xLarge ?? this.xLarge,
-        xxLarge: xxLarge ?? this.xxLarge,
-        xxxLarge: xxxLarge ?? this.xxxLarge,
-      );
+  }) => AppSpacingExt(
+    xSmall: xSmall ?? this.xSmall,
+    small: small ?? this.small,
+    medium: medium ?? this.medium,
+    mediumLarge: mediumLarge ?? this.mediumLarge,
+    large: large ?? this.large,
+    xLarge: xLarge ?? this.xLarge,
+    xxLarge: xxLarge ?? this.xxLarge,
+    xxxLarge: xxxLarge ?? this.xxxLarge,
+  );
 
   @override
   ThemeExtension<AppSpacingExt> lerp(
-      ThemeExtension<AppSpacingExt>? other, double t) {
+    ThemeExtension<AppSpacingExt>? other,
+    double t,
+  ) {
     if (other is! AppSpacingExt) {
       return this;
     }

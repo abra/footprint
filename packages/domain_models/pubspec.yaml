@@ -1,14 +1,14 @@
 name: domain_models
 version: 1.0.0
 publish_to: none
+resolution: workspace
 
 environment:
-  sdk: ^3.5.1
+  sdk: ^3.13.2
 
 # Add regular dependencies here.
 dependencies:
-  meta: ^1.15.0
-  equatable: ^2.0.5
+  equatable: ^2.1.0
   # path: ^1.8.0
 
 dev_dependencies:

@@ -2,74 +2,38 @@ import 'package:equatable/equatable.dart';
 
 import 'route_point_dm.dart';
 
-/// Domain model for route. DM stands for Domain Model.
 class RouteDM extends Equatable {
-  const RouteDM({
+  RouteDM({
     required this.id,
-    required this.startPoint,
-    required this.endPoint,
     required this.startTime,
-    required this.endTime,
-    required this.distance,
-    required this.averageSpeed,
+    this.endTime,
+    this.distance,
+    this.averageSpeed,
     required this.status,
-    required this.routePoints,
-  });
+    List<RoutePointDM> routePoints = const [],
+  }) : routePoints = List.unmodifiable(routePoints);
 
-  final String id;
-  final RoutePointDM startPoint;
-  final RoutePointDM endPoint;
+  final int id;
   final DateTime startTime;
-  final DateTime endTime;
-  final double distance;
-  final double averageSpeed;
+  final DateTime? endTime;
+  final double? distance;
+  final double? averageSpeed;
   final Status status;
   final List<RoutePointDM> routePoints;
 
-  factory RouteDM.fromMap(Map<String, dynamic> map) {
-    return RouteDM(
-      id: map['id'] as String,
-      startPoint:
-          RoutePointDM.fromMap(map['start_point'] as Map<String, dynamic>),
-      endPoint: RoutePointDM.fromMap(map['end_point'] as Map<String, dynamic>),
-      startTime: DateTime.parse(map['start_time'] as String),
-      endTime: DateTime.parse(map['end_time'] as String),
-      distance: map['distance'] as double,
-      averageSpeed: map['average_speed'] as double,
-      status: Status.values.byName(map['status'] as String),
-      routePoints: (map['route_points'] as List<dynamic>)
-          .map((map) => RoutePointDM.fromMap(map as Map<String, dynamic>))
-          .toList(),
-    );
-  }
-
-  Map<String, dynamic> toMap() => {
-        'id': id,
-        'start_point': startPoint.toMap(),
-        'end_point': endPoint.toMap(),
-        'start_time': startTime.toIso8601String(),
-        'end_time': endTime.toIso8601String(),
-        'distance': distance,
-        'average_speed': averageSpeed,
-        'status': status.name,
-        'route_points': routePoints.map((e) => e.toMap()).toList(),
-      };
+  RoutePointDM? get startPoint => routePoints.firstOrNull;
+  RoutePointDM? get endPoint => routePoints.lastOrNull;
 
   @override
   List<Object?> get props => [
-        id,
-        startPoint,
-        endPoint,
-        startTime,
-        endTime,
-        distance,
-        averageSpeed,
-        status,
-        routePoints,
-      ];
+    id,
+    startTime,
+    endTime,
+    distance,
+    averageSpeed,
+    status,
+    routePoints,
+  ];
 }
 
-enum Status {
-  active,
-  completed,
-}
+enum Status { active, completed }

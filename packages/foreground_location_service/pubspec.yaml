@@ -1,17 +1,18 @@
 name: foreground_location_service
 version: 1.0.0
 publish_to: none
+resolution: workspace
 
 environment:
-  sdk: ^3.5.1
-  flutter: ">=1.17.0"
+  sdk: ^3.13.2
+  flutter: '>=3.47.2'
 
 dependencies:
   flutter:
     sdk: flutter
-  flutter_foreground_task: ^9.2.2
-  geolocator: ^14.0.2
-  uuid: ^4.4.2
+  flutter_foreground_task: ^11.0.2
+  geolocator: ^14.0.3
+  uuid: ^4.6.0
   domain_models:
     path: ../domain_models
 
@@ -21,4 +22,3 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
 flutter:
-

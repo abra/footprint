@@ -1,4 +1,4 @@
-import 'dart:developer' as developer;
+import 'dart:developer';
 
 import 'package:domain_models/domain_models.dart';
 import 'package:meta/meta.dart';
@@ -13,66 +13,76 @@ class GeocodingManager {
     required SqliteStorage sqliteStorage,
     @visibleForTesting GeocodingCacheStorage? cacheStorage,
     @visibleForTesting GeocodingService? geocodingService,
-  })  : _geocodingService = geocodingService ?? GeocodingService(),
-        _geocodingCacheStorage = cacheStorage ??
-            GeocodingCacheStorage(
-              sqliteStorage: sqliteStorage,
-            );
+  }) : _service = geocodingService ?? GeocodingService(),
+       _cache =
+           cacheStorage ?? GeocodingCacheStorage(sqliteStorage: sqliteStorage);
 
-  final GeocodingService _geocodingService;
-  final GeocodingCacheStorage _geocodingCacheStorage;
+  final GeocodingService _service;
+  final GeocodingCacheStorage _cache;
+  final _requests = <Future<PlaceAddressDM?>>{};
+  Future<void>? _disposal;
 
-  /// Get address from coordinates
-  ///
-  /// [location] - LocationDM object with latitude and longitude
-  ///
-  /// throws [UnableGetPlaceAddressException] if address is not found
-  Future<PlaceAddressDM?> getAddressFromCoordinates(
-    LocationDM location,
-  ) async {
-    final latitude = location.latitude;
-    final longitude = location.longitude;
-
-    try {
-      final cachedAddress = await _geocodingCacheStorage.getPlaceAddress(
-        latitude: latitude,
-        longitude: longitude,
-      );
-
-      if (cachedAddress != null) {
-        return cachedAddress.toDomainModel();
-      }
-
-      final geocodedAddress = await _geocodingService.reverseGeocoding(
-        latitude: latitude,
-        longitude: longitude,
-      );
-
-      if (geocodedAddress != null) {
-        await _geocodingCacheStorage.addPlaceAddress(
-          address: geocodedAddress,
-          latitude: latitude,
-          longitude: longitude,
-        );
-
-        return PlaceAddressDM(
-          address: geocodedAddress,
-          latitude: latitude,
-          longitude: longitude,
-        );
-      }
-      developer.log('address is null');
-      return null;
-    } on SqliteStorageDatabaseException catch (e, s) {
-      developer.log('$e: $s', name: 'GeocodingManager', time: DateTime.now());
-      throw UnableGetPlaceAddressException(
-        message: 'Could not get place address from $latitude, $longitude: $e',
-        stackTrace: s,
-      );
-    }
+  Future<PlaceAddressDM?> getAddressFromCoordinates(LocationDM location) {
+    if (_disposal != null) return Future.value();
+    final request = _getAddress(location);
+    _requests.add(request);
+    request.then<void>(
+      (_) => _requests.remove(request),
+      onError: (Object _, StackTrace _) => _requests.remove(request),
+    );
+    return request;
   }
 
-  Future<void> closeCacheStorage() async {
-    await _geocodingCacheStorage.closeStorage();
+  Future<PlaceAddressDM?> _getAddress(LocationDM location) async {
+    try {
+      final cached = await _cache.getPlaceAddress(
+        latitude: location.latitude,
+        longitude: location.longitude,
+      );
+      if (cached != null) return cached.toDomainModel();
+    } on Object catch (error, stack) {
+      log(
+        'Address cache read failed',
+        name: 'GeocodingManager',
+        error: error,
+        stackTrace: stack,
+      );
+    }
+
+    if (_disposal != null) return null;
+    final address = await _service.reverseGeocoding(
+      latitude: location.latitude,
+      longitude: location.longitude,
+    );
+    if (_disposal != null || address == null || address.isEmpty) return null;
+    try {
+      await _cache.addPlaceAddress(
+        address: address,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      );
+    } on Object catch (error, stack) {
+      log(
+        'Address cache write failed',
+        name: 'GeocodingManager',
+        error: error,
+        stackTrace: stack,
+      );
+    }
+    return PlaceAddressDM(
+      address: address,
+      latitude: location.latitude,
+      longitude: location.longitude,
+    );
+  }
+
+  Future<void> dispose() => _disposal ??= _dispose();
+
+  Future<void> _dispose() async {
+    await _service.dispose();
+    await Future.wait([
+      for (final request in _requests.toList())
+        request.then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+    ]);
   }
 }

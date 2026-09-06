@@ -4,9 +4,9 @@ import 'package:uuid/uuid.dart';
 
 extension PositionToDomain on Position {
   LocationDM toDomainModel() => LocationDM(
-        id: const Uuid().v1(),
-        timestamp: timestamp,
-        latitude: latitude,
-        longitude: longitude,
-      );
+    id: const Uuid().v1(),
+    timestamp: timestamp,
+    latitude: latitude,
+    longitude: longitude,
+  );
 }

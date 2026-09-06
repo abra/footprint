@@ -6,21 +6,24 @@ class RoutePoint {
     required this.longitude,
     required this.address,
     required this.timestamp,
+    this.sourceId,
   });
 
-  final String id;
-  final String routeId;
+  final int id;
+  final int routeId;
   final double latitude;
   final double longitude;
-  final String address;
+  final String? address;
   final String timestamp;
+  final String? sourceId;
 
   factory RoutePoint.fromMap(Map<String, dynamic> map) => RoutePoint(
-        id: map['id'] as String,
-        routeId: map['route_id'] as String,
-        latitude: map['latitude'] as double,
-        longitude: map['longitude'] as double,
-        address: map['address'] as String,
-        timestamp: map['timestamp'] as String,
-      );
+    id: map['id'] as int,
+    routeId: map['route_id'] as int,
+    latitude: (map['latitude'] as num).toDouble(),
+    longitude: (map['longitude'] as num).toDouble(),
+    address: map['address'] as String?,
+    timestamp: map['timestamp'] as String,
+    sourceId: map['source_id'] as String?,
+  );
 }

@@ -1,0 +1,13 @@
+
+# FVM Version Cache
+.fvm/
+.dart_tool/
+build/
+**/.dart_tool/
+**/build/
+!/.fvmrc
+!/pubspec.lock
+!/ios/Podfile.lock
+!/.gitignore
+!/Makefile
+!/ios/Runner.xcodeproj/project.pbxproj

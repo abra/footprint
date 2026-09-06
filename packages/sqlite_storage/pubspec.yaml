@@ -1,17 +1,16 @@
 name: sqlite_storage
 version: 1.0.0
 publish_to: none
+resolution: workspace
 
 environment:
-  sdk: ^3.5.1
+  sdk: ^3.13.2
 
-# Add regular dependencies here.
 dependencies:
-  path: ^1.9.0
-  sqflite: ^2.3.3+1
-  domain_models:
-    path: ../domain_models
+  path: ^1.9.1
+  sqflite: ^2.4.3
 
 dev_dependencies:
+  sqflite_common_ffi: ^2.4.2
   lints: ^6.1.0
   test: ^1.24.0

@@ -1,19 +1,15 @@
-class Config {
-  const Config();
+class MapConfig {
+  const MapConfig({
+    this.urlTemplate = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    this.attribution = 'OpenStreetMap contributors',
+    this.attributionUrl = 'https://www.openstreetmap.org/copyright',
+  });
 
-  final double markerSize = 17.3;
-  final double markerMaxSize = 22.0;
-  final double markerMinSize = 8.0;
-  final double polylineWidth = 4.0;
-  final double polylineMinWidth = 2.0;
-  final double polylineMaxWidth = 8.0;
-  final bool mapCentered = true;
-  final double zoomStep = 0.5;
+  final String urlTemplate;
+  final String attribution;
+  final String attributionUrl;
+  final String userAgentPackageName = 'io.github.abra.footprint';
   final double defaultZoom = 16;
-  final double maxZoom = 18;
-  final double minZoom = 14;
-  final String urlTemplate =
-      'https://tile.openstreetmap.{domain}/{z}/{x}/{y}.png';
-  final String tileDomain = 'org';
-  final String userAgentPackageName = 'com.github.abra.footprint';
+  final double maxZoom = 19;
+  final double minZoom = 2;
 }

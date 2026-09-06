@@ -1,14 +1,16 @@
 name: geocoding_manager
 version: 1.0.0
 publish_to: none
+resolution: workspace
 
 environment:
-  sdk: ^3.5.1
+  sdk: ^3.13.2
 
 # Add regular dependencies here.
 dependencies:
-  geocoding: ^4.0.0
-  meta: ^1.15.0
+  geocoding: ^5.0.0
+  http: ^1.6.0
+  meta: ^1.19.0
   osm_nominatim: ^4.0.1
   domain_models:
     path: ../domain_models

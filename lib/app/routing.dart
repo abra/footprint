@@ -16,10 +16,10 @@ GoRouter buildRouter({required DependenciesContainer dependencies}) {
       GoRoute(
         path: AppRoutes.map,
         builder: (context, state) => MapScreen(
-          locationService: dependencies.foregroundLocationService,
-          routesRepository: dependencies.routesRepository,
+          recordingService: dependencies.recordingService,
           geocodingManager: dependencies.geocodingManager,
-          onPageChangeRequested: () => context.go(AppRoutes.routes),
+          config: dependencies.config.map,
+          onPageChangeRequested: () => context.push(AppRoutes.routes),
         ),
       ),
       GoRoute(
@@ -28,7 +28,8 @@ GoRouter buildRouter({required DependenciesContainer dependencies}) {
           key: state.pageKey,
           child: RouteListScreen(
             routesRepository: dependencies.routesRepository,
-            onPageChangeRequested: () => context.go(AppRoutes.map),
+            onPageChangeRequested: () =>
+                context.canPop() ? context.pop() : context.go(AppRoutes.map),
           ),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);

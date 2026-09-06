@@ -11,7 +11,7 @@ class Route {
     this.routePoints,
   });
 
-  final String id;
+  final int id;
   final String startTime;
   final String? endTime;
   final double? distance;
@@ -21,13 +21,13 @@ class Route {
 
   factory Route.fromMap(Map<String, dynamic> map) {
     return Route(
-      id: map['id'] as String,
+      id: map['id'] as int,
       startTime: map['start_time'] as String,
       endTime: map['end_time'] as String?,
-      distance: map['distance'] as double?,
-      averageSpeed: map['average_speed'] as double?,
+      distance: (map['distance'] as num?)?.toDouble(),
+      averageSpeed: (map['average_speed'] as num?)?.toDouble(),
       status: map['status'] as String?,
-      routePoints: (map['route_points'] as List<dynamic>)
+      routePoints: (map['route_points'] as List<dynamic>? ?? [])
           .map((map) => RoutePoint.fromMap(map as Map<String, dynamic>))
           .toList(),
     );

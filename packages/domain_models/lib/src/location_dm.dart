@@ -14,19 +14,25 @@ class LocationDM extends Equatable {
   final double longitude;
   final DateTime timestamp;
 
+  bool get hasValidCoordinates =>
+      latitude.isFinite &&
+      longitude.isFinite &&
+      latitude.abs() <= 90 &&
+      longitude.abs() <= 180;
+
   factory LocationDM.fromMap(Map<String, dynamic> map) => LocationDM(
-        id: map['id'] as String,
-        latitude: map['latitude'] as double,
-        longitude: map['longitude'] as double,
-        timestamp: DateTime.parse(map['timestamp'] as String),
-      );
+    id: map['id'] as String,
+    latitude: (map['latitude'] as num).toDouble(),
+    longitude: (map['longitude'] as num).toDouble(),
+    timestamp: DateTime.parse(map['timestamp'] as String),
+  );
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'latitude': latitude,
-        'longitude': longitude,
-        'timestamp': timestamp.toIso8601String(),
-      };
+    'id': id,
+    'latitude': latitude,
+    'longitude': longitude,
+    'timestamp': timestamp.toIso8601String(),
+  };
 
   @override
   String toString() {
@@ -34,9 +40,5 @@ class LocationDM extends Equatable {
   }
 
   @override
-  List<Object?> get props => [
-        id,
-        latitude,
-        longitude,
-      ];
+  List<Object?> get props => [id, latitude, longitude, timestamp];
 }

@@ -1,12 +1,16 @@
 name: route_list
 version: 1.0.0
 publish_to: none
+resolution: workspace
 
 environment:
-  sdk: ^3.5.1
-  flutter: ">=1.17.0"
+  sdk: ^3.13.2
+  flutter: '>=3.47.2'
 
 dependencies:
+  flutter_bloc: ^9.1.1
+  domain_models:
+    path: ../../domain_models
   flutter:
     sdk: flutter
   routes_repository:
@@ -19,4 +23,3 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
 flutter:
-

@@ -68,7 +68,7 @@ class RequestForPermissionInProgressException implements Exception {
   RequestForPermissionInProgressException({
     this.message =
         'A request for location permissions is already running, please '
-            'wait for it to complete before doing another request.',
+        'wait for it to complete before doing another request.',
     this.stackTrace,
   });
 

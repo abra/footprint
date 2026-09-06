@@ -4,10 +4,9 @@ import 'package:sqlite_storage/sqlite_storage.dart';
 
 class GeocodingCacheStorage {
   const GeocodingCacheStorage({
-    required SqliteStorage sqliteStorage,
+    required this._sqliteStorage,
     Duration? cacheMaxAge,
-  })  : _sqliteStorage = sqliteStorage,
-        _cacheMaxAge = cacheMaxAge ?? const Duration(days: 7);
+  }) : _cacheMaxAge = cacheMaxAge ?? const Duration(days: 7);
 
   final SqliteStorage _sqliteStorage;
   final Duration _cacheMaxAge;
@@ -23,12 +22,11 @@ class GeocodingCacheStorage {
     required String address,
     required double latitude,
     required double longitude,
-  }) async =>
-      await _sqliteStorage.addPlaceAddressToCache(
-        address: address,
-        latitude: latitude,
-        longitude: longitude,
-      );
+  }) async => await _sqliteStorage.geocodingCache.add(
+    address: address,
+    latitude: latitude,
+    longitude: longitude,
+  );
 
   /// Get the nearest address to the coordinates from the cache.
   ///
@@ -42,11 +40,11 @@ class GeocodingCacheStorage {
     required double latitude,
     required double longitude,
     double distance = 20,
-    double limit = 1,
   }) async {
-    final places = await _sqliteStorage.fetchNearestPlaces(
+    final places = await _sqliteStorage.geocodingCache.nearby(
       latitude: latitude,
       longitude: longitude,
+      maxAge: _cacheMaxAge,
     );
 
     if (places.isEmpty) return null;
@@ -56,17 +54,13 @@ class GeocodingCacheStorage {
       latitude,
       longitude,
       distance,
-      limit,
     );
 
     if (nearestPlace == null) {
       return null;
     }
 
-    await _sqliteStorage.updatePlaceAddressCache(
-      nearestPlace.id,
-      nearestPlace.usageFrequency + 1,
-    );
+    await _sqliteStorage.geocodingCache.markUsed(nearestPlace.id);
 
     return nearestPlace;
   }
@@ -76,7 +70,6 @@ class GeocodingCacheStorage {
     double lat,
     double lon,
     double distance,
-    double limit,
   ) async {
     double minDistance = distance;
     PlaceAddressCM? nearestPlaceAddress;
@@ -109,7 +102,8 @@ class GeocodingCacheStorage {
     double dLat = _toRadians(lat2 - lat1);
     double dLon = _toRadians(lon2 - lon1);
 
-    double a = sin(dLat / 2) * sin(dLat / 2) +
+    double a =
+        sin(dLat / 2) * sin(dLat / 2) +
         cos(_toRadians(lat1)) *
             cos(_toRadians(lat2)) *
             sin(dLon / 2) *
@@ -129,7 +123,5 @@ class GeocodingCacheStorage {
   ///
   /// Returns number of rows affected.
   Future<int> clearCache() async =>
-      await _sqliteStorage.deleteOldCacheEntries(maxAge: _cacheMaxAge);
-
-  Future<void> closeStorage() async => await _sqliteStorage.close();
+      await _sqliteStorage.geocodingCache.clearOlderThan(_cacheMaxAge);
 }

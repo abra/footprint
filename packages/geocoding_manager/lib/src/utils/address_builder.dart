@@ -2,9 +2,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:osm_nominatim/osm_nominatim.dart';
 
 class AddressBuilder {
-  AddressBuilder({
-    this.maxAddressLength = 40,
-  });
+  AddressBuilder({this.maxAddressLength = 40});
 
   final int maxAddressLength;
 
@@ -14,7 +12,7 @@ class AddressBuilder {
   ///
   /// Returns address string
   String buildAddressFromNominatim(Place place) {
-    final address = place.address!;
+    final address = place.address ?? <String, dynamic>{};
 
     List<String> components = [];
     int currentLength = 0;
@@ -22,7 +20,8 @@ class AddressBuilder {
     void addIfContains(String key) {
       if (address.containsKey(key)) {
         String component = address[key] as String;
-        int newLength = currentLength +
+        int newLength =
+            currentLength +
             component.length +
             (components.isEmpty ? 0 : 2); // 2 - , + space
         if (newLength <= maxAddressLength) {

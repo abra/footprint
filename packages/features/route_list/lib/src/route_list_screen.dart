@@ -1,7 +1,9 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:routes_repository/routes_repository.dart';
+
+import 'route_list_cubit.dart';
+import 'route_list_view.dart';
 
 class RouteListScreen extends StatelessWidget {
   const RouteListScreen({
@@ -14,18 +16,8 @@ class RouteListScreen extends StatelessWidget {
   final VoidCallback onPageChangeRequested;
 
   @override
-  Widget build(BuildContext context) {
-    log('build', name: '$this', time: DateTime.now());
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Route List'),
-      ),
-      body: Center(
-        child: TextButton(
-          onPressed: onPageChangeRequested,
-          child: const Text('Go to MapScreen'),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => BlocProvider(
+    create: (_) => RouteListCubit(routesRepository: routesRepository)..load(),
+    child: RouteListView(onMapRequested: onPageChangeRequested),
+  );
 }

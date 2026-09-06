@@ -25,19 +25,20 @@ class AppColorsExt extends ThemeExtension<AppColorsExt> {
     Color? grayBlue,
     Color? darkPurple,
     Color? lightPurple,
-  }) =>
-      AppColorsExt(
-        darkCyan: darkCyan ?? this.darkCyan,
-        appWhite: appWhite ?? this.appWhite,
-        simpleWhite: simpleWhite ?? this.simpleWhite,
-        grayBlue: grayBlue ?? this.grayBlue,
-        darkPurple: darkPurple ?? this.darkPurple,
-        lightPurple: lightPurple ?? this.lightPurple,
-      );
+  }) => AppColorsExt(
+    darkCyan: darkCyan ?? this.darkCyan,
+    appWhite: appWhite ?? this.appWhite,
+    simpleWhite: simpleWhite ?? this.simpleWhite,
+    grayBlue: grayBlue ?? this.grayBlue,
+    darkPurple: darkPurple ?? this.darkPurple,
+    lightPurple: lightPurple ?? this.lightPurple,
+  );
 
   @override
   ThemeExtension<AppColorsExt> lerp(
-      ThemeExtension<AppColorsExt>? other, double t) {
+    ThemeExtension<AppColorsExt>? other,
+    double t,
+  ) {
     if (other is! AppColorsExt) {
       return this;
     }
