@@ -14,13 +14,38 @@ class MapCubit extends Cubit<MapState> {
     required RoutePhotosRepository photosRepository,
     required GeocodingManager geocodingManager,
     DateTime Function()? now,
+    WalksRepository? walksRepository,
   }) : _recording = recordingService,
        _photos = photosRepository,
        _geocoding = geocodingManager,
        _now = now ?? DateTime.now,
+       _walks = walksRepository,
        super(const MapState());
 
   final RecordingService _recording;
+  final WalksRepository? _walks;
+  int _walkRequest = 0;
+
+  Future<void> retryWalk() async {
+    final request = ++_walkRequest;
+    final id = state.routeId;
+    try {
+      final walk = id == null ? null : await _walks?.getProgress(id);
+      if (_closing != null || isClosed || request != _walkRequest) return;
+      emit(
+        state.copyWith(
+          walk: walk,
+          clearWalk: walk == null,
+          clearWalkError: true,
+        ),
+      );
+    } on Object catch (error, stack) {
+      if (_closing != null || isClosed || request != _walkRequest) return;
+      addError(error, stack);
+      emit(state.copyWith(walkError: 'Walk progress could not be loaded.'));
+    }
+  }
+
   final RoutePhotosRepository _photos;
   StreamSubscription<int>? _photoSubscription;
   int _photoRequest = 0;
@@ -194,6 +219,9 @@ class MapCubit extends Cubit<MapState> {
       ),
     );
     if (routeChanged) unawaited(_loadPhotos(recording.routeId));
+    if (_walks != null && (routeChanged || pointsChanged)) {
+      unawaited(retryWalk());
+    }
     if (!recording.foreground) {
       _cancelAddress();
       _addressLocation = null;

@@ -72,6 +72,56 @@ void main() {
   });
 
   test(
+    'a one-shot refresh updates only the idle preview and preserves timestamp',
+    () async {
+      await prepare();
+      locationService.currentFix = location(2);
+      expect(await service.refreshPreviewLocation(), location(2));
+      expect(service.state.location, location(2));
+      expect(service.state.points, isEmpty);
+      expect(repository.added, isEmpty);
+      expect(repository.active, isNull);
+      expect(locationService.modes, [LocationMode.preview]);
+      await service.start();
+      expect(service.state.points, [location(2)]);
+    },
+  );
+
+  test('one-shot refresh cannot overwrite a newer stream fix', () async {
+    await prepare();
+    locationService.currentLocationGate = Completer<LocationDM>();
+    final refreshing = service.refreshPreviewLocation();
+    locationService.send(location(3));
+    await tick();
+    locationService.currentLocationGate!.complete(location(2));
+    expect(await refreshing, location(3));
+    expect(service.state.location, location(3));
+  });
+
+  for (final close in [false, true]) {
+    test(
+      'late one-shot cannot enter ${close ? 'a closed service' : 'an active recording'}',
+      () async {
+        await prepare();
+        locationService.currentLocationGate = Completer<LocationDM>();
+        final refreshing = service.refreshPreviewLocation();
+        final failure = expectLater(refreshing, throwsStateError);
+        if (close) {
+          await service.dispose();
+        } else {
+          await service.start();
+        }
+        locationService.currentLocationGate!.complete(location(2));
+        await failure;
+        expect(service.state.location, location(1));
+        expect(repository.added, isEmpty);
+        await expectLater(service.refreshPreviewLocation(), throwsStateError);
+        expect(locationService.currentLocationRequests, 1);
+      },
+    );
+  }
+
+  test(
     'start and incoming points serialize without duplicate sessions',
     () async {
       await prepare();

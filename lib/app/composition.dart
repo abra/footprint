@@ -6,6 +6,7 @@ import 'package:geocoding_manager/geocoding_manager.dart';
 import 'package:routes_repository/routes_repository.dart';
 import 'package:recording_service/recording_service.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
+import 'package:route_planning/route_planning.dart';
 
 import 'config/application_config.dart';
 import 'resource_disposer.dart';
@@ -67,6 +68,12 @@ Future<DependenciesContainer> createDependenciesContainer({
       sqliteStorage: sqliteStorage,
       photos: photos,
     );
+    final walks = WalksRepository(storage: sqliteStorage);
+    final planner = OpenRouteServicePlanner(
+      apiKey: config.routingApiKey,
+      endpoint: config.routingEndpoint,
+    );
+    resources.add('route planner', () async => planner.dispose());
     final geocoding = GeocodingManager(sqliteStorage: sqliteStorage);
     resources.add('geocoding', geocoding.dispose);
     final recording = RecordingService(
@@ -76,6 +83,8 @@ Future<DependenciesContainer> createDependenciesContainer({
     resources.add('recording', recording.dispose);
     await recording.initialize();
     return DependenciesContainer(
+      walksRepository: walks,
+      routePlanner: planner,
       photosRepository: photos,
       foregroundLocationService: locationService,
       sqliteStorage: sqliteStorage,

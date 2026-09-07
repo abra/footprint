@@ -103,25 +103,19 @@ class MapPhotoError extends StatelessWidget {
                 onPressed: state.photoBusy
                     ? null
                     : () async {
-                        final confirmed = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            scrollable: true,
-                            title: const Text('Discard pending photo?'),
-                            content: const Text(
+                        final confirmed = await showAppActionSheet<bool>(
+                          context,
+                          title: 'Discard pending photo?',
+                          message:
                               'Saved photos and route points will be kept.',
+                          actions: const [
+                            SheetAction(
+                              value: true,
+                              label: 'Discard',
+                              icon: Icons.close,
+                              destructive: true,
                             ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Discard'),
-                              ),
-                            ],
-                          ),
+                          ],
                         );
                         if (confirmed == true && context.mounted) {
                           await cubit.discardPendingPhoto();

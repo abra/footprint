@@ -8,6 +8,7 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
+  dart_geohash: ^2.1.0
   equatable: ^2.1.0
   latlong2: ^0.10.1
 

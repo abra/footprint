@@ -18,6 +18,12 @@ void main() {
     final recorder = await SqliteStorage.open(path: path);
     final start = DateTime.utc(2026, 9, 6);
     try {
+      final previous = await ui.routes.create(
+        latitude: 56,
+        longitude: 60,
+        timestamp: start.subtract(const Duration(days: 1)),
+      );
+      await ui.routes.complete(previous, start);
       final id = await ui.routes.create(
         latitude: 56,
         longitude: 60,
@@ -45,6 +51,7 @@ void main() {
             );
             await ui.routes.getAll();
             await ui.routePhotos.getForRoute(id);
+            expect((await ui.statistics.getSummaries()).single.id, previous);
           }
         }(),
       ]).timeout(const Duration(seconds: 20));
@@ -53,6 +60,7 @@ void main() {
       final saved = (await ui.routes.getById(id))!;
       expect(saved.status, 'completed');
       expect(saved.routePoints, hasLength(31));
+      expect(await ui.statistics.getSummaries(), hasLength(2));
       expect(
         saved.routePoints!.map((point) => point.sourceId).toSet(),
         hasLength(31),

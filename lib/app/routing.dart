@@ -4,10 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:map/map.dart';
 import 'package:route_list/route_list.dart';
 import 'package:route_details/route_details.dart';
+import 'package:explore/explore.dart';
+import 'package:statistics/statistics.dart';
 
 abstract final class AppRoutes {
   static const map = '/map';
   static const routes = '/routes';
+  static const explore = '/explore';
+  static const statistics = '/statistics';
 }
 
 GoRouter buildRouter({required DependenciesContainer dependencies}) {
@@ -19,6 +23,8 @@ GoRouter buildRouter({required DependenciesContainer dependencies}) {
         pageBuilder: (context, state) => _materialPage<void>(
           state,
           MapScreen(
+            walksRepository: dependencies.walksRepository,
+            onExploreRequested: () => context.push(AppRoutes.explore),
             photosRepository: dependencies.photosRepository,
             recordingService: dependencies.recordingService,
             geocodingManager: dependencies.geocodingManager,
@@ -34,6 +40,7 @@ GoRouter buildRouter({required DependenciesContainer dependencies}) {
         pageBuilder: (context, state) => _materialPage<void>(
           state,
           RouteListScreen(
+            onStatisticsRequested: () => context.push(AppRoutes.statistics),
             routesRepository: dependencies.routesRepository,
             config: dependencies.config.map,
             onRouteRequested: (id) async {
@@ -45,10 +52,36 @@ GoRouter buildRouter({required DependenciesContainer dependencies}) {
         ),
       ),
       GoRoute(
+        path: AppRoutes.explore,
+        pageBuilder: (context, state) => _materialPage<void>(
+          state,
+          ExploreScreen(
+            planner: dependencies.routePlanner,
+            walks: dependencies.walksRepository,
+            recording: dependencies.recordingService,
+            config: dependencies.config.map,
+            onBack: () =>
+                context.canPop() ? context.pop() : context.go(AppRoutes.map),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.statistics,
+        pageBuilder: (context, state) => _materialPage<void>(
+          state,
+          StatisticsScreen(
+            repository: dependencies.routesRepository,
+            onBack: () =>
+                context.canPop() ? context.pop() : context.go(AppRoutes.routes),
+          ),
+        ),
+      ),
+      GoRoute(
         path: '${AppRoutes.routes}/:id',
         pageBuilder: (context, state) => _materialPage<bool>(
           state,
           RouteDetailsScreen(
+            walksRepository: dependencies.walksRepository,
             photosRepository: dependencies.photosRepository,
             routeId: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
             repository: dependencies.routesRepository,

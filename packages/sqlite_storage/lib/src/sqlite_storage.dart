@@ -5,17 +5,23 @@ import 'database_helper.dart';
 import 'database_retry.dart';
 import 'daos/geocoding_cache_dao.dart';
 import 'daos/routes_dao.dart';
+import 'daos/route_statistics_dao.dart';
 import 'daos/route_photos_dao.dart';
+import 'daos/exploration_dao.dart';
 
 /// The composition root owns the connection; features only borrow its DAOs.
 class SqliteStorage {
   SqliteStorage._(this._database)
     : routes = RoutesDao(_database),
+      statistics = RouteStatisticsDao(_database),
+      exploration = ExplorationDao(_database),
       routePhotos = RoutePhotosDao(_database),
       geocodingCache = GeocodingCacheDao(_database);
 
   final Database _database;
   final RoutesDao routes;
+  final RouteStatisticsDao statistics;
+  final ExplorationDao exploration;
   final RoutePhotosDao routePhotos;
   final GeocodingCacheDao geocodingCache;
   Future<void>? _closeFuture;
@@ -32,7 +38,7 @@ class SqliteStorage {
       () => selectedFactory.openDatabase(
         databasePath,
         options: OpenDatabaseOptions(
-          version: 6,
+          version: 8,
           singleInstance: false,
           onConfigure: (db) async {
             // Native busy waits can block sqflite's shared Android worker and
@@ -49,5 +55,10 @@ class SqliteStorage {
     return SqliteStorage._(database);
   }
 
-  Future<void> close() => _closeFuture ??= _database.close();
+  Future<void> close() => _closeFuture ??= _close();
+
+  Future<void> _close() async {
+    await statistics.close();
+    await _database.close();
+  }
 }

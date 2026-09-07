@@ -39,6 +39,7 @@ void main() {
             recordingService: recording,
             geocodingManager: FakeGeocodingManager(),
             onPageChangeRequested: () {},
+            onExploreRequested: () {},
           ),
         ),
       );
@@ -124,7 +125,7 @@ void main() {
       await tester.tap(find.byTooltip('Attributions'));
       await tester.pumpAndSettle();
       expect(find.text('Map data'), findsOneWidget);
-      await tester.tap(find.byTooltip('Close attribution'));
+      await tester.tap(find.text('Close attribution'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());

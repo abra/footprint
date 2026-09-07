@@ -1,7 +1,9 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:domain_models/domain_models.dart' show RoutePlan;
 
 import '../database_retry.dart';
 import '../models/route.dart';
+import 'exploration_dao.dart';
 
 class RoutesDao {
   const RoutesDao(this._db);
@@ -9,6 +11,7 @@ class RoutesDao {
   final Database _db;
 
   Future<int> create({
+    RoutePlan? plan,
     required double latitude,
     required double longitude,
     required DateTime timestamp,
@@ -49,6 +52,7 @@ class RoutesDao {
       'raw_longitude': rawLongitude,
       'is_stationary': isStationary ? 1 : 0,
     });
+    if (plan != null) await ExplorationDao.createWalk(txn, id, plan);
     return id;
   });
 
@@ -98,6 +102,7 @@ class RoutesDao {
       'raw_longitude': rawLongitude,
       'is_stationary': isStationary ? 1 : 0,
     });
+    await ExplorationDao.recordPoint(txn, routeId);
     return true;
   });
 
@@ -193,6 +198,7 @@ class RoutesDao {
       where: 'id = ?',
       whereArgs: [id],
     );
+    await ExplorationDao.completeWalk(txn, id, completedAt);
   });
 
   Future<void> delete(int id) => _db.retryTransaction((txn) async {

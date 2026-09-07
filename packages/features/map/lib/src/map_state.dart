@@ -22,6 +22,8 @@ class MapState extends Equatable {
     this.photos = const [],
     this.photoBusy = false,
     this.photoError,
+    this.walk,
+    this.walkError,
   });
 
   final LocationDM? location;
@@ -42,6 +44,8 @@ class MapState extends Equatable {
   final List<RoutePhotoDM> photos;
   final bool photoBusy;
   final String? photoError;
+  final WalkProgress? walk;
+  final String? walkError;
 
   MapState copyWith({
     LocationDM? location,
@@ -65,6 +69,10 @@ class MapState extends Equatable {
     bool? photoBusy,
     String? photoError,
     bool clearPhotoError = false,
+    WalkProgress? walk,
+    bool clearWalk = false,
+    String? walkError,
+    bool clearWalkError = false,
   }) => MapState(
     location: location ?? this.location,
     locationLoading: locationLoading ?? this.locationLoading,
@@ -85,6 +93,8 @@ class MapState extends Equatable {
     photos: photos == null ? this.photos : List.unmodifiable(photos),
     photoBusy: photoBusy ?? this.photoBusy,
     photoError: clearPhotoError ? null : photoError ?? this.photoError,
+    walk: clearWalk ? null : walk ?? this.walk,
+    walkError: clearWalkError ? null : walkError ?? this.walkError,
   );
 
   @override
@@ -106,5 +116,7 @@ class MapState extends Equatable {
     photos,
     photoBusy,
     photoError,
+    walk,
+    walkError,
   ];
 }

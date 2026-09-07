@@ -2,6 +2,7 @@ import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
 
 import '../route_labels.dart';
+import '../action_sheet.dart';
 import 'route_photo_image.dart';
 
 Future<void> showRoutePhotoViewer(
@@ -52,25 +53,18 @@ class _PhotoViewerState extends State<_PhotoViewer> {
 
   Future<void> _delete() async {
     if (_deleting) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        scrollable: true,
-        title: const Text('Delete photo?'),
-        content: const Text(
-          'Only the copy attached to this route will be removed.',
+    final confirmed = await showAppActionSheet<bool>(
+      context,
+      title: 'Delete photo?',
+      message: 'Only the copy attached to this route will be removed.',
+      actions: const [
+        SheetAction(
+          value: true,
+          label: 'Delete',
+          icon: Icons.delete_outline,
+          destructive: true,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      ],
     );
     if (confirmed != true || !mounted) return;
     setState(() {

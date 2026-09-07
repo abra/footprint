@@ -36,11 +36,25 @@ class FakeLocationService implements LocationService {
   bool failStart = false;
   bool failStop = false;
   int starts = 0;
+  int currentLocationRequests = 0;
+  Completer<LocationDM>? currentLocationGate;
+  LocationDM? currentFix;
+  Object? currentLocationError;
   LocationMode mode = LocationMode.stopped;
   @override
   LocationDM? lastLocation;
   @override
   Stream<LocationDM> get locations => controller.stream;
+  @override
+  Future<LocationDM> currentLocation() async {
+    currentLocationRequests++;
+    if (currentLocationError case final error?) throw error;
+    return currentLocationGate?.future ??
+        currentFix ??
+        lastLocation ??
+        (throw TimeoutException('No location'));
+  }
+
   void send(LocationDM value) {
     lastLocation = value;
     controller.add(value);
@@ -71,6 +85,18 @@ class FakeLocationService implements LocationService {
 }
 
 class FakeRoutesRepository extends Fake implements RoutesRepository {
+  @override
+  Future<List<RecordedRouteSummary>> getRecordedSummaries() async => [
+    for (final route in saved.values)
+      if (route.status == Status.completed)
+        RecordedRouteSummary(
+          id: route.id,
+          startedAt: route.startTime,
+          distance: route.metrics.distance,
+          duration: route.metrics.duration,
+        ),
+  ];
+
   RouteDM? active;
   final saved = <int, RouteDM>{};
   Completer<RouteDM?>? activeGate;
@@ -83,6 +109,7 @@ class FakeRoutesRepository extends Fake implements RoutesRepository {
   bool failStart = false;
   bool failPoint = false;
   bool failFinish = false;
+  RoutePlan? startedPlan;
 
   @override
   Future<RouteDM?> getActiveRoute() async =>
@@ -115,7 +142,8 @@ class FakeRoutesRepository extends Fake implements RoutesRepository {
   Future<RouteDM?> getRoute(int id) async =>
       active?.id == id ? active : saved[id];
   @override
-  Future<int> startRoute(LocationDM location) async {
+  Future<int> startRoute(LocationDM location, {RoutePlan? plan}) async {
+    startedPlan = plan;
     if (failStart) throw StateError('Disk full');
     final id = startGate == null ? saved.length + 1 : await startGate!.future;
     active = RouteDM(

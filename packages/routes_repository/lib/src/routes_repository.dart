@@ -6,10 +6,15 @@ import 'photos/route_photos_repository.dart';
 
 class RoutesRepository {
   RoutesRepository({required SqliteStorage sqliteStorage, this._photos})
-    : _routes = sqliteStorage.routes;
+    : _routes = sqliteStorage.routes,
+      _statistics = sqliteStorage.statistics;
 
   final RoutesDao _routes;
+  final RouteStatisticsDao _statistics;
   final RoutePhotosRepository? _photos;
+
+  Future<List<RecordedRouteSummary>> getRecordedSummaries() =>
+      _statistics.getSummaries();
 
   Future<List<RouteDM>> getRoutes() async =>
       (await _routes.getAll()).map((route) => route.toDomain()).toList();
@@ -50,19 +55,21 @@ class RoutesRepository {
   Future<RouteDM?> getActiveRoute() async =>
       (await _routes.getActive())?.toDomain();
 
-  Future<int> startRoute(LocationDM location) => _routes.create(
-    latitude: location.latitude,
-    longitude: location.longitude,
-    timestamp: location.timestamp,
-    sourceId: location.id,
-    accuracy: location.accuracy,
-    speed: location.speed,
-    speedAccuracy: location.speedAccuracy,
-    filteredSpeed: location.filteredSpeed,
-    rawLatitude: location.rawLatitude,
-    rawLongitude: location.rawLongitude,
-    isStationary: location.isStationary,
-  );
+  Future<int> startRoute(LocationDM location, {RoutePlan? plan}) =>
+      _routes.create(
+        plan: plan,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        timestamp: location.timestamp,
+        sourceId: location.id,
+        accuracy: location.accuracy,
+        speed: location.speed,
+        speedAccuracy: location.speedAccuracy,
+        filteredSpeed: location.filteredSpeed,
+        rawLatitude: location.rawLatitude,
+        rawLongitude: location.rawLongitude,
+        isStationary: location.isStationary,
+      );
 
   Future<bool> addPoint(int id, LocationDM location) => _routes.addPoint(
     routeId: id,

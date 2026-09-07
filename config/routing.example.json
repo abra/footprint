@@ -1,0 +1,4 @@
+{
+  "ORS_API_KEY": "",
+  "ROUTING_URL": "https://api.heigit.org/openrouteservice/v2/directions/foot-walking/geojson"
+}

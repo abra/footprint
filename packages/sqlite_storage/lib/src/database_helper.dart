@@ -32,6 +32,8 @@ abstract final class DatabaseHelper {
       )
     ''');
     await createPhotoTables(db);
+    await createExplorationTables(db);
+    await createStatisticsTable(db);
     await createIndexes(db);
   }
 
@@ -63,7 +65,55 @@ abstract final class DatabaseHelper {
         'ALTER TABLE route_points ADD COLUMN is_stationary INTEGER NOT NULL DEFAULT 0',
       );
     }
+    if (oldVersion < 7) await createExplorationTables(db);
+    if (oldVersion < 8) await createStatisticsTable(db);
     await createIndexes(db);
+  }
+
+  static Future<void> createStatisticsTable(Database db) => db.execute('''
+    CREATE TABLE route_statistics (
+      route_id INTEGER PRIMARY KEY REFERENCES routes(id) ON DELETE CASCADE,
+      distance REAL NOT NULL CHECK(distance >= 0),
+      duration_us INTEGER NOT NULL CHECK(duration_us >= 0)
+    )
+  ''');
+
+  static Future<void> createExplorationTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE walks (
+        route_id INTEGER PRIMARY KEY REFERENCES routes(id) ON DELETE CASCADE,
+        plan TEXT NOT NULL,
+        reached INTEGER NOT NULL DEFAULT 0,
+        last_reached_at TEXT
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE walk_checkpoints (
+        route_id INTEGER NOT NULL REFERENCES walks(route_id) ON DELETE CASCADE,
+        ordinal INTEGER NOT NULL,
+        latitude REAL NOT NULL, longitude REAL NOT NULL,
+        PRIMARY KEY (route_id, ordinal)
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE explored_cells (
+        cell_id TEXT PRIMARY KEY NOT NULL,
+        latitude REAL NOT NULL, longitude REAL NOT NULL,
+        first_route_id INTEGER REFERENCES routes(id) ON DELETE SET NULL,
+        discovered_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX explored_cells_position ON explored_cells(latitude, longitude)',
+    );
+    await db.execute(
+      'CREATE INDEX explored_cells_route ON explored_cells(first_route_id)',
+    );
+    await db.execute('''
+      CREATE TABLE exploration_achievements (
+        code TEXT PRIMARY KEY NOT NULL, unlocked_at TEXT NOT NULL
+      )
+    ''');
   }
 
   static Future<void> createPhotoTables(Database db) async {

@@ -11,6 +11,13 @@ class FakeBackend implements LocationBackend {
   Completer<void>? startGate;
   bool failStart = false;
   bool failStop = false;
+  Completer<LocationDM>? locationGate;
+  @override
+  Future<LocationDM> currentLocation() {
+    calls.add('current');
+    return locationGate!.future;
+  }
+
   @override
   Stream<LocationDM> get locations => controller.stream;
   @override
@@ -67,6 +74,73 @@ void main() {
       expect(backend.calls, ['preview', 'stop', 'recording', 'stop']);
     },
   );
+
+  test(
+    'one-shot requests are shared without restarting or publishing to tracking',
+    () async {
+      await service.setMode(LocationMode.recording);
+      backend.locationGate = Completer<LocationDM>();
+      final fixes = <LocationDM>[];
+      final listener = service.locations.listen(fixes.add);
+      final first = service.currentLocation();
+      expect(service.currentLocation(), same(first));
+      await service.setMode(LocationMode.stopped);
+      final fix = LocationDM(
+        id: 'fresh',
+        latitude: 56,
+        longitude: 60,
+        timestamp: DateTime.now(),
+      );
+      backend.locationGate!.complete(fix);
+      expect(await first, fix);
+      await tick();
+      expect(backend.calls, ['recording', 'current', 'stop']);
+      expect(fixes, isEmpty);
+      expect(service.lastLocation, isNull);
+      await listener.cancel();
+    },
+  );
+
+  testWidgets('one-shot timeout releases the request so it can be retried', (
+    tester,
+  ) async {
+    backend.locationGate = Completer<LocationDM>();
+    final first = service.currentLocation();
+    final failure = expectLater(first, throwsA(isA<TimeoutException>()));
+    await tester.pump(DeviceLocation.acquisitionTimeout);
+    await failure;
+    final late = backend.locationGate!;
+    backend.locationGate = Completer<LocationDM>();
+    final retry = service.currentLocation();
+    final fix = LocationDM(
+      id: 'fresh',
+      latitude: 56,
+      longitude: 60,
+      timestamp: DateTime.now(),
+    );
+    late.complete(fix);
+    backend.locationGate!.complete(fix);
+    expect(await retry, fix);
+    expect(backend.calls, ['current', 'current']);
+  });
+
+  test('disposal rejects new and late one-shot results', () async {
+    backend.locationGate = Completer<LocationDM>();
+    final request = service.currentLocation();
+    final failure = expectLater(request, throwsStateError);
+    await service.dispose();
+    backend.locationGate!.complete(
+      LocationDM(
+        id: 'late',
+        latitude: 56,
+        longitude: 60,
+        timestamp: DateTime.now(),
+      ),
+    );
+    await failure;
+    await expectLater(service.currentLocation(), throwsStateError);
+    expect(service.lastLocation, isNull);
+  });
 
   test('startup failure can be retried with the same mode', () async {
     backend.failStart = true;

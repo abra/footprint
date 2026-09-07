@@ -13,12 +13,14 @@ class RouteListScreen extends StatelessWidget {
     required this.onPageChangeRequested,
     this.config = const MapTileConfig(),
     this.onRouteRequested,
+    this.onStatisticsRequested,
   });
 
   final RoutesRepository routesRepository;
   final VoidCallback onPageChangeRequested;
   final MapTileConfig config;
   final Future<void> Function(int)? onRouteRequested;
+  final VoidCallback? onStatisticsRequested;
 
   @override
   Widget build(BuildContext context) => BlocProvider(
@@ -27,6 +29,7 @@ class RouteListScreen extends StatelessWidget {
       onMapRequested: onPageChangeRequested,
       config: config,
       onRouteRequested: onRouteRequested,
+      onStatisticsRequested: onStatisticsRequested,
     ),
   );
 }

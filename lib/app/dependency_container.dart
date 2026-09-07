@@ -3,6 +3,7 @@ import 'package:geocoding_manager/geocoding_manager.dart';
 import 'package:routes_repository/routes_repository.dart';
 import 'package:recording_service/recording_service.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
+import 'package:route_planning/route_planning.dart';
 
 import 'config/application_config.dart';
 import 'resource_disposer.dart';
@@ -17,6 +18,8 @@ class DependenciesContainer {
     required this.recordingService,
     required this.config,
     required this.resources,
+    required this.walksRepository,
+    required this.routePlanner,
   });
 
   final LocationService foregroundLocationService;
@@ -27,6 +30,8 @@ class DependenciesContainer {
   final RecordingService recordingService;
   final ApplicationConfig config;
   final ResourceDisposer resources;
+  final WalksRepository walksRepository;
+  final RoutePlanner routePlanner;
 
   Future<void> dispose() => resources.dispose();
 }

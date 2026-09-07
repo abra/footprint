@@ -27,6 +27,7 @@ class RouteDetailsReady extends RouteDetailsState {
     this.photos = const [],
     this.photoError,
     this.photoBusy = false,
+    this.walk,
   });
   final RouteDM route;
   final String name;
@@ -36,6 +37,7 @@ class RouteDetailsReady extends RouteDetailsState {
   final List<RoutePhotoDM> photos;
   final String? photoError;
   final bool photoBusy;
+  final WalkProgress? walk;
   bool get dirty => name.trim() != (route.name ?? '');
 
   RouteDetailsReady copyWith({
@@ -57,6 +59,7 @@ class RouteDetailsReady extends RouteDetailsState {
     photos: photos == null ? this.photos : List.unmodifiable(photos),
     photoBusy: photoBusy ?? this.photoBusy,
     photoError: clearPhotoError ? null : photoError ?? this.photoError,
+    walk: walk,
   );
 }
 
@@ -65,7 +68,9 @@ class RouteDetailsCubit extends Cubit<RouteDetailsState> {
     required this._repository,
     required this._routeId,
     required RoutePhotosRepository photosRepository,
+    WalksRepository? walksRepository,
   }) : _photos = photosRepository,
+       _walks = walksRepository,
        super(const RouteDetailsLoading()) {
     _subscription = _photos.changes.listen((id) {
       if (id == _routeId) unawaited(loadPhotos());
@@ -73,6 +78,7 @@ class RouteDetailsCubit extends Cubit<RouteDetailsState> {
   }
 
   final RoutesRepository _repository;
+  final WalksRepository? _walks;
   final int _routeId;
   final RoutePhotosRepository _photos;
   StreamSubscription<int>? _subscription;
@@ -90,11 +96,16 @@ class RouteDetailsCubit extends Cubit<RouteDetailsState> {
     emit(const RouteDetailsLoading());
     try {
       final route = await _repository.getRoute(_routeId);
+      final walk = route == null ? null : await _walks?.getProgress(_routeId);
       if (isClosed || request != _request) return;
       emit(
         route == null
             ? const RouteDetailsFailure('Route not found.')
-            : RouteDetailsReady(route: route, name: route.name ?? ''),
+            : RouteDetailsReady(
+                route: route,
+                name: route.name ?? '',
+                walk: walk,
+              ),
       );
       if (route != null) await loadPhotos();
     } on Object catch (error, stack) {

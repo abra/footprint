@@ -15,13 +15,13 @@ The application follows the feature boundaries used by Readflex:
   `DependenciesScope`. Tests can substitute dependencies explicitly.
 - `ResourceDisposer` closes resources once, in reverse registration order:
   recording (stop input, drain accepted points), geocoding (cancel network and
-  join cache writes), photos (join accepted imports), location backend, then SQLite. Screen disposal never owns
+  join cache writes), route planner (cancel HTTP), photos (join accepted imports), location backend, then SQLite. Screen disposal never owns
   application writes.
 - `RootContext` observes the application lifecycle. Preview tracking stops when
   the app is hidden; an active recording keeps its recording mode.
 - `routing.dart` injects dependencies into screens. History uses `push` to retain
   map presentation, but recording no longer depends on that navigation choice.
-  All three screens explicitly use Flutter's platform-adaptive `MaterialPage`.
+  All screens explicitly use Flutter's platform-adaptive `MaterialPage`.
   `go_router` 18 detects `material_ui.MaterialApp`, not this app's Flutter
   `MaterialApp`, so relying on automatic page selection loses transitions.
   iOS uses the standard horizontal transition and interactive edge-swipe back;
@@ -30,6 +30,47 @@ The application follows the feature boundaries used by Readflex:
   returns to the same map, camera, and recording session.
 
 ## Features
+
+The walking/exploration milestone is specified in [docs/exploration.md](docs/exploration.md).
+`ExploreScreen -> ExploreCubit -> RoutePlanner / WalksRepository` adds planning
+without replacing free recording. Plans and ordered checkpoints are distinct
+from GPS traces. Pure `ExplorationRules` are applied by `ExplorationDao` inside
+the GPS write transaction; both native recording paths earn progress without UI
+listeners. `MapCubit` and `RouteDetailsCubit` only read that progress. Selection,
+route actions and confirmations use bottom/action sheets.
+
+Planning supports loops from the current position and point-to-point walks with
+manual A/B selection. `RoutePlanner.generateBetween` sends ordered endpoints
+without round-trip options; both snapped endpoints are checked within 100 m.
+Point-to-point geometry is bounded to 100 m-20 km and need not close or match a
+requested distance. Its final checkpoint is B. Version 2 of the stored JSON plan
+includes mode; version 1 still restores as a loop, with no SQLite schema change.
+The View owns the active A/B field. Selecting a field highlights it in place;
+the next map tap commits the point through the Cubit without a sheet or a
+separate confirmation. Panning, cancelling and switching fields do not change
+endpoints or an existing preview. A dedicated GPS action resets the start to
+current location. Cubit commands own endpoints and invalidate stale requests. Manual points bypass
+GPS only for planning, never for starting a recording away from its route start.
+The map retains the opposite endpoint while editing A or B; current-location
+starts are also labeled A. Endpoint stems keep labels clear of the GPS marker
+and each other when their coordinates coincide, without changing coordinates.
+
+Composition owns and disposes `OpenRouteServicePlanner`, which implements the
+`RoutePlanner` interface used by Explore. Each generation owns a cancellable
+HTTP client. Closing an Explore Cubit cancels presentation requests without
+disposing the shared planner or stopping recording. The HeiGIT implementation
+owns authentication, GeoJSON parsing, geometry validation and bounded novelty
+ranking. Network errors remain explicit; no fabricated fallback is used.
+
+Generation from the current location and Start walk reuse a suitable fix up to 30 seconds old; otherwise
+`RecordingService.refreshPreviewLocation` requests a high-accuracy one-shot fix
+through `LocationService -> LocationBackend -> DeviceLocation`. Acquisition has
+a 15-second deadline and concurrent requests share the same future. It does not
+restart tracking or change its 5-meter distance filter. Only the idle preview
+may receive the result; newer stream fixes win and late results cannot enter an
+active recording. Explore distinguishes GPS acquisition from HTTP generation,
+continues automatically on success, and ignores cancelled/closed requests.
+GPS recovery clears only location errors, never routing/storage failures.
 
 `MapScreen`, `RouteListScreen`, and `RouteDetailsScreen` create their Cubits using `BlocProvider`.
 Their Views render state and send commands to Cubits; Views do not receive
@@ -106,6 +147,32 @@ Back without a name retains the completed route with a generated display title;
 discarding edits never deletes the route. Active routes cannot be renamed or
 deleted, including at the DAO boundary. Failed name saves retain the input.
 
+`StatisticsScreen -> StatisticsCubit -> RoutesRepository -> RouteStatisticsDao`
+adds cumulative activity from the history toolbar, preserving the list and map
+underneath. The Cubit owns an immutable summary snapshot and period/bucket
+selection. Pure `RouteStatistics` groups completed recordings by local start
+date: Monday-based weeks, calendar months, or all-time months/years. Overnight
+recordings belong entirely to their start date. Duration includes stops; active
+days count distinct recording start dates. No activity classification is inferred.
+Future starts and active routes are excluded. Calendar construction, not 24-hour
+increments, handles DST. Empty periods contain zero-filled buckets.
+
+SQLite v8 adds a derived `route_statistics` table with cascading deletion, leaving
+all routes, points, photos and exploration data unchanged. Missing summaries are
+calculated lazily, one completed trace at a time, using `RouteMetrics` in a worker
+isolate. Reading/calculation does not hold a write transaction. A short conditional
+insert tolerates concurrent deletion and duplicate readers. Only distance and
+duration return from the worker, never speed histories. Subsequent visits read
+summaries, not GPS points; changing periods does not query storage. Start/Stop and
+the recording pipeline are unchanged. `SqliteStorage.close` stops further cache
+backfill and joins the in-flight operation before closing the connection.
+
+Refresh preserves visible data on failure with an explicit retry; stale requests
+and results arriving after Cubit disposal are ignored. Resume reloads the snapshot
+and advances the current calendar period, while explicitly browsed past periods
+stay pinned. The chart uses selectable, accessible bars with fixed plot height;
+labels and metrics reflow at large text sizes. Explanations use an action sheet.
+
 `LocationFilter` is a pure Dart, constant-space processor in
 `foreground_location_service`, upstream of persistence and presentation.
 `NativeLocationBackend` applies it to preview and iOS recording streams. The
@@ -173,8 +240,10 @@ metadata deletion. Originals, unrelated files and pending imports are protected.
 
 - `domain_models`: Flutter-independent values with domain types and equality.
 - `routes_repository`: typed route lifecycle API and storage-to-domain mappers.
+- `route_planning`: cancellable walking-route generation through HeiGIT
+  (OpenRouteService). Credentials and the endpoint are injected at composition.
 - `sqlite_storage`: explicitly owned connections, `RoutesDao`, and
-  `GeocodingCacheDao`, and `RoutePhotosDao`. Version 6 migrates versions 1/2/3/4/5 without deleting route
+  `GeocodingCacheDao`, `RoutePhotosDao`, `RouteStatisticsDao`, and `ExplorationDao`. Version 8 migrates versions 1/2/3/4/5/6/7 without deleting route
   data. Nullable `source_id` preserves legacy points; a unique per-route sample
   index makes repeated delivery idempotent. Transactions reject a second active
   route and prevent appending to a completed route. The Android worker has an
@@ -189,6 +258,9 @@ metadata deletion. Originals, unrelated files and pending imports are protected.
   Version 5 adds photo metadata and a single pending-capture journal with foreign keys.
   Version 6 adds nullable raw GPS/quality/speed measurements and a default-false
   stationary flag. Legacy geometry, photos and pending captures are preserved.
+  Version 7 adds versioned walk plans, ordered checkpoints, discovered geohash
+  cells and achievements. The storage package depends on pure domain models to
+  run shared exploration rules in the same transaction as the recording write.
 - `foreground_location_service`: `LocationService` contract and its platform
   implementation. Modes are stopped, preview, and recording. Transitions are
   serialized; startup failures, stream errors, and stream completion can be
@@ -222,7 +294,7 @@ and prevents different dependency versions within the same application.
 
 `make get` resolves dependencies once. `make verify` checks formatting, analyzes
 the workspace, and runs unit, database, and widget tests, including stream
-failure/restart, every recording retry operation, migration from versions 1/2/3/4/5,
+failure/restart, every recording retry operation, migration from versions 1/2/3/4/5/6/7,
 deduplication, shutdown ordering, and a background writer with no UI connection.
 Golden tests cover the map, saving, history, and photo viewer using a bundled
 font, fixture tiles, and a photo extracted from the supplied PDF. Layout tests
@@ -248,7 +320,7 @@ iOS adopts the UIScene lifecycle and Flutter's current deployment target.
   Thresholds need physical-device walking/driving traces under real signal
   conditions. Activity-recognition sensors and optional auto-pause are not added.
 
-- The optional chart and alternative grid catalog from the PDFs, and export/sharing
+- The alternative grid catalog from the PDFs and export/sharing
   remain separate product work. There are no placeholder chart controls. Active route details are
   a read-only snapshot; live statistics remain on the recording screen.
 - Android point persistence does not depend on a UI listener while its foreground

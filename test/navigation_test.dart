@@ -14,6 +14,10 @@ import 'package:recording_service/recording_service.dart';
 import 'package:route_details/src/route_details_view.dart';
 import 'package:route_list/src/route_list_cubit.dart';
 import 'package:route_list/src/route_list_view.dart';
+import 'package:routes_repository/routes_repository.dart';
+import 'package:domain_models/domain_models.dart';
+import 'package:statistics/src/statistics_cubit.dart';
+import 'package:statistics/src/statistics_view.dart';
 
 import '../packages/features/map/test/fakes.dart';
 import '../packages/features/map/test/pump_recording_ui.dart';
@@ -27,6 +31,9 @@ final class NavigationDependencies extends TestDependenciesContainer {
   }
   final FakeLocationService _service;
   final _routes = FakeRoutesRepository();
+  @override
+  WalksRepository get walksRepository => _walks;
+  final _walks = _NavigationWalks();
   final _photos = FakeRoutePhotosRepository();
   @override
   FakeRoutePhotosRepository get photosRepository => _photos;
@@ -42,6 +49,11 @@ final class NavigationDependencies extends TestDependenciesContainer {
   FakeGeocodingManager get geocodingManager => _geocoding;
   @override
   ApplicationConfig get config => const ApplicationConfig();
+}
+
+class _NavigationWalks extends Fake implements WalksRepository {
+  @override
+  Future<WalkProgress?> getProgress(int routeId) async => null;
 }
 
 Future<void> withRecordingNavigation(
@@ -76,6 +88,44 @@ Future<void> withRecordingNavigation(
 }
 
 void main() {
+  testWidgets(
+    'statistics round trip preserves history, camera and active recording',
+    (tester) => withRecordingNavigation(tester, (service, router, cubit) async {
+      await tester.tap(find.byTooltip('Routes'));
+      await pumpRecordingUi(tester);
+      final listCubit = tester
+          .element(find.byType(RouteListView))
+          .read<RouteListCubit>();
+      await tester.enterText(find.byType(TextField), 'recording');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.byTooltip('Statistics'));
+      await pumpRecordingUi(tester);
+      final context = tester.element(find.byType(StatisticsView));
+      expect(ModalRoute.of(context)!.settings, isA<MaterialPage<void>>());
+      final statistics = context.read<StatisticsCubit>();
+      expect(statistics.state.data!.totals.routes, 0);
+      service.send(location(2));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.byTooltip('Back to routes'));
+      await pumpRecordingUi(tester);
+      expect(statistics.isClosed, isTrue);
+      expect(
+        tester.element(find.byType(RouteListView)).read<RouteListCubit>(),
+        same(listCubit),
+      );
+      expect(listCubit.query, 'recording');
+      await tester.tap(find.byTooltip('Back to map'));
+      await pumpRecordingUi(tester);
+      expect(cubit.state.isRecording, isTrue);
+      expect(cubit.state.points, hasLength(2));
+      expect(service.disposed, isFalse);
+    }),
+    variant: const TargetPlatformVariant({
+      TargetPlatform.iOS,
+      TargetPlatform.android,
+    }),
+  );
+
   testWidgets(
     'platform pages retain the map and recording on a routes round trip',
     (tester) => withRecordingNavigation(tester, (service, router, cubit) async {

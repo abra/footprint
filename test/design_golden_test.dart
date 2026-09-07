@@ -17,6 +17,7 @@ import 'package:route_details/route_details.dart';
 import 'package:route_list/route_list.dart';
 
 import '../packages/features/map/test/fakes.dart';
+import '../packages/domain_models/test/walk_fixtures.dart' as walking;
 
 class FixtureTiles extends TileProvider {
   FixtureTiles(this.bytes);
@@ -105,6 +106,7 @@ void main() {
     for (final screen in [
       'idle',
       'recording',
+      'recording_walk',
       'recording_expanded',
       'recording_fast',
       'recording_fast_expanded',
@@ -171,6 +173,20 @@ void main() {
               address: '243 Deer Run Dr S, Ponte Vedra Beach, FL',
               points: isRecording ? points : [],
               isRecording: isRecording,
+              walk: screen == 'recording_walk'
+                  ? WalkProgress(
+                      routeId: 1,
+                      plan: walking.loopPlan(
+                        start: GeoPoint(
+                          points.first.latitude,
+                          points.first.longitude,
+                        ),
+                      ),
+                      reached: 1,
+                      newCells: 4,
+                      recording: true,
+                    )
+                  : null,
               routeId: isRecording ? 1 : null,
               photos: isRecording ? [photo] : [],
               metrics: switch (screen) {
@@ -201,6 +217,7 @@ void main() {
               onClosed: (_) {},
             ),
             'routes' => RouteListScreen(
+              onStatisticsRequested: () {},
               routesRepository: repository,
               config: config,
               onPageChangeRequested: () {},

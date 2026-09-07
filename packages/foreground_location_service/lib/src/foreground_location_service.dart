@@ -4,6 +4,7 @@ import 'package:domain_models/domain_models.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import 'location_service.dart';
+import 'device_location.dart';
 
 class ForegroundLocationService implements LocationService {
   ForegroundLocationService({required this._backend});
@@ -13,6 +14,7 @@ class ForegroundLocationService implements LocationService {
   StreamSubscription<LocationDM>? _subscription;
   Future<void> _operations = Future.value();
   Future<void>? _disposal;
+  Future<LocationDM>? _currentLocation;
   LocationMode _mode = LocationMode.stopped;
   bool _needsStop = false;
   bool _failed = false;
@@ -29,6 +31,22 @@ class ForegroundLocationService implements LocationService {
 
   @override
   LocationDM? get lastLocation => _lastLocation;
+
+  @override
+  Future<LocationDM> currentLocation() {
+    if (_disposed) {
+      return Future.error(StateError('Location service is closed.'));
+    }
+    // Share one bounded request, independently of the recording command queue.
+    return _currentLocation ??= _backend
+        .currentLocation()
+        .timeout(DeviceLocation.acquisitionTimeout)
+        .then((location) {
+          if (_disposed) throw StateError('Location service is closed.');
+          return location;
+        })
+        .whenComplete(() => _currentLocation = null);
+  }
 
   @override
   Future<void> setMode(

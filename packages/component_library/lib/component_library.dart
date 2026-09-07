@@ -11,3 +11,5 @@ export 'src/photos/route_photo_markers.dart';
 export 'src/photos/route_photo_viewer.dart';
 export 'src/route_labels.dart';
 export 'src/map_surface.dart';
+export 'src/map/exploration_layers.dart';
+export 'src/action_sheet.dart';

@@ -4,6 +4,19 @@ import 'package:geolocator/geolocator.dart';
 import 'mappers/position_to_domain.dart';
 
 class DeviceLocation {
+  static const acquisitionTimeout = Duration(seconds: 15);
+
+  Future<LocationDM> currentLocation() async {
+    await ensureAvailable();
+    final position = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        timeLimit: acquisitionTimeout,
+      ),
+    );
+    return position.toDomainModel();
+  }
+
   Future<void> ensureAvailable() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       throw LocationServiceDisabledStateException();

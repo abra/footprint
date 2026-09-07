@@ -36,6 +36,7 @@ class RecordingService {
   bool _flushScheduled = false;
   int _previewClients = 0;
   LocationDM? _startLocation;
+  RoutePlan? _startPlan;
   DateTime? _stopTime;
 
   RecordingState get state => _state;
@@ -87,6 +88,26 @@ class RecordingService {
   Future<void> detachPreview() {
     if (_previewClients > 0) _previewClients--;
     return _updateLocation();
+  }
+
+  /// Refreshes an idle preview; a late one-shot fix must never enter a recording.
+  Future<LocationDM> refreshPreviewLocation() async {
+    if (_closing || state.isRecording) {
+      throw StateError('The idle location preview is unavailable.');
+    }
+    final location = await _location.currentLocation();
+    if (_closing || state.isRecording) {
+      throw StateError('The idle location preview is unavailable.');
+    }
+    if (!location.hasValidCoordinates) {
+      throw const FormatException('Invalid GPS coordinates.');
+    }
+    final latest = state.location;
+    if (latest != null && latest.timestamp.isAfter(location.timestamp)) {
+      return latest;
+    }
+    _onLocation(location);
+    return location;
   }
 
   Future<void> setForeground(bool foreground) {
@@ -163,7 +184,7 @@ class RecordingService {
     );
   }
 
-  Future<void> start() {
+  Future<void> start({RoutePlan? plan}) {
     if (_closing ||
         !_initialized ||
         state.isRecording ||
@@ -171,6 +192,7 @@ class RecordingService {
       return Future.value();
     }
     _startLocation = state.location;
+    _startPlan = plan;
     _pending.clear();
     _emit(state.copyWith(phase: RecordingPhase.starting, clearFailure: true));
     return _run(RecordingOperation.start, _start);
@@ -179,7 +201,7 @@ class RecordingService {
   Future<void> _start() async {
     if (state.routeId == null) {
       final location = _startLocation!;
-      final id = await _routes.startRoute(location);
+      final id = await _routes.startRoute(location, plan: _startPlan);
       _savedIds
         ..clear()
         ..add(location.id);

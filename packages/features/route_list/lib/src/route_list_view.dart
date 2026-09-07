@@ -13,10 +13,12 @@ class RouteListView extends StatelessWidget {
     required this.onMapRequested,
     this.config = const MapTileConfig(),
     this.onRouteRequested,
+    this.onStatisticsRequested,
   });
   final VoidCallback onMapRequested;
   final MapTileConfig config;
   final Future<void> Function(int)? onRouteRequested;
+  final VoidCallback? onStatisticsRequested;
 
   Future<void> _open(BuildContext context, RouteDM route) async {
     if (onRouteRequested == null) return;
@@ -25,23 +27,19 @@ class RouteListView extends StatelessWidget {
   }
 
   Future<void> _delete(BuildContext context, RouteDM route) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        scrollable: true,
-        title: const Text('Delete route?'),
-        content: Text(RouteLabels.title(context, route)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    final confirmed = await showAppActionSheet<bool>(
+      context,
+      title: 'Delete route?',
+      message:
+          '${RouteLabels.title(context, route)}\nExplored areas and achievements will be kept.',
+      actions: const [
+        SheetAction(
+          value: true,
+          label: 'Delete',
+          icon: Icons.delete_outline,
+          destructive: true,
+        ),
+      ],
     );
     if (confirmed == true && context.mounted) {
       await context.read<RouteListCubit>().delete(route);
@@ -58,28 +56,49 @@ class RouteListView extends StatelessWidget {
         icon: const Icon(Icons.arrow_back),
       ),
       actions: [
+        if (onStatisticsRequested != null)
+          IconButton(
+            tooltip: 'Statistics',
+            icon: const Icon(Icons.bar_chart_outlined),
+            onPressed: onStatisticsRequested,
+          ),
         IconButton(
           tooltip: 'Refresh',
           icon: const Icon(Icons.refresh),
           onPressed: context.read<RouteListCubit>().load,
         ),
         BlocBuilder<RouteListCubit, RouteListState>(
-          builder: (context, state) => PopupMenuButton<RouteSort>(
+          builder: (context, state) => IconButton(
             tooltip: 'Sort routes',
             icon: const Icon(Icons.sort),
-            initialValue: context.read<RouteListCubit>().sort,
-            onSelected: context.read<RouteListCubit>().sortBy,
-            itemBuilder: (_) => const [
-              PopupMenuItem(
-                value: RouteSort.newest,
-                child: Text('Newest first'),
-              ),
-              PopupMenuItem(
-                value: RouteSort.oldest,
-                child: Text('Oldest first'),
-              ),
-              PopupMenuItem(value: RouteSort.name, child: Text('Name')),
-            ],
+            onPressed: () async {
+              final cubit = context.read<RouteListCubit>();
+              final sort = await showAppActionSheet<RouteSort>(
+                context,
+                title: 'Sort routes',
+                actions: [
+                  SheetAction(
+                    value: RouteSort.newest,
+                    label: 'Newest first',
+                    icon: Icons.arrow_downward,
+                    selected: cubit.sort == RouteSort.newest,
+                  ),
+                  SheetAction(
+                    value: RouteSort.oldest,
+                    label: 'Oldest first',
+                    icon: Icons.arrow_upward,
+                    selected: cubit.sort == RouteSort.oldest,
+                  ),
+                  SheetAction(
+                    value: RouteSort.name,
+                    label: 'Name',
+                    icon: Icons.sort_by_alpha,
+                    selected: cubit.sort == RouteSort.name,
+                  ),
+                ],
+              );
+              if (context.mounted && sort != null) cubit.sortBy(sort);
+            },
           ),
         ),
       ],
@@ -292,24 +311,34 @@ class _RouteEntry extends StatelessWidget {
               ),
             )
           else if (onOpen != null || onDelete != null)
-            PopupMenuButton<String>(
+            IconButton(
               tooltip: 'Route actions',
               icon: const Icon(Icons.more_vert),
-              onSelected: (action) =>
-                  action == 'delete' ? onDelete?.call() : onOpen?.call(),
-              itemBuilder: (_) => [
-                if (onOpen != null)
-                  PopupMenuItem(
-                    value: 'open',
-                    child: Text(
-                      route.status == Status.active
-                          ? 'View route'
-                          : 'View or rename',
-                    ),
-                  ),
-                if (onDelete != null)
-                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
-              ],
+              onPressed: () async {
+                final action = await showAppActionSheet<String>(
+                  context,
+                  title: 'Route actions',
+                  actions: [
+                    if (onOpen != null)
+                      SheetAction(
+                        value: 'open',
+                        icon: Icons.route_outlined,
+                        label: route.status == Status.active
+                            ? 'View route'
+                            : 'View or rename',
+                      ),
+                    if (onDelete != null)
+                      const SheetAction(
+                        value: 'delete',
+                        label: 'Delete',
+                        icon: Icons.delete_outline,
+                        destructive: true,
+                      ),
+                  ],
+                );
+                if (!context.mounted || action == null) return;
+                action == 'delete' ? onDelete?.call() : onOpen?.call();
+              },
             ),
         ],
       ),

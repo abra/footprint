@@ -134,7 +134,7 @@ void main() {
     },
   );
 
-  for (final legacyVersion in [1, 2, 3, 4, 5]) {
+  for (final legacyVersion in [1, 2, 3, 4, 5, 6, 7]) {
     test(
       'version $legacyVersion migration preserves existing route data and repairs indexes',
       () async {
@@ -177,6 +177,26 @@ void main() {
               if (legacyVersion >= 5) {
                 await DatabaseHelper.createPhotoTables(db);
               }
+              if (legacyVersion >= 6) {
+                for (final column in [
+                  'accuracy',
+                  'speed',
+                  'speed_accuracy',
+                  'filtered_speed',
+                  'raw_latitude',
+                  'raw_longitude',
+                ]) {
+                  await db.execute(
+                    'ALTER TABLE route_points ADD COLUMN $column REAL',
+                  );
+                }
+                await db.execute(
+                  'ALTER TABLE route_points ADD COLUMN is_stationary INTEGER NOT NULL DEFAULT 0',
+                );
+              }
+              if (legacyVersion >= 7) {
+                await DatabaseHelper.createExplorationTables(db);
+              }
               await db.insert('routes', {
                 'id': 7,
                 'start_time': timestamp.toIso8601String(),
@@ -187,6 +207,15 @@ void main() {
                 'latitude': 56.0,
                 'longitude': 60.0,
                 'timestamp': timestamp.toIso8601String(),
+                if (legacyVersion >= 6) ...{
+                  'accuracy': 7.0,
+                  'raw_latitude': 56.0001,
+                  'raw_longitude': 60.0002,
+                  'speed': 0.5,
+                  'speed_accuracy': 0.2,
+                  'filtered_speed': 0.4,
+                  'is_stationary': 1,
+                },
               });
               if (legacyVersion >= 5) {
                 await db.insert('route_photos', {
@@ -227,9 +256,9 @@ void main() {
         final legacyPoint = (await migrated.routes.getById(7))!
             .routePoints!
             .single;
-        expect(legacyPoint.accuracy, isNull);
-        expect(legacyPoint.rawLatitude, isNull);
-        expect(legacyPoint.isStationary, isFalse);
+        expect(legacyPoint.accuracy, legacyVersion >= 6 ? 7.0 : null);
+        expect(legacyPoint.rawLatitude, legacyVersion >= 6 ? 56.0001 : null);
+        expect(legacyPoint.isStationary, legacyVersion >= 6);
         await migrated.routes.addPoint(
           routeId: 7,
           latitude: 56.01,
@@ -265,7 +294,7 @@ void main() {
         expect(filtered.isStationary, isTrue);
         await migrated.close();
         final check = await databaseFactoryFfi.openDatabase(path);
-        expect(await check.getVersion(), 6);
+        expect(await check.getVersion(), 8);
         if (legacyVersion >= 5) {
           expect((await check.query('route_photos')).single['id'], 'photo');
           expect((await check.query('pending_photo')).single['id'], 'pending');

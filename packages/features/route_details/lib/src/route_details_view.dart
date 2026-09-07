@@ -24,23 +24,19 @@ class RouteDetailsView extends StatelessWidget {
     if (state case RouteDetailsReady(:final dirty, :final saving)) {
       if (saving) return;
       if (dirty) {
-        final discard = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            scrollable: true,
-            title: const Text('Discard name changes?'),
-            content: const Text('The recorded route will be kept.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Keep editing'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Discard changes'),
-              ),
-            ],
-          ),
+        final discard = await showAppActionSheet<bool>(
+          context,
+          title: 'Discard name changes?',
+          message: 'The recorded route will be kept.',
+          cancelLabel: 'Keep editing',
+          actions: const [
+            SheetAction(
+              value: true,
+              label: 'Discard changes',
+              icon: Icons.undo,
+              destructive: true,
+            ),
+          ],
         );
         if (discard != true || !context.mounted) return;
       }
@@ -166,6 +162,10 @@ class _RouteContent extends StatelessWidget {
             ),
           const SizedBox(height: 24),
           RouteStats(metrics: state.route.metrics),
+          if (state.walk case final walk?) ...[
+            const SizedBox(height: 24),
+            WalkSummary(progress: walk),
+          ],
           const SizedBox(height: 24),
           SizedBox(
             height: (constraints.maxHeight - 260).clamp(280, 800),

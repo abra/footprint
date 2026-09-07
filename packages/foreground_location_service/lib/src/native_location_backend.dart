@@ -28,6 +28,9 @@ class NativeLocationBackend implements LocationBackend {
   Stream<LocationDM> get locations => _locations.stream;
 
   @override
+  Future<LocationDM> currentLocation() => _device.currentLocation();
+
+  @override
   Future<void> start({
     required bool background,
     LocationDM? initialLocation,

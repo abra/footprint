@@ -17,8 +17,17 @@ workspace:
   - packages/routes_repository
   - packages/recording_service
   - packages/sqlite_storage
+  - packages/route_planning
+  - packages/features/explore
+  - packages/features/statistics
 
 dependencies:
+  statistics:
+    path: packages/features/statistics
+  route_planning:
+    path: packages/route_planning
+  explore:
+    path: packages/features/explore
   flutter:
     sdk: flutter
 

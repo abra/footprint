@@ -3,6 +3,8 @@
 .fvm/
 .dart_tool/
 build/
+test/failures/
+config/*.local.json
 **/.dart_tool/
 **/build/
 !/.fvmrc

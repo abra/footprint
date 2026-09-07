@@ -7,6 +7,7 @@ import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foreground_location_service/foreground_location_service.dart';
+import 'package:route_planning/route_planning.dart';
 import 'package:footprint/app/composition.dart';
 import 'package:footprint/app/config/application_config.dart';
 import 'package:footprint/app/dependency_container.dart';
@@ -17,6 +18,7 @@ import 'package:map/map.dart';
 import 'package:routes_repository/routes_repository.dart';
 import 'package:recording_service/recording_service.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
+import 'package:statistics/src/statistics_view.dart';
 
 import '../packages/features/map/test/fakes.dart';
 import '../packages/features/map/test/pump_recording_ui.dart';
@@ -137,6 +139,8 @@ void main() {
       await directory.delete(recursive: true);
     });
     final dependencies = DependenciesContainer(
+      routePlanner: OpenRouteServicePlanner(),
+      walksRepository: WalksRepository(storage: storage),
       photosRepository: photos,
       foregroundLocationService: service,
       sqliteStorage: storage,
@@ -241,6 +245,22 @@ void main() {
     await tester.tap(find.byTooltip('Routes'));
     await pumpRecordingUi(tester);
     expect(find.text('Morning walk'), findsOneWidget);
+    await tester.tap(find.byTooltip('Statistics'));
+    await pumpRecordingUi(tester);
+    await pumpUntil(
+      tester,
+      () => find.text('Recordings').evaluate().isNotEmpty,
+    );
+    await tester.tap(find.text('All time'));
+    await pumpRecordingUi(tester);
+    expect(find.byType(StatisticsView), findsOneWidget);
+    final summary = (await repository.getRecordedSummaries()).single;
+    expect(summary.id, route.id);
+    expect(summary.distance, route.metrics.distance);
+    expect(summary.duration, route.metrics.duration);
+    await tester.tap(find.byTooltip('Back to routes'));
+    await pumpRecordingUi(tester);
+    expect(find.text('Morning walk'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
     await pumpRecordingUi(tester);
     await resources.dispose();
@@ -257,6 +277,9 @@ void main() {
         isNot(saved.routePoints!.last.latitude),
       );
       expect(await reopened.routePhotos.getForRoute(route.id), hasLength(1));
+      expect((await reopened.statistics.getSummaries()).single, summary);
+      await reopened.routes.delete(route.id);
+      expect(await reopened.statistics.getSummaries(), isEmpty);
     } finally {
       await reopened.close();
     }

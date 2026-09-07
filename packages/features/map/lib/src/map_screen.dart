@@ -17,6 +17,8 @@ class MapScreen extends StatelessWidget {
     required this.onPageChangeRequested,
     this.config = const MapConfig(),
     this.onRouteCompleted,
+    this.walksRepository,
+    this.onExploreRequested,
   });
 
   final RecordingService recordingService;
@@ -25,6 +27,8 @@ class MapScreen extends StatelessWidget {
   final VoidCallback onPageChangeRequested;
   final MapConfig config;
   final ValueChanged<int>? onRouteCompleted;
+  final WalksRepository? walksRepository;
+  final VoidCallback? onExploreRequested;
 
   @override
   Widget build(BuildContext context) => BlocProvider(
@@ -32,11 +36,13 @@ class MapScreen extends StatelessWidget {
       recordingService: recordingService,
       photosRepository: photosRepository,
       geocodingManager: geocodingManager,
+      walksRepository: walksRepository,
     )..initialize(),
     child: MapView(
       config: config,
       onRoutesRequested: onPageChangeRequested,
       onRouteCompleted: onRouteCompleted,
+      onExploreRequested: onExploreRequested,
     ),
   );
 }

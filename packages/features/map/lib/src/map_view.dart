@@ -25,10 +25,12 @@ class MapView extends StatelessWidget {
     required this.config,
     required this.onRoutesRequested,
     this.onRouteCompleted,
+    this.onExploreRequested,
   });
   final MapConfig config;
   final VoidCallback onRoutesRequested;
   final ValueChanged<int>? onRouteCompleted;
+  final VoidCallback? onExploreRequested;
 
   @override
   Widget build(BuildContext context) => BlocListener<MapCubit, MapState>(
@@ -38,15 +40,24 @@ class MapView extends StatelessWidget {
     listener: (context, state) =>
         onRouteCompleted?.call(state.completedRouteId!),
     child: Scaffold(
-      body: _MapCanvas(config: config, onRoutesRequested: onRoutesRequested),
+      body: _MapCanvas(
+        config: config,
+        onRoutesRequested: onRoutesRequested,
+        onExploreRequested: onExploreRequested,
+      ),
     ),
   );
 }
 
 class _MapCanvas extends StatefulWidget {
-  const _MapCanvas({required this.config, required this.onRoutesRequested});
+  const _MapCanvas({
+    required this.config,
+    required this.onRoutesRequested,
+    this.onExploreRequested,
+  });
   final MapConfig config;
   final VoidCallback onRoutesRequested;
+  final VoidCallback? onExploreRequested;
 
   @override
   State<_MapCanvas> createState() => _MapCanvasState();
@@ -158,6 +169,15 @@ class _MapCanvasState extends State<_MapCanvas>
                   ),
                 ),
                 BlocBuilder<MapCubit, MapState>(
+                  buildWhen: (before, after) => before.walk != after.walk,
+                  builder: (context, state) => state.walk == null
+                      ? const SizedBox.shrink()
+                      : PlannedRouteLayer(
+                          plan: state.walk!.plan,
+                          reached: state.walk!.reached,
+                        ),
+                ),
+                BlocBuilder<MapCubit, MapState>(
                   buildWhen: (before, after) =>
                       before.points != after.points ||
                       before.isRecording != after.isRecording,
@@ -258,6 +278,27 @@ class _MapCanvasState extends State<_MapCanvas>
                             MapAppBar(onPageChange: widget.onRoutesRequested),
                             const _MapError(),
                             const MapPhotoError(),
+                            BlocBuilder<MapCubit, MapState>(
+                              buildWhen: (before, after) =>
+                                  before.walk != after.walk ||
+                                  before.isRecording != after.isRecording ||
+                                  before.location != after.location,
+                              builder: (_, state) =>
+                                  state.walk == null || !state.isRecording
+                                  ? const SizedBox.shrink()
+                                  : Padding(
+                                      padding: const EdgeInsets.only(top: 12),
+                                      child: MapSurface(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: WalkSummary(
+                                            progress: state.walk!,
+                                            location: state.location,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                            ),
                           ],
                         ),
                       ),
@@ -320,6 +361,27 @@ class _MapCanvasState extends State<_MapCanvas>
                               ),
                             ),
                     ),
+                    if (widget.onExploreRequested != null)
+                      BlocSelector<MapCubit, MapState, bool>(
+                        selector: (state) =>
+                            state.isRecording || state.recordingBusy,
+                        builder: (_, busy) => busy
+                            ? const SizedBox.shrink()
+                            : Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: FilledButton.icon(
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: explorationColor,
+                                    ),
+                                    onPressed: widget.onExploreRequested,
+                                    icon: const Icon(Icons.explore_outlined),
+                                    label: const Text('Explore'),
+                                  ),
+                                ),
+                              ),
+                      ),
                     const _RecordButton(),
                   ],
                 );
@@ -469,10 +531,13 @@ class _MapError extends StatelessWidget {
   @override
   Widget build(BuildContext context) => BlocBuilder<MapCubit, MapState>(
     buildWhen: (before, after) =>
-        before.error != after.error || before.tileError != after.tileError,
+        before.error != after.error ||
+        before.tileError != after.tileError ||
+        before.walkError != after.walkError,
     builder: (context, state) {
       final message =
           state.error ??
+          state.walkError ??
           (state.tileError ? 'Map tiles could not be loaded.' : null);
       if (message == null) return const SizedBox.shrink();
       return Padding(
@@ -502,6 +567,8 @@ class _MapError extends StatelessWidget {
                     final cubit = context.read<MapCubit>();
                     if (state.error != null) {
                       unawaited(cubit.retry());
+                    } else if (state.walkError != null) {
+                      unawaited(cubit.retryWalk());
                     } else {
                       cubit.retryTiles();
                     }
