@@ -20,6 +20,13 @@ extension RouteToDomain on storage.Route {
           address: point.address ?? '',
           timestamp: DateTime.parse(point.timestamp),
           sourceId: point.sourceId,
+          accuracy: point.accuracy,
+          speed: point.speed,
+          speedAccuracy: point.speedAccuracy,
+          filteredSpeed: point.filteredSpeed,
+          rawLatitude: point.rawLatitude,
+          rawLongitude: point.rawLongitude,
+          isStationary: point.isStationary,
         ),
     ],
   );

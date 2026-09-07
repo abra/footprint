@@ -47,7 +47,11 @@ class FakeLocationService implements LocationService {
   }
 
   @override
-  Future<void> setMode(LocationMode value, {bool restart = false}) async {
+  Future<void> setMode(
+    LocationMode value, {
+    bool restart = false,
+    LocationDM? initialLocation,
+  }) async {
     if (value == mode && !restart) return;
     modes.add(value);
     if (value == LocationMode.stopped) {
@@ -131,6 +135,13 @@ class FakeRoutesRepository extends Fake implements RoutesRepository {
     longitude: value.longitude,
     address: '',
     timestamp: value.timestamp,
+    accuracy: value.accuracy,
+    speed: value.speed,
+    speedAccuracy: value.speedAccuracy,
+    filteredSpeed: value.filteredSpeed,
+    rawLatitude: value.rawLatitude,
+    rawLongitude: value.rawLongitude,
+    isStationary: value.isStationary,
   );
 
   @override

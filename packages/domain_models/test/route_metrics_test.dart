@@ -10,6 +10,69 @@ LocationDM point(double longitude, int seconds) => LocationDM(
 );
 
 void main() {
+  LocationDM measured(
+    int second,
+    double longitude, {
+    double? speed = 0.8,
+    double? speedAccuracy = 0.1,
+    bool stationary = false,
+  }) => LocationDM(
+    id: '$second',
+    latitude: 0,
+    longitude: longitude,
+    timestamp: start.add(Duration(seconds: second)),
+    speed: speed,
+    speedAccuracy: speedAccuracy,
+    isStationary: stationary,
+  );
+
+  test(
+    'reliable sensor speed takes precedence over quantized GPS segments',
+    () {
+      final metrics = RouteMetrics.fromLocations([
+        measured(0, 0),
+        measured(1, 0.00002),
+        measured(2, 0.00002),
+      ]);
+      expect(metrics.currentSpeed, 0.8);
+      expect(metrics.maxSpeed, 0.8);
+      expect(metrics.distance, closeTo(2.23, 0.01));
+    },
+  );
+
+  test(
+    'confirmed stops override reported speed without stopping elapsed time',
+    () {
+      final metrics = RouteMetrics.fromLocations([
+        measured(0, 0),
+        measured(10, 0.0001),
+        measured(600, 0.0001, stationary: true),
+      ]);
+      expect(metrics.currentSpeed, 0);
+      expect(metrics.maxSpeed, 0.8);
+      expect(metrics.duration, const Duration(minutes: 10));
+      expect(metrics.averageSpeed, closeTo(11.13 / 600, 0.001));
+    },
+  );
+
+  test('unavailable or invalid sensor speed falls back to geometry', () {
+    for (final (speed, uncertainty) in <(double?, double?)>[
+      (null, null),
+      (1, null),
+      (-1, 0.1),
+      (double.nan, 0.1),
+      (double.infinity, 0.1),
+      (1, -1),
+      (1, double.nan),
+      (1, 2),
+    ]) {
+      final metrics = RouteMetrics.fromLocations([
+        measured(0, 0),
+        measured(10, 0.0001, speed: speed, speedAccuracy: uncertainty),
+      ]);
+      expect(metrics.currentSpeed, closeTo(1.113, 0.001));
+    }
+  });
   test('empty and single-point tracks have finite zero metrics', () {
     expect(RouteMetrics.fromLocations([]), const RouteMetrics());
     final metrics = RouteMetrics.fromLocations([point(0, 0)]);

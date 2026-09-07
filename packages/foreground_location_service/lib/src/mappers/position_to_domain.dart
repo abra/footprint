@@ -8,5 +8,8 @@ extension PositionToDomain on Position {
     timestamp: timestamp,
     latitude: latitude,
     longitude: longitude,
+    accuracy: hasAccuracy ? accuracy : null,
+    speed: hasSpeed ? speed : null,
+    speedAccuracy: hasSpeedAccuracy ? speedAccuracy : null,
   );
 }

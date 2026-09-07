@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:foreground_location_service/foreground_location_service.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:map/map.dart';
 import 'package:map/src/center_location_icon.dart';
@@ -14,6 +15,7 @@ import 'package:recording_service/recording_service.dart';
 
 import 'fakes.dart';
 import 'pump_recording_ui.dart';
+import '../../../foreground_location_service/test/gps_fixtures.dart';
 
 LatLng markerPoint(WidgetTester tester) => tester
     .widget<MarkerLayer>(find.byKey(const ValueKey('current-location-layer')))
@@ -24,6 +26,77 @@ LatLng markerPoint(WidgetTester tester) => tester
 class _UnusedRecordingService extends Fake implements RecordingService {}
 
 void main() {
+  testWidgets(
+    'stationary fixes keep the marker, camera and route still while time advances',
+    (tester) async {
+      final filter = LocationFilter();
+      final service = FakeLocationService()
+        ..lastLocation = filter.add(fix(0, 0));
+      final repository = FakeRoutesRepository();
+      final recording = RecordingService(
+        locationService: service,
+        routesRepository: repository,
+      );
+      var lookups = 0;
+      var now = gpsEpoch;
+      final cubit = MapCubit(
+        recordingService: recording,
+        photosRepository: FakeRoutePhotosRepository(),
+        geocodingManager: FakeGeocodingManager()
+          ..lookup = (_) async {
+            lookups++;
+            return null;
+          },
+        now: () => now,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: BlocProvider(
+            create: (_) => cubit..initialize(),
+            child: MapView(config: const MapConfig(), onRoutesRequested: () {}),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Record route'));
+      await pumpRecordingUi(tester);
+      final controller = tester
+          .widget<FlutterMap>(find.byType(FlutterMap))
+          .mapController!;
+      final marker = markerPoint(tester);
+      final camera = controller.camera.center;
+      final originalLookups = lookups;
+      for (var second = 30; second <= 600; second += 30) {
+        now = gpsEpoch.add(Duration(seconds: second));
+        service.send(filter.add(fix(second, second % 60 == 0 ? 1 : -1))!);
+        await pumpRecordingUi(tester);
+        expect(markerPoint(tester), marker);
+        expect(controller.camera.center, camera);
+        expect(cubit.state.metrics.distance, 0);
+        expect(cubit.state.metrics.currentSpeed, 0);
+        expect(cubit.state.isRecording, isTrue);
+      }
+      expect(cubit.state.metrics.duration, const Duration(minutes: 10));
+      expect(lookups, originalLookups);
+      final vertices = tester
+          .widgetList<PolylineLayer>(find.byType(PolylineLayer))
+          .expand((layer) => layer.polylines)
+          .expand((line) => line.points);
+      expect(vertices, isNotEmpty);
+      expect(vertices.every((point) => point == marker), isTrue);
+      expect(repository.active!.metrics.distance, 0);
+      expect(repository.active!.endPoint!.isStationary, isTrue);
+      expect(repository.active!.endPoint!.rawLongitude, fix(600, 1).longitude);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await tester.runAsync(() async {
+        await recording.dispose();
+        await service.dispose();
+      });
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'camera follows the animated marker while storage retains GPS samples',
     (tester) async {

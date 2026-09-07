@@ -5,6 +5,7 @@ import 'package:domain_models/domain_models.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import 'device_location.dart';
+import 'location_filter.dart';
 import 'location_service.dart';
 import 'location_task_message.dart';
 
@@ -27,14 +28,19 @@ class NativeLocationBackend implements LocationBackend {
   Stream<LocationDM> get locations => _locations.stream;
 
   @override
-  Future<void> start({required bool background}) async {
+  Future<void> start({
+    required bool background,
+    LocationDM? initialLocation,
+  }) async {
     await _device.ensureAvailable();
     if (!Platform.isAndroid && !Platform.isIOS) {
       throw UnsupportedError('Location tracking supports Android and iOS.');
     }
     if (Platform.isIOS || !background) {
-      _subscription = _device
-          .positions(apple: Platform.isIOS, background: background)
+      _subscription = LocationFilter(initialLocation: initialLocation)
+          .bind(
+            _device.positions(apple: Platform.isIOS, background: background),
+          )
           .listen(
             _locations.add,
             onError: _locations.addError,

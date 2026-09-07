@@ -9,6 +9,13 @@ void main() {
       latitude: 56,
       longitude: 60,
       timestamp: DateTime.utc(2026, 9, 6),
+      accuracy: 5,
+      speed: 0.1,
+      speedAccuracy: 0.2,
+      filteredSpeed: 0,
+      rawLatitude: 56.00001,
+      rawLongitude: 60.00001,
+      isStationary: true,
     );
     final message = LocationTaskMessage.decode(
       LocationTaskMessage.forLocation(location),

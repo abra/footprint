@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:domain_models/domain_models.dart';
+import 'package:foreground_location_service/foreground_location_service.dart';
 import 'package:routes_repository/routes_repository.dart';
 
 /// Persists before publishing: no UI listener is needed for a point to survive.
@@ -27,29 +28,34 @@ class BackgroundRecordingWorker {
     if (active == null) throw StateError('No active route to record.');
     _routeId = active.id;
     _accepting = true;
-    _subscription = locations.listen(
-      (location) {
-        if (!_accepting) return;
-        if (!location.hasValidCoordinates) {
-          onError(
-            const FormatException('Invalid GPS coordinates.'),
-            StackTrace.current,
-          );
-          return;
-        }
-        _pending.add(location);
-        unawaited(flush().catchError(onError));
-      },
-      onError: onError,
-      onDone: () {
-        if (_accepting) {
-          onError(
-            StateError('Background GPS stream stopped.'),
-            StackTrace.current,
-          );
-        }
-      },
+    final filter = LocationFilter(
+      initialLocation: active.endPoint?.toLocation(),
     );
+    _subscription = filter
+        .bind(locations)
+        .listen(
+          (location) {
+            if (!_accepting) return;
+            if (!location.hasValidCoordinates) {
+              onError(
+                const FormatException('Invalid GPS coordinates.'),
+                StackTrace.current,
+              );
+              return;
+            }
+            _pending.add(location);
+            unawaited(flush().catchError(onError));
+          },
+          onError: onError,
+          onDone: () {
+            if (_accepting) {
+              onError(
+                StateError('Background GPS stream stopped.'),
+                StackTrace.current,
+              );
+            }
+          },
+        );
   }
 
   Future<void> flush() =>

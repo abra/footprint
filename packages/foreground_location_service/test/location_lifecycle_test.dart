@@ -7,13 +7,18 @@ import 'package:foreground_location_service/foreground_location_service.dart';
 class FakeBackend implements LocationBackend {
   StreamController<LocationDM> controller = StreamController.broadcast();
   final calls = <String>[];
+  final seeds = <LocationDM?>[];
   Completer<void>? startGate;
   bool failStart = false;
   bool failStop = false;
   @override
   Stream<LocationDM> get locations => controller.stream;
   @override
-  Future<void> start({required bool background}) async {
+  Future<void> start({
+    required bool background,
+    LocationDM? initialLocation,
+  }) async {
+    seeds.add(initialLocation);
     calls.add(background ? 'recording' : 'preview');
     await startGate?.future;
     if (failStart) throw StateError('Permission denied');
@@ -121,6 +126,38 @@ void main() {
     await service.setMode(LocationMode.preview, restart: true);
     expect(backend.calls, ['preview', 'stop', 'preview']);
   });
+
+  test(
+    'mode changes and retries seed from the newest filtered location',
+    () async {
+      final restored = LocationDM(
+        id: 'saved',
+        latitude: 56,
+        longitude: 60,
+        timestamp: DateTime.utc(2026, 9, 7),
+        accuracy: 5,
+        rawLatitude: 56.00001,
+        rawLongitude: 60,
+        isStationary: true,
+      );
+      await service.setMode(LocationMode.preview, initialLocation: restored);
+      expect(backend.seeds.last, restored);
+      final latest = LocationDM(
+        id: 'live',
+        latitude: 56.0001,
+        longitude: 60,
+        timestamp: restored.timestamp.add(const Duration(seconds: 10)),
+        accuracy: 5,
+      );
+      backend.controller.add(latest);
+      await tick();
+      await service.setMode(LocationMode.recording, initialLocation: restored);
+      expect(backend.seeds.last, latest);
+      await service.setMode(LocationMode.recording, restart: true);
+      expect(backend.seeds.last, latest);
+      expect(service.lastLocation, latest);
+    },
+  );
 
   test('failed stop does not falsely commit the requested new mode', () async {
     await service.setMode(LocationMode.recording);

@@ -3,6 +3,47 @@ import 'package:test/test.dart';
 
 void main() {
   test(
+    'filtered coordinates preserve raw observations and metadata on round trip',
+    () {
+      final raw = LocationDM(
+        id: 'raw',
+        latitude: 56.00001,
+        longitude: 60.00001,
+        timestamp: DateTime.utc(2026, 9, 7),
+        accuracy: 5,
+        speed: 0,
+        speedAccuracy: 0.2,
+      );
+      final filtered = raw.withFilteredPosition(
+        latitude: 56,
+        longitude: 60,
+        isStationary: true,
+        filteredSpeed: 0,
+      );
+      expect(filtered.rawLatitude, raw.latitude);
+      expect(filtered.rawLongitude, raw.longitude);
+      expect(filtered.timestamp, raw.timestamp);
+      expect(filtered.id, raw.id);
+      expect(LocationDM.fromMap(filtered.toMap()), filtered);
+      final again = filtered.withFilteredPosition(
+        latitude: 55,
+        longitude: 59,
+        isStationary: false,
+      );
+      expect(again.rawLatitude, raw.latitude);
+      expect(again.rawLongitude, raw.longitude);
+      final point = RoutePointDM.fromMap({
+        ...filtered.toMap(),
+        'id': 1,
+        'source_id': raw.id,
+        'route_id': 2,
+        'address': '',
+      });
+      expect(point.toLocation(), filtered);
+      expect(RoutePointDM.fromMap(point.toMap()), point);
+    },
+  );
+  test(
     'location accepts numeric JSON coordinates and preserves its timestamp',
     () {
       final location = LocationDM.fromMap({

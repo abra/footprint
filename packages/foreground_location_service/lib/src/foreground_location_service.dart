@@ -31,11 +31,22 @@ class ForegroundLocationService implements LocationService {
   LocationDM? get lastLocation => _lastLocation;
 
   @override
-  Future<void> setMode(LocationMode mode, {bool restart = false}) {
+  Future<void> setMode(
+    LocationMode mode, {
+    bool restart = false,
+    LocationDM? initialLocation,
+  }) {
     if (_disposed) {
       return Future.error(StateError('Location service is closed.'));
     }
-    final operation = _operations.then((_) => _setMode(mode, restart: restart));
+    final operation = _operations.then((_) {
+      if (initialLocation != null &&
+          (_lastLocation == null ||
+              initialLocation.timestamp.isAfter(_lastLocation!.timestamp))) {
+        _lastLocation = initialLocation;
+      }
+      return _setMode(mode, restart: restart);
+    });
     // Callers receive failures; the next command must still be able to recover.
     _operations = operation.then<void>(
       (_) {},
@@ -78,7 +89,10 @@ class ForegroundLocationService implements LocationService {
         },
       );
       _needsStop = true;
-      await _backend.start(background: mode == LocationMode.recording);
+      await _backend.start(
+        background: mode == LocationMode.recording,
+        initialLocation: _lastLocation,
+      );
       if (_failed) throw _failure!;
       _mode = mode;
     } on Object {

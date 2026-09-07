@@ -51,7 +51,9 @@ class RouteMetrics extends Equatable {
           LatLng(point.latitude, point.longitude),
         );
         distance += segment;
-        speed = segment / seconds;
+        speed = point.isStationary
+            ? 0
+            : point.filteredSpeed ?? point.reliableSpeed ?? segment / seconds;
         maximum = math.max(maximum, speed);
         speeds.add(
           RouteSpeedSample(

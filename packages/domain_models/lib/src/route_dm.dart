@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 
 import 'route_point_dm.dart';
-import 'location_dm.dart';
 import 'route_metrics.dart';
 
 class RouteDM extends Equatable {
@@ -26,14 +25,7 @@ class RouteDM extends Equatable {
   final List<RoutePointDM> routePoints;
 
   late final RouteMetrics metrics = RouteMetrics.fromLocations(
-    routePoints.map(
-      (point) => LocationDM(
-        id: '${point.id}',
-        latitude: point.latitude,
-        longitude: point.longitude,
-        timestamp: point.timestamp,
-      ),
-    ),
+    routePoints.map((point) => point.toLocation()),
     startedAt: startTime,
     endedAt: endTime,
   );

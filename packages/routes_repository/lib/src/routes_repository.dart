@@ -55,6 +55,13 @@ class RoutesRepository {
     longitude: location.longitude,
     timestamp: location.timestamp,
     sourceId: location.id,
+    accuracy: location.accuracy,
+    speed: location.speed,
+    speedAccuracy: location.speedAccuracy,
+    filteredSpeed: location.filteredSpeed,
+    rawLatitude: location.rawLatitude,
+    rawLongitude: location.rawLongitude,
+    isStationary: location.isStationary,
   );
 
   Future<bool> addPoint(int id, LocationDM location) => _routes.addPoint(
@@ -63,6 +70,13 @@ class RoutesRepository {
     longitude: location.longitude,
     timestamp: location.timestamp,
     sourceId: location.id,
+    accuracy: location.accuracy,
+    speed: location.speed,
+    speedAccuracy: location.speedAccuracy,
+    filteredSpeed: location.filteredSpeed,
+    rawLatitude: location.rawLatitude,
+    rawLongitude: location.rawLongitude,
+    isStationary: location.isStationary,
   );
 
   Future<void> finishRoute(int id, DateTime endTime) =>

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
+import 'package:sqlite_storage/src/database_helper.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -133,7 +134,7 @@ void main() {
     },
   );
 
-  for (final legacyVersion in [1, 2, 3, 4]) {
+  for (final legacyVersion in [1, 2, 3, 4, 5]) {
     test(
       'version $legacyVersion migration preserves existing route data and repairs indexes',
       () async {
@@ -173,6 +174,9 @@ void main() {
                   'ALTER TABLE routes ADD COLUMN name_search TEXT',
                 );
               }
+              if (legacyVersion >= 5) {
+                await DatabaseHelper.createPhotoTables(db);
+              }
               await db.insert('routes', {
                 'id': 7,
                 'start_time': timestamp.toIso8601String(),
@@ -184,6 +188,26 @@ void main() {
                 'longitude': 60.0,
                 'timestamp': timestamp.toIso8601String(),
               });
+              if (legacyVersion >= 5) {
+                await db.insert('route_photos', {
+                  'id': 'photo',
+                  'route_id': 7,
+                  'file_name': 'photo.jpg',
+                  'latitude': 56,
+                  'longitude': 60,
+                  'captured_at': timestamp.toIso8601String(),
+                });
+                await db.insert('pending_photo', {
+                  'slot': 1,
+                  'id': 'pending',
+                  'route_id': 7,
+                  'file_name': 'pending.jpg',
+                  'latitude': 56,
+                  'longitude': 60,
+                  'captured_at': timestamp.toIso8601String(),
+                  'source_path': '/pending.jpg',
+                });
+              }
             },
           ),
         );
@@ -200,12 +224,25 @@ void main() {
           (await migrated.routes.getById(7))!.routePoints!.single.sourceId,
           isNull,
         );
+        final legacyPoint = (await migrated.routes.getById(7))!
+            .routePoints!
+            .single;
+        expect(legacyPoint.accuracy, isNull);
+        expect(legacyPoint.rawLatitude, isNull);
+        expect(legacyPoint.isStationary, isFalse);
         await migrated.routes.addPoint(
           routeId: 7,
           latitude: 56.01,
           longitude: 60,
           timestamp: timestamp.add(const Duration(seconds: 1)),
           sourceId: 'new',
+          accuracy: 5,
+          speed: 0,
+          speedAccuracy: 0.2,
+          filteredSpeed: 0,
+          rawLatitude: 56.01001,
+          rawLongitude: 60.00001,
+          isStationary: true,
         );
         expect(
           await migrated.routes.addPoint(
@@ -218,9 +255,21 @@ void main() {
           isFalse,
         );
         expect((await migrated.routes.getById(7))!.routePoints, hasLength(2));
+        final filtered = (await migrated.routes.getById(7))!.routePoints!.last;
+        expect(filtered.accuracy, 5);
+        expect(filtered.speed, 0);
+        expect(filtered.speedAccuracy, 0.2);
+        expect(filtered.filteredSpeed, 0);
+        expect(filtered.rawLatitude, 56.01001);
+        expect(filtered.rawLongitude, 60.00001);
+        expect(filtered.isStationary, isTrue);
         await migrated.close();
         final check = await databaseFactoryFfi.openDatabase(path);
-        expect(await check.getVersion(), 5);
+        expect(await check.getVersion(), 6);
+        if (legacyVersion >= 5) {
+          expect((await check.query('route_photos')).single['id'], 'photo');
+          expect((await check.query('pending_photo')).single['id'], 'pending');
+        }
         expect(
           await check.rawQuery(
             "SELECT name FROM sqlite_master WHERE type = 'index' "

@@ -59,15 +59,7 @@ class RecordingService {
       _emit(state.copyWith(phase: RecordingPhase.idle, clearRoute: true));
       return;
     }
-    final points = [
-      for (final point in route.routePoints)
-        LocationDM(
-          id: point.sourceId ?? 'stored:${point.id}',
-          latitude: point.latitude,
-          longitude: point.longitude,
-          timestamp: point.timestamp,
-        ),
-    ];
+    final points = [for (final point in route.routePoints) point.toLocation()];
     _savedIds
       ..clear()
       ..addAll(points.map((point) => point.id));
@@ -132,7 +124,11 @@ class RecordingService {
 
   Future<void> _applyLocation({bool restart = false}) async {
     try {
-      await _location.setMode(_desiredMode, restart: restart);
+      await _location.setMode(
+        _desiredMode,
+        restart: restart,
+        initialLocation: state.points.lastOrNull,
+      );
       _emit(state.copyWith(clearLocationError: true));
     } on Object catch (error, stack) {
       _onLocationError(error, stack);
@@ -190,7 +186,10 @@ class RecordingService {
       _emit(state.copyWith(routeId: id, points: [location]));
     }
     await _flush();
-    await _location.setMode(_desiredMode);
+    await _location.setMode(
+      _desiredMode,
+      initialLocation: state.points.lastOrNull,
+    );
     _emit(
       state.copyWith(
         phase: RecordingPhase.recording,
@@ -218,15 +217,7 @@ class RecordingService {
     final route = await _routes.getRoute(id);
     final points = route == null
         ? state.points
-        : [
-            for (final point in route.routePoints)
-              LocationDM(
-                id: point.sourceId ?? 'stored:${point.id}',
-                latitude: point.latitude,
-                longitude: point.longitude,
-                timestamp: point.timestamp,
-              ),
-          ];
+        : [for (final point in route.routePoints) point.toLocation()];
     _stopTime = null;
     _emit(
       state.copyWith(

@@ -40,6 +40,7 @@ address lookups, and handles tile and photo presentation state. Record/Stop/Retr
 service. Closing the Cubit cancels its view subscriptions and releases its preview
 request, without stopping an active recording. Address lookups are not launched
 while the app is hidden; stale results cannot overwrite newer coordinates.
+Repeated fixes at the same filtered coordinates do not repeat address lookups.
 
 `recording_service` owns the session, accepted-point queue, persisted sample IDs,
 restoration, and operation-specific failures. The phases are idle, starting,
@@ -64,8 +65,9 @@ Template measurements stay cached; no animation is added. The expanded two-colum
 column widths. Three-digit speeds, four-digit distances, and three-digit hours
 determine whether four, two, or one column fits; this choice depends on these
 templates and accessibility settings, never the current readings. Narrow expanded panels
-place the chart above the metrics. `RouteMetrics.speedHistory` contains measured
-segment speeds at elapsed GPS times; live clock ticks reuse that immutable list.
+place the chart above the metrics. `RouteMetrics.speedHistory` contains filtered
+motion estimates (legacy points use segment speeds) at elapsed GPS times;
+live clock ticks reuse that immutable list.
 The chart is isolated by a repaint boundary and is not driven by marker frames.
 
 Map camera operations and tile rendering belong to the View. `LocationMotion`
@@ -88,8 +90,9 @@ the visible prefix without scanning/copying the whole route each frame. The
 timestamp index is monotonic even for late samples, preserving recorded order.
 No line is drawn before playback reaches the recording's first point. Completed
 routes show their full recorded geometry, independent of preview movement.
-SQLite, metrics, and photos still use original GPS samples, never animation
-frames. Map errors remain visible and can be retried by recreating the tile layer.
+SQLite, metrics, and photos use filtered GPS fixes, never animation frames.
+Recorded fixes also retain original coordinates and sensor measurements.
+Map errors remain visible and can be retried by recreating the tile layer.
 
 `RouteListCubit` handles loading, loaded/empty, and failure states. Late results
 cannot overwrite a newer request or emit after the Cubit is closed.
@@ -103,13 +106,43 @@ Back without a name retains the completed route with a generated display title;
 discarding edits never deletes the route. Active routes cannot be renamed or
 deleted, including at the DAO boundary. Failed name saves retain the input.
 
+`LocationFilter` is a pure Dart, constant-space processor in
+`foreground_location_service`, upstream of persistence and presentation.
+`NativeLocationBackend` applies it to preview and iOS recording streams. The
+Android `BackgroundRecordingWorker` applies the same processor before writing;
+worker messages are never filtered again by the UI isolate. Mode changes/retries
+use the newest known fix as an anchor; restored recordings and restarted
+Android workers seed from the last persisted point.
+
+Measured accuracy must be finite, positive and no worse than 35 meters. Invalid
+coordinates and non-increasing timestamps are rejected. Absent measurements
+remain null, not fictitious zeroes. Fixes without an accuracy measurement keep
+their geometry unchanged; old routes are not reprocessed. The holding radius is
+the larger of 3 meters and the anchor/current accuracy. After 8 seconds without
+accepted movement, the state becomes stationary; its departure radius is 1.5
+times wider. Departure needs two directionally consistent fixes within a minute,
+also accommodating slow distance-filtered updates. Reliable sensor motion can
+retain steps of at least 1 meter: speed minus uncertainty must exceed 0.35 m/s,
+and uncertainty must not exceed 1 m/s. Unexplained jumps need confirmation;
+displacements implying over 100 m/s plus positional uncertainty are held.
+Filtering neither pauses recording nor disables GPS. The native 5-meter
+distance filter is unchanged.
+
+Each emitted fix preserves its source ID, timestamp, raw coordinates, accuracy,
+sensor speed/uncertainty, filtered speed and stationary flag. Held fixes share
+accepted coordinates instead of adding a loop. Filtered speed prefers usable
+sensor speed (up to 100 m/s); otherwise it uses time between accepted anchors,
+avoiding spikes when a held position is released. It becomes zero on a confirmed
+stop. Rejected fixes are not stored. The filter has no timers, growing history
+or animation-frame work; it processes only incoming fixes.
+
 `RouteMetrics` is a pure Dart GPS estimate using latlong2 geodesic distances.
-It skips invalid coordinates and non-increasing timestamps. Average speed uses
-total elapsed time, including stops; current/max speed are segment estimates,
-not sensor measurements. Current speed becomes zero after 10 seconds without a
-sample. MapCubit advances only the presentation clock once per second while
-recording in the foreground; animation positions never enter these calculations.
-GPS noise/outliers are not yet filtered using accuracy or activity-specific rules.
+It skips invalid coordinates and non-increasing timestamps, sums filtered
+geometry and uses persisted filtered speeds (sensor/segment fallback for older
+data). Average speed uses total elapsed time, including stops. Current speed
+also becomes zero after 10 seconds without a sample. MapCubit advances only the
+presentation clock once per second while recording in the foreground;
+animation positions never enter these calculations.
 
 The first PDF-based milestone implements a full-bleed map with floating controls, a
 recording metrics panel, route naming/preview, and a vertical route catalog.
@@ -141,7 +174,7 @@ metadata deletion. Originals, unrelated files and pending imports are protected.
 - `domain_models`: Flutter-independent values with domain types and equality.
 - `routes_repository`: typed route lifecycle API and storage-to-domain mappers.
 - `sqlite_storage`: explicitly owned connections, `RoutesDao`, and
-  `GeocodingCacheDao`, and `RoutePhotosDao`. Version 5 migrates versions 1/2/3/4 without deleting route
+  `GeocodingCacheDao`, and `RoutePhotosDao`. Version 6 migrates versions 1/2/3/4/5 without deleting route
   data. Nullable `source_id` preserves legacy points; a unique per-route sample
   index makes repeated delivery idempotent. Transactions reject a second active
   route and prevent appending to a completed route. The Android worker has an
@@ -154,6 +187,8 @@ metadata deletion. Originals, unrelated files and pending imports are protected.
   with 1.27 seconds of total backoff; other errors propagate immediately.
   Version 4 adds nullable route names and Unicode-lowercased search names.
   Version 5 adds photo metadata and a single pending-capture journal with foreign keys.
+  Version 6 adds nullable raw GPS/quality/speed measurements and a default-false
+  stationary flag. Legacy geometry, photos and pending captures are preserved.
 - `foreground_location_service`: `LocationService` contract and its platform
   implementation. Modes are stopped, preview, and recording. Transitions are
   serialized; startup failures, stream errors, and stream completion can be
@@ -187,11 +222,15 @@ and prevents different dependency versions within the same application.
 
 `make get` resolves dependencies once. `make verify` checks formatting, analyzes
 the workspace, and runs unit, database, and widget tests, including stream
-failure/restart, every recording retry operation, migration from versions 1/2/3/4,
+failure/restart, every recording retry operation, migration from versions 1/2/3/4/5,
 deduplication, shutdown ordering, and a background writer with no UI connection.
 Golden tests cover the map, saving, history, and photo viewer using a bundled
 font, fixture tiles, and a photo extracted from the supplied PDF. Layout tests
 additionally cover 320px portrait and landscape with 2x text.
+GPS tests cover ten-minute stops, slow walking, vehicle speeds, isolated jumps,
+poor/missing accuracy, stream restart, filtered write retries and persisted
+metadata. A map widget test checks stable geometry/camera with advancing time;
+the native workflow also simulates a stop and checks reopened SQLite data.
 `make integration
 DEVICE=<device-id>` runs the native recording workflow on a simulator/device.
 
@@ -201,6 +240,13 @@ Flutter Gradle plugin's legacy Android extension API.
 iOS adopts the UIScene lifecycle and Flutter's current deployment target.
 
 ## Remaining Product Work
+
+- GPS filtering is conservative, not a guarantee of meter-level tracking.
+  Motion below positional uncertainty may remain held until enough displacement
+  accumulates. Coherent drift can still look like real movement; prolonged GPS
+  outages retain the existing straight connection between accepted locations.
+  Thresholds need physical-device walking/driving traces under real signal
+  conditions. Activity-recognition sensors and optional auto-pause are not added.
 
 - The optional chart and alternative grid catalog from the PDFs, and export/sharing
   remain separate product work. There are no placeholder chart controls. Active route details are

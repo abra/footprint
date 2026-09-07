@@ -13,6 +13,13 @@ class RoutesDao {
     required double longitude,
     required DateTime timestamp,
     String? sourceId,
+    double? accuracy,
+    double? speed,
+    double? speedAccuracy,
+    double? filteredSpeed,
+    double? rawLatitude,
+    double? rawLongitude,
+    bool isStationary = false,
   }) => _db.retryTransaction((txn) async {
     final active = await txn.query(
       'routes',
@@ -34,6 +41,13 @@ class RoutesDao {
       'longitude': longitude,
       'timestamp': timestamp.toIso8601String(),
       'source_id': sourceId,
+      'accuracy': accuracy,
+      'speed': speed,
+      'speed_accuracy': speedAccuracy,
+      'filtered_speed': filteredSpeed,
+      'raw_latitude': rawLatitude,
+      'raw_longitude': rawLongitude,
+      'is_stationary': isStationary ? 1 : 0,
     });
     return id;
   });
@@ -44,6 +58,13 @@ class RoutesDao {
     required double longitude,
     required DateTime timestamp,
     String? sourceId,
+    double? accuracy,
+    double? speed,
+    double? speedAccuracy,
+    double? filteredSpeed,
+    double? rawLatitude,
+    double? rawLongitude,
+    bool isStationary = false,
   }) => _db.retryTransaction((txn) async {
     final active = await txn.query(
       'routes',
@@ -69,6 +90,13 @@ class RoutesDao {
       'longitude': longitude,
       'timestamp': timestamp.toIso8601String(),
       'source_id': sourceId,
+      'accuracy': accuracy,
+      'speed': speed,
+      'speed_accuracy': speedAccuracy,
+      'filtered_speed': filteredSpeed,
+      'raw_latitude': rawLatitude,
+      'raw_longitude': rawLongitude,
+      'is_stationary': isStationary ? 1 : 0,
     });
     return true;
   });

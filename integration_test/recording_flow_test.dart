@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:foreground_location_service/foreground_location_service.dart';
 import 'package:footprint/app/composition.dart';
 import 'package:footprint/app/config/application_config.dart';
 import 'package:footprint/app/dependency_container.dart';
@@ -59,6 +60,31 @@ class FixturePhotoPicker implements PhotoPicker {
   Future<String?> recover() async => null;
 }
 
+class FilteredFixtureLocationService extends FakeLocationService {
+  FilteredFixtureLocationService() {
+    lastLocation = _filter.add(_measured(location(1)));
+  }
+  final _filter = LocationFilter();
+
+  static LocationDM _measured(LocationDM point) => LocationDM(
+    id: point.id,
+    latitude: point.latitude,
+    longitude: point.longitude,
+    timestamp: point.timestamp,
+    accuracy: 5,
+    speed: 11.1,
+    speedAccuracy: 0.2,
+  );
+
+  @override
+  void send(LocationDM value) {
+    final filtered = _filter.add(
+      value.accuracy == null ? _measured(value) : value,
+    );
+    if (filtered != null) super.send(filtered);
+  }
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -93,7 +119,7 @@ void main() {
         directory: () async => Directory('${directory.path}/photos'),
       ),
     );
-    final service = FakeLocationService()..lastLocation = location(1);
+    final service = FilteredFixtureLocationService();
     final repository = RoutesRepository(sqliteStorage: storage, photos: photos);
     final recording = RecordingService(
       locationService: service,
@@ -179,6 +205,28 @@ void main() {
     await tester.tap(statsPanel);
     await pumpRecordingUi(tester);
     expect(tester.widget<RouteStats>(find.byType(RouteStats)).columns, isNull);
+    final distanceBeforeStop =
+        (await repository.getActiveRoute())!.metrics.distance;
+    for (var step = 1; step <= 20; step++) {
+      service.send(
+        LocationDM(
+          id: 'stationary:$step',
+          latitude: location(3).latitude + (step.isEven ? 0.000005 : -0.000005),
+          longitude: location(3).longitude,
+          timestamp: location(3).timestamp.add(Duration(seconds: step * 30)),
+          accuracy: 5,
+          speed: 0,
+          speedAccuracy: 0.2,
+        ),
+      );
+    }
+    await pumpUntil(tester, () => recording.state.points.length == 23);
+    expect(
+      (await repository.getActiveRoute())!.metrics.distance,
+      distanceBeforeStop,
+    );
+    expect(recording.state.points.last.isStationary, isTrue);
+    expect(recording.state.points.last.latitude, location(3).latitude);
     await tester.tap(find.text('Stop recording'));
     await pumpRecordingUi(tester);
     expect(find.text('SAVE ROUTE'), findsOneWidget);
@@ -189,7 +237,7 @@ void main() {
     final savedPhoto = (await photos.getPhotos(route.id)).single;
     expect(savedPhoto.latitude, location(2).latitude);
     expect(await File(savedPhoto.path).readAsBytes(), pixel);
-    expect((await repository.getRoute(route.id))!.routePoints, hasLength(3));
+    expect((await repository.getRoute(route.id))!.routePoints, hasLength(23));
     await tester.tap(find.byTooltip('Routes'));
     await pumpRecordingUi(tester);
     expect(find.text('Morning walk'), findsOneWidget);
@@ -201,7 +249,13 @@ void main() {
       final saved = (await reopened.routes.getById(route.id))!;
       expect(saved.status, 'completed');
       expect(saved.name, 'Morning walk');
-      expect(saved.routePoints, hasLength(3));
+      expect(saved.routePoints, hasLength(23));
+      expect(saved.routePoints!.last.isStationary, isTrue);
+      expect(saved.routePoints!.last.filteredSpeed, 0);
+      expect(
+        saved.routePoints!.last.rawLatitude,
+        isNot(saved.routePoints!.last.latitude),
+      );
       expect(await reopened.routePhotos.getForRoute(route.id), hasLength(1));
     } finally {
       await reopened.close();

@@ -200,7 +200,11 @@ class MapCubit extends Cubit<MapState> {
       return;
     }
     final location = recording.location;
-    if (location == null || location == _addressLocation) return;
+    if (location == null ||
+        (location.latitude == _addressLocation?.latitude &&
+            location.longitude == _addressLocation?.longitude)) {
+      return;
+    }
     _addressLocation = location;
     _cancelAddress();
     final request = _addressRequest;

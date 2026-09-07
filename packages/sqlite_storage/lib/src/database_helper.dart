@@ -16,7 +16,10 @@ abstract final class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         route_id INTEGER NOT NULL REFERENCES routes(id),
         latitude REAL NOT NULL, longitude REAL NOT NULL,
-        address TEXT, timestamp TEXT NOT NULL, source_id TEXT
+        address TEXT, timestamp TEXT NOT NULL, source_id TEXT,
+        accuracy REAL, speed REAL, speed_accuracy REAL, filtered_speed REAL,
+        raw_latitude REAL, raw_longitude REAL,
+        is_stationary INTEGER NOT NULL DEFAULT 0
       )
     ''');
     await db.execute('''
@@ -45,6 +48,21 @@ abstract final class DatabaseHelper {
       await db.execute('ALTER TABLE routes ADD COLUMN name_search TEXT');
     }
     if (oldVersion < 5) await createPhotoTables(db);
+    if (oldVersion < 6) {
+      for (final column in [
+        'accuracy',
+        'speed',
+        'speed_accuracy',
+        'filtered_speed',
+        'raw_latitude',
+        'raw_longitude',
+      ]) {
+        await db.execute('ALTER TABLE route_points ADD COLUMN $column REAL');
+      }
+      await db.execute(
+        'ALTER TABLE route_points ADD COLUMN is_stationary INTEGER NOT NULL DEFAULT 0',
+      );
+    }
     await createIndexes(db);
   }
 

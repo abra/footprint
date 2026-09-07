@@ -7,6 +7,13 @@ class RoutePoint {
     required this.address,
     required this.timestamp,
     this.sourceId,
+    this.accuracy,
+    this.speed,
+    this.speedAccuracy,
+    this.filteredSpeed,
+    this.rawLatitude,
+    this.rawLongitude,
+    this.isStationary = false,
   });
 
   final int id;
@@ -16,6 +23,13 @@ class RoutePoint {
   final String? address;
   final String timestamp;
   final String? sourceId;
+  final double? accuracy;
+  final double? speed;
+  final double? speedAccuracy;
+  final double? filteredSpeed;
+  final double? rawLatitude;
+  final double? rawLongitude;
+  final bool isStationary;
 
   factory RoutePoint.fromMap(Map<String, dynamic> map) => RoutePoint(
     id: map['id'] as int,
@@ -25,5 +39,12 @@ class RoutePoint {
     address: map['address'] as String?,
     timestamp: map['timestamp'] as String,
     sourceId: map['source_id'] as String?,
+    accuracy: (map['accuracy'] as num?)?.toDouble(),
+    speed: (map['speed'] as num?)?.toDouble(),
+    speedAccuracy: (map['speed_accuracy'] as num?)?.toDouble(),
+    filteredSpeed: (map['filtered_speed'] as num?)?.toDouble(),
+    rawLatitude: (map['raw_latitude'] as num?)?.toDouble(),
+    rawLongitude: (map['raw_longitude'] as num?)?.toDouble(),
+    isStationary: map['is_stationary'] == 1,
   );
 }
