@@ -8,6 +8,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'config.dart';
+import 'center_location_icon.dart';
 import 'extensions.dart';
 import 'location_motion.dart';
 import 'map_app_bar.dart';
@@ -358,11 +359,7 @@ class _MapControls extends StatelessWidget {
         builder: (context, centered) => IconButton(
           tooltip: 'Center on location',
           isSelected: centered,
-          icon: Icon(
-            centered ? Icons.navigation : Icons.near_me_outlined,
-            color: centered ? AppTheme.route : AppTheme.ink,
-            size: 28,
-          ),
+          icon: CenterLocationIcon(centered: centered),
           onPressed: onCenter,
         ),
       ),

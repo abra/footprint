@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:map/map.dart';
+import 'package:map/src/center_location_icon.dart';
 import 'package:map/src/map_app_bar.dart';
 import 'package:map/src/map_cubit.dart';
 import 'package:map/src/map_state.dart';
@@ -81,13 +82,41 @@ void main() {
       await tester.drag(find.byType(FlutterMap), const Offset(100, 80));
       await pumpRecordingUi(tester);
       expect(cubit.state.centered, isFalse);
+      expect(
+        tester
+            .widget<CenterLocationIcon>(find.byType(CenterLocationIcon))
+            .centered,
+        isFalse,
+      );
       final cameraAfterPan = controller.camera.center;
       service.send(location(3));
       await pumpRecordingUi(tester);
       expect(markerPoint(tester).latitude, location(3).latitude);
       expect(controller.camera.center, cameraAfterPan);
       await tester.tap(find.byTooltip('Center on location'));
+      await tester.pump();
+      expect(cubit.state.centered, isTrue);
+      expect(
+        tester
+            .widget<CenterLocationIcon>(find.byType(CenterLocationIcon))
+            .centered,
+        isTrue,
+      );
+      final iconOpacity = tester
+          .widget<FadeTransition>(
+            find
+                .ancestor(
+                  of: find.byIcon(Icons.navigation),
+                  matching: find.byType(FadeTransition),
+                )
+                .first,
+          )
+          .opacity;
+      expect(iconOpacity.value, 0);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(iconOpacity.value, inExclusiveRange(0, 1));
       await pumpRecordingUi(tester);
+      expect(iconOpacity.value, 1);
       expect(
         controller.camera.center.latitude,
         closeTo(location(3).latitude, 0.000001),

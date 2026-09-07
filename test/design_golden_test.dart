@@ -117,6 +117,8 @@ void main() {
       'zoom_out_pressed',
       'center_pressed',
       'recording_photo_pressed',
+      'center_uncentered',
+      'center_transition',
     ]) {
       testWidgets('$screen design $variant', (tester) async {
         debugDisableShadows = false;
@@ -234,7 +236,7 @@ void main() {
                 builder: (context, child) => MediaQuery(
                   data: MediaQuery.of(context).copyWith(
                     textScaler: TextScaler.linear(scale),
-                    disableAnimations: true,
+                    disableAnimations: screen != 'center_transition',
                   ),
                   child: child!,
                 ),
@@ -252,6 +254,23 @@ void main() {
             );
           }
           await tester.pumpAndSettle();
+          if (screen == 'center_uncentered' || screen == 'center_transition') {
+            cubit.setCentered(false);
+            await tester.pump();
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 100));
+            if (screen == 'center_transition') {
+              final filled = tester.widget<FadeTransition>(
+                find
+                    .ancestor(
+                      of: find.byIcon(Icons.navigation),
+                      matching: find.byType(FadeTransition),
+                    )
+                    .first,
+              );
+              expect(filled.opacity.value, inExclusiveRange(0, 1));
+            }
+          }
           if (screen.endsWith('expanded')) {
             await tester.tap(
               find.byKey(const ValueKey('recording-stats-panel')),
