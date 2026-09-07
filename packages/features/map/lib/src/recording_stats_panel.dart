@@ -54,6 +54,7 @@ class RecordingStatsPanel extends StatelessWidget {
         expanded: expanded,
         child: InkWell(
           key: const ValueKey('recording-stats-panel'),
+          customBorder: AppTheme.controlShape,
           onTap: onToggle,
           child: MediaQuery.disableAnimationsOf(context)
               ? content

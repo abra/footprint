@@ -12,6 +12,9 @@ abstract final class AppTheme {
   static const surface = Color(0xFFF5F7F9);
   static const border = Color(0xFFE8EDF1);
   static const success = Color(0xFF64CB54);
+  static const controlShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(Radius.circular(16)),
+  );
 
   static const appColors = AppColorsExt(
     darkCyan: Color(0xFF055C5C),
@@ -75,7 +78,7 @@ abstract final class AppTheme {
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: const Size(48, 56),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: controlShape,
         textStyle: const TextStyle(
           fontFamily: 'packages/component_library/RobotoCondensed',
           fontSize: 22,
@@ -84,7 +87,10 @@ abstract final class AppTheme {
       ),
     ),
     iconButtonTheme: IconButtonThemeData(
-      style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
+      style: IconButton.styleFrom(
+        minimumSize: const Size(48, 48),
+        shape: controlShape,
+      ),
     ),
     extensions: const [appColors, appStyles, appSpacing],
   );

@@ -367,6 +367,10 @@ class _MapControls extends StatelessWidget {
         ),
       ),
     );
+    // The shared surface clips the outer corners; the divider edges stay square.
+    const zoomButtonStyle = ButtonStyle(
+      shape: WidgetStatePropertyAll(RoundedRectangleBorder()),
+    );
     final zoom = MapSurface(
       child: Flex(
         direction: horizontal ? Axis.horizontal : Axis.vertical,
@@ -374,12 +378,14 @@ class _MapControls extends StatelessWidget {
         children: [
           IconButton(
             tooltip: 'Zoom in',
+            style: zoomButtonStyle,
             icon: const Icon(Icons.add, size: 30),
             onPressed: () => onZoom(1),
           ),
           if (!horizontal) const SizedBox(width: 32, child: Divider(height: 1)),
           IconButton(
             tooltip: 'Zoom out',
+            style: zoomButtonStyle,
             icon: const Icon(Icons.remove, size: 30),
             onPressed: () => onZoom(-1),
           ),

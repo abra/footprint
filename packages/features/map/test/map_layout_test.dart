@@ -1,3 +1,4 @@
+import 'package:component_library/component_library.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -25,6 +26,7 @@ void main() {
       );
       await tester.pumpWidget(
         MaterialApp(
+          theme: AppTheme.light,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(
               textScaler: const TextScaler.linear(2),
@@ -42,6 +44,36 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 400));
       final cubit = tester.element(find.byType(MapView)).read<MapCubit>();
+      final controller = tester
+          .widget<FlutterMap>(find.byType(FlutterMap))
+          .mapController!;
+      final originalZoom = controller.camera.zoom;
+      for (final (tooltip, delta) in [('Zoom in', 1), ('Zoom out', 0)]) {
+        final button = find.byWidgetPredicate(
+          (widget) => widget is IconButton && widget.tooltip == tooltip,
+        );
+        final ink = tester.widget<InkWell>(
+          find.descendant(of: button, matching: find.byType(InkWell)),
+        );
+        expect(ink.customBorder, const RoundedRectangleBorder());
+        expect(tester.getSize(button), const Size(48, 48));
+        final surface = tester.widget<Material>(
+          find
+              .descendant(
+                of: find.ancestor(
+                  of: button,
+                  matching: find.byType(MapSurface),
+                ),
+                matching: find.byType(Material),
+              )
+              .first,
+        );
+        expect(surface.shape, AppTheme.controlShape);
+        expect(surface.clipBehavior, Clip.antiAlias);
+        await tester.tap(button);
+        await tester.pumpAndSettle();
+        expect(controller.camera.zoom, closeTo(originalZoom + delta, 0.001));
+      }
       expect(find.byType(PolylineLayer), findsNothing);
       cubit.tilesFailed();
       await tester.pumpAndSettle();
@@ -71,6 +103,23 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.byTooltip('Add route photo').hitTestable(), findsOneWidget);
+      for (final tooltip in [
+        'Center on location',
+        'Add route photo',
+        'Routes',
+      ]) {
+        final button = find.byWidgetPredicate(
+          (widget) => widget is IconButton && widget.tooltip == tooltip,
+        );
+        expect(
+          tester
+              .widget<InkWell>(
+                find.descendant(of: button, matching: find.byType(InkWell)),
+              )
+              .customBorder,
+          AppTheme.controlShape,
+        );
+      }
       expect(find.byTooltip('Attributions').hitTestable(), findsOneWidget);
       await tester.tap(find.byTooltip('Attributions'));
       await tester.pumpAndSettle();

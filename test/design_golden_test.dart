@@ -113,6 +113,10 @@ void main() {
       'saving',
       'routes',
       'photo',
+      'zoom_in_pressed',
+      'zoom_out_pressed',
+      'center_pressed',
+      'recording_photo_pressed',
     ]) {
       testWidgets('$screen design $variant', (tester) async {
         debugDisableShadows = false;
@@ -221,7 +225,12 @@ void main() {
               key: const ValueKey('design'),
               child: MaterialApp(
                 debugShowCheckedModeBanner: false,
-                theme: AppTheme.light,
+                // Keep ink snapshots independent of asynchronous shader compilation.
+                theme: screen.endsWith('_pressed')
+                    ? AppTheme.light.copyWith(
+                        splashFactory: InkRipple.splashFactory,
+                      )
+                    : AppTheme.light,
                 builder: (context, child) => MediaQuery(
                   data: MediaQuery.of(context).copyWith(
                     textScaler: TextScaler.linear(scale),
@@ -263,12 +272,40 @@ void main() {
               isFalse,
             );
           }
-          if (variant == 'phone') {
+          final pressedTooltip = switch (screen) {
+            'zoom_in_pressed' => 'Zoom in',
+            'zoom_out_pressed' => 'Zoom out',
+            'center_pressed' => 'Center on location',
+            'recording_photo_pressed' => 'Add route photo',
+            _ => null,
+          };
+          TestGesture? press;
+          if (pressedTooltip != null) {
+            press = await tester.startGesture(
+              tester.getCenter(find.byTooltip(pressedTooltip)),
+            );
+            await tester.pump(const Duration(milliseconds: 100));
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 200));
+            final button = find.byWidgetPredicate(
+              (widget) =>
+                  widget is IconButton && widget.tooltip == pressedTooltip,
+            );
+            final ink = tester.widget<InkWell>(
+              find.descendant(of: button, matching: find.byType(InkWell)),
+            );
+            expect(ink.statesController!.value, contains(WidgetState.pressed));
+          }
+          if (variant == 'phone' ||
+              (variant == 'landscape_large_text' &&
+                  screen.startsWith('zoom_'))) {
+            final suffix = variant == 'phone' ? '' : '_$variant';
             await expectLater(
               find.byKey(const ValueKey('design')),
-              matchesGoldenFile('goldens/$screen.png'),
+              matchesGoldenFile('goldens/$screen$suffix.png'),
             );
           }
+          await press?.cancel();
           await tester.pumpWidget(const SizedBox.shrink());
           await tester.pumpAndSettle();
           await cubit.close();

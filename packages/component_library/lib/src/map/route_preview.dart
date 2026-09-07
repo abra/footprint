@@ -138,6 +138,8 @@ class _RoutePreviewState extends State<RoutePreview> {
               alignment: Alignment.topRight,
               child: Material(
                 color: Colors.white,
+                shape: AppTheme.controlShape,
+                clipBehavior: Clip.antiAlias,
                 child: IconButton(
                   tooltip: 'Retry map tiles',
                   icon: const Icon(Icons.cloud_off_outlined),
