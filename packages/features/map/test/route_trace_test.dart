@@ -1,9 +1,9 @@
+import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:map/src/location_motion.dart';
 import 'package:map/src/route_trace.dart';
 
 const start = LatLng(56, 60);
@@ -44,12 +44,19 @@ void main() {
     WidgetTester tester,
     List<LocationDM> points, {
     bool isRecording = true,
+    bool muted = false,
   }) => tester.pumpWidget(
     MaterialApp(
+      builder: AppTheme.builder,
       home: FlutterMap(
         options: const MapOptions(initialCenter: start, initialZoom: 16),
         children: [
-          RouteTrace(points: points, isRecording: isRecording, motion: motion),
+          RouteTrace(
+            points: points,
+            isRecording: isRecording,
+            motion: motion,
+            muted: muted,
+          ),
         ],
       ),
     ),
@@ -124,12 +131,27 @@ void main() {
     await showTrace(tester, points);
     await tester.pump(const Duration(milliseconds: 500));
     expect(visiblePath(tester).last, isNot(corner));
-    await showTrace(tester, points, isRecording: false);
+    await showTrace(tester, points, isRecording: false, muted: true);
     expect(visiblePath(tester), [start, corner]);
+    final history = tester.widget<PolylineLayer>(
+      find.byKey(const ValueKey('route-history-layer')),
+    );
+    expect(
+      history.polylines.single.color,
+      AppTheme.route.withValues(alpha: 0.25),
+    );
+    expect(history.polylines.single.strokeWidth, 4);
+    expect(find.byKey(const ValueKey('route-history-shadow')), findsNothing);
     move(end, 2);
     await tester.pumpAndSettle();
     expect(motion.value, end);
     expect(visiblePath(tester), [start, corner]);
+    expect(
+      tester.widget<PolylineLayer>(
+        find.byKey(const ValueKey('route-history-layer')),
+      ),
+      same(history),
+    );
   });
 
   testWidgets('snapping motion also completes the visible route', (
@@ -195,9 +217,28 @@ void main() {
       final historyFinder = find.byKey(const ValueKey('route-history-layer'));
       final history = tester.widget<PolylineLayer>(historyFinder);
       expect(history.polylines.single.points, hasLength(1999));
+      final cachedLayers = {
+        for (final suffix in ['shadow', 'layer'])
+          suffix: tester.widget<PolylineLayer>(
+            find.byKey(ValueKey('route-history-$suffix')),
+          ),
+      };
+      for (final layer in cachedLayers.values) {
+        for (final line in layer.polylines) {
+          expect(line.points, same(history.polylines.single.points));
+        }
+      }
       for (var i = 0; i < 20; i++) {
         await tester.pump(const Duration(milliseconds: 16));
         expect(tester.widget<PolylineLayer>(historyFinder), same(history));
+        for (final entry in cachedLayers.entries) {
+          expect(
+            tester.widget<PolylineLayer>(
+              find.byKey(ValueKey('route-history-${entry.key}')),
+            ),
+            same(entry.value),
+          );
+        }
         final tail = tester
             .widget<PolylineLayer>(
               find.byKey(const ValueKey('route-tail-layer')),

@@ -3,6 +3,8 @@ import 'package:equatable/equatable.dart';
 
 enum RecordingAction { start, stop }
 
+enum MapOrientation { northUp, courseUp }
+
 class MapState extends Equatable {
   const MapState({
     this.location,
@@ -12,11 +14,13 @@ class MapState extends Equatable {
     this.isRecording = false,
     this.recordingAction,
     this.centered = true,
+    this.orientation = MapOrientation.northUp,
     this.error,
     this.tileError = false,
     this.tileGeneration = 0,
     this.routeId,
     this.completedRouteId,
+    this.lastRouteHidden = false,
     this.metrics = const RouteMetrics(),
     this.statsExpanded = false,
     this.photos = const [],
@@ -34,11 +38,24 @@ class MapState extends Equatable {
   final RecordingAction? recordingAction;
   bool get recordingBusy => recordingAction != null;
   final bool centered;
+  final MapOrientation orientation;
+
+  String get followActionLabel => !centered
+      ? 'Center on location'
+      : orientation == MapOrientation.northUp
+      ? 'Follow direction of travel'
+      : 'Keep north up';
   final String? error;
   final bool tileError;
   final int tileGeneration;
   final int? routeId;
   final int? completedRouteId;
+  final bool lastRouteHidden;
+  bool get showsLastRoute =>
+      !isRecording &&
+      !lastRouteHidden &&
+      points.any((point) => point.hasValidCoordinates);
+  bool get showsRoute => isRecording || showsLastRoute;
   final RouteMetrics metrics;
   final bool statsExpanded;
   final List<RoutePhotoDM> photos;
@@ -56,6 +73,7 @@ class MapState extends Equatable {
     RecordingAction? recordingAction,
     bool clearRecordingAction = false,
     bool? centered,
+    MapOrientation? orientation,
     String? error,
     bool clearError = false,
     bool? tileError,
@@ -63,6 +81,7 @@ class MapState extends Equatable {
     int? routeId,
     bool clearRoute = false,
     int? completedRouteId,
+    bool? lastRouteHidden,
     RouteMetrics? metrics,
     bool? statsExpanded,
     List<RoutePhotoDM>? photos,
@@ -83,11 +102,13 @@ class MapState extends Equatable {
         ? null
         : recordingAction ?? this.recordingAction,
     centered: centered ?? this.centered,
+    orientation: orientation ?? this.orientation,
     error: clearError ? null : error ?? this.error,
     tileError: tileError ?? this.tileError,
     tileGeneration: tileGeneration ?? this.tileGeneration,
     routeId: clearRoute ? null : routeId ?? this.routeId,
     completedRouteId: completedRouteId ?? this.completedRouteId,
+    lastRouteHidden: lastRouteHidden ?? this.lastRouteHidden,
     metrics: metrics ?? this.metrics,
     statsExpanded: statsExpanded ?? this.statsExpanded,
     photos: photos == null ? this.photos : List.unmodifiable(photos),
@@ -106,11 +127,13 @@ class MapState extends Equatable {
     isRecording,
     recordingAction,
     centered,
+    orientation,
     error,
     tileError,
     tileGeneration,
     routeId,
     completedRouteId,
+    lastRouteHidden,
     metrics,
     statsExpanded,
     photos,

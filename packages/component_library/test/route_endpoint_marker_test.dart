@@ -14,6 +14,7 @@ void main() {
       final end = RouteEndpointMarker(point: point, letter: 'B');
       await tester.pumpWidget(
         MaterialApp(
+          builder: AppTheme.builder,
           home: Scaffold(
             body: FlutterMap(
               options: MapOptions(

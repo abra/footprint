@@ -32,11 +32,14 @@ class RouteListLoaded extends RouteListState {
 }
 
 class RouteListCubit extends Cubit<RouteListState> {
-  RouteListCubit({required RoutesRepository routesRepository})
-    : _repository = routesRepository,
-      super(const RouteListLoading());
+  RouteListCubit({
+    required RoutesRepository routesRepository,
+    this.onRouteDeleted,
+  }) : _repository = routesRepository,
+       super(const RouteListLoading());
   static const pageSize = 20;
   final RoutesRepository _repository;
+  final Future<void> Function(int)? onRouteDeleted;
   int _request = 0;
   String _query = '';
   RouteSort _sort = RouteSort.newest;
@@ -132,6 +135,7 @@ class RouteListCubit extends Cubit<RouteListState> {
     );
     try {
       await _repository.deleteRoute(route.id);
+      await onRouteDeleted?.call(route.id);
       if (!isClosed && request == _request) await load();
     } on Object catch (error, stack) {
       if (isClosed || request != _request) return;

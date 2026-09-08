@@ -7,6 +7,7 @@ import 'package:routes_repository/routes_repository.dart';
 import 'package:recording_service/recording_service.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
 import 'package:route_planning/route_planning.dart';
+import 'package:route_snapshots/route_snapshots.dart';
 
 import 'config/application_config.dart';
 import 'resource_disposer.dart';
@@ -74,6 +75,11 @@ Future<DependenciesContainer> createDependenciesContainer({
       endpoint: config.routingEndpoint,
     );
     resources.add('route planner', () async => planner.dispose());
+    final snapshots = RouteSnapshotRepository(
+      config: config.map,
+      store: FileSnapshotStore(),
+    );
+    resources.add('route snapshots', snapshots.dispose);
     final geocoding = GeocodingManager(sqliteStorage: sqliteStorage);
     resources.add('geocoding', geocoding.dispose);
     final recording = RecordingService(
@@ -85,6 +91,7 @@ Future<DependenciesContainer> createDependenciesContainer({
     return DependenciesContainer(
       walksRepository: walks,
       routePlanner: planner,
+      routeSnapshots: snapshots,
       photosRepository: photos,
       foregroundLocationService: locationService,
       sqliteStorage: sqliteStorage,

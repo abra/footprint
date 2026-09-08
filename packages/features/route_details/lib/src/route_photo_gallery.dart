@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'route_details_cubit.dart';
+import 'photo_comment_sheet.dart';
 
 class RoutePhotoGallery extends StatelessWidget {
   const RoutePhotoGallery({super.key, required this.state});
@@ -19,17 +21,17 @@ class RoutePhotoGallery extends StatelessWidget {
         Row(
           children: [
             Expanded(child: Text(error)),
-            IconButton(
+            AppIconButton(
               tooltip: 'Retry photos',
               onPressed: context.read<RouteDetailsCubit>().loadPhotos,
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(FLucideIcons.refreshCw),
             ),
           ],
         ),
       if (state.photos.isNotEmpty) ...[
         const SizedBox(height: 24),
         Text(
-          'PHOTOS (${state.photos.length})',
+          'Photos (${state.photos.length})',
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
@@ -55,6 +57,15 @@ class RoutePhotoGallery extends StatelessWidget {
                           context,
                           photos: state.photos,
                           selected: photo,
+                          onEditComment: state.route.status == Status.completed
+                              ? (viewerContext, photo) => showPhotoCommentSheet(
+                                  viewerContext,
+                                  photo: photo,
+                                  onSave: (comment) => context
+                                      .read<RouteDetailsCubit>()
+                                      .updatePhotoComment(photo.id, comment),
+                                )
+                              : null,
                           onDelete: state.route.status == Status.completed
                               ? (photo) => context
                                     .read<RouteDetailsCubit>()

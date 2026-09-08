@@ -1,0 +1,25 @@
+name: route_snapshots
+version: 1.0.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.2
+  flutter: '>=3.47.2'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  component_library:
+    path: ../component_library
+  crypto: ^3.0.7
+  flutter_map: ^8.3.2
+  path: ^1.9.1
+  path_provider: ^2.1.5
+
+dev_dependencies:
+  domain_models:
+    path: ../domain_models
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

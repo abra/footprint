@@ -1,3 +1,4 @@
+import 'package:component_library/component_library.dart';
 import 'package:flutter/cupertino.dart' show CupertinoPageTransition;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,15 +13,20 @@ import 'package:map/src/map_cubit.dart';
 import 'package:map/src/map_view.dart';
 import 'package:recording_service/recording_service.dart';
 import 'package:route_details/src/route_details_view.dart';
+import 'package:route_details/src/route_details_cubit.dart';
+import 'package:route_details/src/timeline/route_timeline_view.dart';
 import 'package:route_list/src/route_list_cubit.dart';
 import 'package:route_list/src/route_list_view.dart';
 import 'package:routes_repository/routes_repository.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:statistics/src/statistics_cubit.dart';
 import 'package:statistics/src/statistics_view.dart';
+import 'package:route_snapshots/route_snapshots.dart';
+
+import '../packages/route_snapshots/test/fakes.dart';
 
 import '../packages/features/map/test/fakes.dart';
-import '../packages/features/map/test/pump_recording_ui.dart';
+import '../packages/component_library/test/pump_map_ui.dart';
 
 final class NavigationDependencies extends TestDependenciesContainer {
   NavigationDependencies(this._service) {
@@ -31,6 +37,9 @@ final class NavigationDependencies extends TestDependenciesContainer {
   }
   final FakeLocationService _service;
   final _routes = FakeRoutesRepository();
+  @override
+  RouteSnapshotRepository get routeSnapshots => _snapshots;
+  final _snapshots = unavailableSnapshots();
   @override
   WalksRepository get walksRepository => _walks;
   final _walks = _NavigationWalks();
@@ -64,7 +73,13 @@ Future<void> withRecordingNavigation(
   final dependencies = NavigationDependencies(service);
   final router = buildRouter(dependencies: dependencies);
   try {
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        theme: AppTheme.light,
+        builder: AppTheme.builder,
+        routerConfig: router,
+      ),
+    );
     await tester.pump();
     service.send(location(1));
     await tester.pump(const Duration(milliseconds: 400));
@@ -78,10 +93,11 @@ Future<void> withRecordingNavigation(
     expect(tester.takeException(), isNull);
   } finally {
     await tester.pumpWidget(const SizedBox.shrink());
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     router.dispose();
     await tester.runAsync(() async {
       await dependencies.recordingService.dispose();
+      await dependencies.routeSnapshots.dispose();
       await service.dispose();
     });
   }
@@ -92,14 +108,14 @@ void main() {
     'statistics round trip preserves history, camera and active recording',
     (tester) => withRecordingNavigation(tester, (service, router, cubit) async {
       await tester.tap(find.byTooltip('Routes'));
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       final listCubit = tester
           .element(find.byType(RouteListView))
           .read<RouteListCubit>();
-      await tester.enterText(find.byType(TextField), 'recording');
+      await tester.enterText(find.byType(EditableText), 'recording');
       await tester.pump(const Duration(milliseconds: 400));
       await tester.tap(find.byTooltip('Statistics'));
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       final context = tester.element(find.byType(StatisticsView));
       expect(ModalRoute.of(context)!.settings, isA<MaterialPage<void>>());
       final statistics = context.read<StatisticsCubit>();
@@ -107,7 +123,7 @@ void main() {
       service.send(location(2));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.tap(find.byTooltip('Back to routes'));
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       expect(statistics.isClosed, isTrue);
       expect(
         tester.element(find.byType(RouteListView)).read<RouteListCubit>(),
@@ -115,7 +131,7 @@ void main() {
       );
       expect(listCubit.query, 'recording');
       await tester.tap(find.byTooltip('Back to map'));
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       expect(cubit.state.isRecording, isTrue);
       expect(cubit.state.points, hasLength(2));
       expect(service.disposed, isFalse);
@@ -144,14 +160,14 @@ void main() {
           lessThan(tester.getSize(list).width),
         );
       }
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       expect(find.text('Recording'), findsOneWidget);
       expect(cubit.isClosed, isFalse);
       expect(service.disposed, isFalse);
       service.send(location(2));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.tap(find.byTooltip('Back to map'));
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       expect(
         tester.element(find.byType(MapView)).read<MapCubit>(),
         same(cubit),
@@ -170,9 +186,9 @@ void main() {
     'Android system back returns to the recording map',
     (tester) => withRecordingNavigation(tester, (service, router, cubit) async {
       await tester.tap(find.byTooltip('Routes'));
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       await tester.binding.handlePopRoute();
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       expect(router.canPop(), isFalse);
       expect(find.byType(RouteListView), findsNothing);
       expect(
@@ -189,11 +205,11 @@ void main() {
     'details use a platform page and return a typed result to the same list',
     (tester) => withRecordingNavigation(tester, (service, router, cubit) async {
       await tester.tap(find.byTooltip('Routes'));
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       final list = find.byType(RouteListView);
       final listCubit = tester.element(list).read<RouteListCubit>();
       final result = router.push<bool>('${AppRoutes.routes}/1');
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       final detailsContext = tester.element(find.byType(RouteDetailsView));
       final route = ModalRoute.of(detailsContext)! as PageRoute<bool>;
       expect(route.settings, isA<MaterialPage<bool>>());
@@ -203,8 +219,26 @@ void main() {
         expect(find.byType(CupertinoPageTransition), findsWidgets);
         expect(route.popGestureEnabled, isTrue);
       }
+      final detailsCubit = detailsContext.read<RouteDetailsCubit>();
+      await tester.tap(find.byTooltip('Route timeline'));
+      await pumpMapUi(tester);
+      final timelineContext = tester.element(find.byType(RouteTimelineView));
+      final timelineCubit = timelineContext.read<RouteDetailsCubit>();
+      expect(
+        ModalRoute.of(timelineContext)!.settings,
+        isA<MaterialPage<void>>(),
+      );
+      expect(timelineCubit, isNot(same(detailsCubit)));
+      await tester.tap(find.byTooltip('Back to route'));
+      await pumpMapUi(tester);
+      expect(timelineCubit.isClosed, isTrue);
+      expect(detailsCubit.isClosed, isFalse);
+      expect(
+        tester.element(find.byType(RouteDetailsView)).read<RouteDetailsCubit>(),
+        same(detailsCubit),
+      );
       await tester.tap(find.byTooltip('Back'));
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       expect(await result, isFalse);
       expect(tester.element(list).read<RouteListCubit>(), same(listCubit));
       expect(listCubit.isClosed, isFalse);
@@ -233,10 +267,10 @@ void main() {
         const center = LatLng(10, 20);
         controller.move(center, 14);
         await tester.tap(find.byKey(const ValueKey('recording-stats-panel')));
-        await pumpRecordingUi(tester);
+        await pumpMapUi(tester);
         expect(cubit.state.statsExpanded, isTrue);
         await tester.tap(find.byTooltip('Routes'));
-        await pumpRecordingUi(tester);
+        await pumpMapUi(tester);
         final list = find.byType(RouteListView);
         final listContext = tester.element(list);
         final listCubit = listContext.read<RouteListCubit>();
@@ -268,14 +302,14 @@ void main() {
         } finally {
           await gesture.up(timeStamp: const Duration(milliseconds: 800));
         }
-        await pumpRecordingUi(tester);
+        await pumpMapUi(tester);
         if (!complete) {
           expect(router.canPop(), isTrue);
           expect(tester.getTopLeft(list).dx, closeTo(0, 0.01));
           expect(tester.element(list).read<RouteListCubit>(), same(listCubit));
           expect(listCubit.isClosed, isFalse);
           await tester.tap(find.byTooltip('Back to map'));
-          await pumpRecordingUi(tester);
+          await pumpMapUi(tester);
         }
         expect(router.canPop(), isFalse);
         expect(list, findsNothing);

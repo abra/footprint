@@ -4,8 +4,10 @@ A Flutter application for recording routes and exploring nearby areas. Free
 recording works locally. The Explore screen adds distance-based walking loops,
 ordered checkpoints, a persistent discovery map and three local achievements.
 
-The interface follows the supplied Figma PDFs: a full-screen map, live recording
-metrics, route naming and preview, and a searchable, sortable route catalog.
+The interface uses Forui with a shared Footprint theme. The supplied Figma PDFs
+inform the full-screen map, live recording metrics, route naming/preview, and
+searchable route catalog. Recording is the map's single primary bottom action;
+Explore is a compact action in the address bar, alongside route history.
 Stopping saves the route before opening the name editor; leaving that screen
 never discards the recorded points. During recording, camera or library photos
 can be pinned to the current location. Saved routes include photo markers and

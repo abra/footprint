@@ -32,6 +32,7 @@ abstract final class DatabaseHelper {
       )
     ''');
     await createPhotoTables(db);
+    await addPhotoComments(db);
     await createExplorationTables(db);
     await createStatisticsTable(db);
     await createIndexes(db);
@@ -67,8 +68,13 @@ abstract final class DatabaseHelper {
     }
     if (oldVersion < 7) await createExplorationTables(db);
     if (oldVersion < 8) await createStatisticsTable(db);
+    if (oldVersion < 9) await addPhotoComments(db);
     await createIndexes(db);
   }
+
+  static Future<void> addPhotoComments(Database db) => db.execute(
+    "ALTER TABLE route_photos ADD COLUMN comment TEXT NOT NULL DEFAULT ''",
+  );
 
   static Future<void> createStatisticsTable(Database db) => db.execute('''
     CREATE TABLE route_statistics (

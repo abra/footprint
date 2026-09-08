@@ -71,6 +71,22 @@ may receive the result; newer stream fixes win and late results cannot enter an
 active recording. Explore distinguishes GPS acquisition from HTTP generation,
 continues automatically on success, and ignores cancelled/closed requests.
 GPS recovery clears only location errors, never routing/storage failures.
+Regeneration retains the current preview and its novelty estimate through loading,
+cancellation and errors. Only a successful response replaces it; the Cubit keeps
+one previous preview/estimate for a local undo. Parameter changes and clearing a
+route invalidate both snapshots. Generation returns an attempt-specific success
+flag so late or cancelled requests cannot switch the View to a different result.
+The preview shows distance to its start using a suitable GPS fix. A one-shot expiry
+timer invalidates this readiness after 30 seconds without polling or extra GPS
+subscriptions. A fresh, distant fix disables Start walk; an expired/unknown fix
+allows the existing acquisition flow. Refresh location explicitly requests a fix
+without changing the plan or starting a recording. Start always revalidates GPS
+and the 100 m rule, regardless of what the View previously displayed.
+Start walk returns attempt-specific failure feedback for a visible action sheet;
+errors cannot be hidden above the button in a scrolled planning panel or erased
+by the next GPS update before they are presented. The 100 m start-distance check
+still applies to both modes. Dismissing the sheet keeps the plan and endpoints;
+only a successful recording start returns to the map.
 
 `MapScreen`, `RouteListScreen`, and `RouteDetailsScreen` create their Cubits using `BlocProvider`.
 Their Views render state and send commands to Cubits; Views do not receive
@@ -111,7 +127,9 @@ motion estimates (legacy points use segment speeds) at elapsed GPS times;
 live clock ticks reuse that immutable list.
 The chart is isolated by a repaint boundary and is not driven by marker frames.
 
-Map camera operations and tile rendering belong to the View. `LocationMotion`
+Map camera operations and tile rendering belong to the View. Map and Explore
+share `CurrentLocationLayer` and `LocationMotion` from `component_library`,
+with a View-owned ticker on each screen. `LocationMotion`
 plays buffered GPS fixes along geodesic segments without easing at each fix;
 the following camera uses that same position. Presentation delay adapts to the
 GPS timestamp interval, targeting 1.2 to 4 seconds with 200 ms jitter headroom.
@@ -133,6 +151,58 @@ No line is drawn before playback reaches the recording's first point. Completed
 routes show their full recorded geometry, independent of preview movement.
 SQLite, metrics, and photos use filtered GPS fixes, never animation frames.
 Recorded fixes also retain original coordinates and sensor measurements.
+Explore does not follow the marker automatically after initial positioning;
+manual centering targets the displayed location or fits the planned route.
+An automatic A endpoint follows the displayed marker, while manual endpoints
+and generated routes stay fixed. Routing still uses the actual GPS coordinates.
+Explored-area cells are shown only in the Exploration tab, not on Plan route.
+The shared position marker is a borderless purple navigation arrow with a
+compact, low-opacity shadow centered on its silhouette without a directional
+offset, inside a fixed 40px surface. Its size is clamped to
+24px at zoom 10 and below and 36px at zoom 16 and above, interpolating linearly
+between those zoom levels. Only map events that change the clamped size rebuild
+the glyph; sizing adds no ticker and keeps its geographic anchor unchanged.
+Until a travel course is known it uses a
+static 28px dot. Neither shape pulses. `LocationMotion` derives course from at
+least 3m of filtered displacement and publishes it separately at the displayed
+buffered leg, not the newest GPS fix. Stationary fixes preserve the last course;
+relocations and moving fixes after a signal gap reset it. No compass or additional
+persisted sensor fields are required. Turns follow the shortest arc over 240ms,
+ignoring changes below 2 degrees once settled. The arrow rotates with the map.
+`HeadingMotion` stops after each turn and snaps for reduced motion,
+disabled `TickerMode` or a background app. A `RepaintBoundary` isolates drawing.
+On the main map, the View owns this motion and shares it with the arrow and
+`MapFollowMotion`, so course-up rotation exactly cancels the visible arrow's
+geographic heading. Explore keeps its existing freely oriented planning camera.
+The center button resumes following after a map gesture, preserving orientation;
+while following, it toggles north-up (compass icon) and course-up (arrow icon).
+Accessible action labels describe the next action and semantics expose the mode.
+`MapState` holds following/orientation choices only, never animation frames.
+Mode changes turn the map by the shortest arc over 240ms, without changing zoom
+or moving the marker away from the viewport center. Missing course holds the
+current rotation; acquiring a course transitions to it. Manual gestures cancel
+following and in-flight camera turns. Zoom buttons preserve both choices.
+There is no idle rotation ticker, compass subscription or new persisted data.
+Heading-only frames update the camera and dependent map layers in course-up,
+while keeping screen/controls out of frame updates and retaining cached route
+geometry. Camera rotation still incurs rendering work; device profiling is
+required to quantify its cost.
+`RecordedRouteLayer` styles both recordings and saved previews with a rounded
+purple stroke without casing and a faint two-tone vector shadow offset by 2px.
+Full maps use a 7px stroke, compact previews 5px. The shadow needs no viewport blur
+or new ticker. Both shadows render beneath the colored strokes. Each historical pass
+is cached between sample boundaries, sharing the same coordinate list; only the
+two-point tail changes each frame.
+The tail shadow fades in beyond the cached end cap to avoid a dark overlap spot.
+`RecordedRouteMarker` keeps endpoint meanings consistent across recording,
+saved previews and details: a coral flag marks the first rendered point and a
+filled green location pin marks the last. Timeline endpoints share these colors
+and use the same filled finish icon.
+Their pole base/pin tip anchors match the line's
+coordinates, independent of zoom, map rotation or text scaling. Previews use the
+same filtered coordinate list for both the line and its endpoints; single-point
+routes show only the start marker. Timeline events use the same symbol meanings
+and colors.
 Map errors remain visible and can be retried by recreating the tile layer.
 
 `RouteListCubit` handles loading, loaded/empty, and failure states. Late results
@@ -140,6 +210,35 @@ cannot overwrite a newer request or emit after the Cubit is closed.
 The catalog loads 20 routes per page, debounces name/date searches, and supports
 sorting, details/rename, and confirmed deletion. A page reads route headers and
 their points in two queries within one transaction, avoiding one query per row.
+After stopping, the main map retains the completed trace as a thin, muted line
+without a shadow, with subdued start/finish markers and a dismissible "Last route"
+notice. Dismissal belongs to `MapCubit` presentation state, never deletes stored
+points, survives preview GPS updates, and resets when a new route is created.
+Starting a recording hides the old geometry while creation is pending; a failed
+start restores its previous visibility. Active and detailed routes keep their
+normal styling. Completed planned-walk overlays are not retained on the main map.
+
+The catalog uses static 720x400 PNG thumbnails, never `FlutterMap` instances.
+`RouteThumbnail` owns its Cubit; the View only paints state and forwards commands.
+Composition owns `RouteSnapshotRepository` from `route_snapshots`. It coalesces
+identical requests, renders one thumbnail at a time and cancels work when its last
+consumer leaves. Generation is lazy for built list entries, not an initialization
+or recording-save dependency, and never prefetches an entire route catalog.
+`RouteSnapshotScene` fits every valid route point using flutter_map's camera/CRS
+with 72px padding for the line, endpoint glyphs and attribution. The headless
+renderer fetches only the tiles of this single viewport, at one zoom, with up to
+four concurrent loads, the configured provider/User-Agent and normal tile caching.
+It has a 12-second deadline and releases image resources and its provider on exit.
+Only a complete rendered map is cached. While loading or offline, the same fitted
+route is painted without a basemap; failures expose a retry action, not a spinner.
+Images are shown without cropping; attribution remains visible and linked.
+Snapshot keys include geometry, tile URL and rendering version, not route names.
+The service keeps an 8 MB encoded-image memory cache and a 50 MB temporary disk
+cache, validates disk PNGs, atomically replaces files and prunes older geometry
+and least-recently-used files. Cache I/O failure does not block displaying a newly
+rendered image. Deleting a route cancels its pending snapshot writes and clears
+its cache. The OS can evict temporary files; cached previews are not offline maps.
+Route details remain interactive; timeline previews still use `RoutePreview`.
 
 `RouteDetailsCubit` loads the route and validates/persists a trimmed name. A
 successful Stop completes the route before navigation to the naming screen.
@@ -213,9 +312,79 @@ animation positions never enter these calculations.
 
 The first PDF-based milestone implements a full-bleed map with floating controls, a
 recording metrics panel, route naming/preview, and a vertical route catalog.
-`component_library` owns the visual tokens, bundled Roboto Condensed font,
-metric formatting/widgets, and shared map/preview rendering. Production uses
+`component_library` owns the Forui theme, common controls/sheets, metric
+formatting/widgets, and shared map/preview rendering. Inter and Lucide ship with
+Forui; the bundled Roboto Condensed font remains limited to live metrics to
+preserve their fixed digit geometry. Production uses
 real tile providers; golden tests inject a deliberately synthetic tile.
+
+The map has one primary bottom command (Record/Stop). Explore is a labeled
+secondary action in the address bar and hides while recording or transitioning;
+history stays available. The header wraps at narrow widths/large text sizes.
+Camera and map tools remain separate 48px targets. Press feedback does not scale
+the controls and is clipped to the same shape as their surface.
+Floating map controls, the Record/Stop command, headers, recording/planning
+panels and retry notices use
+the borderless `MapSurface` with a shared soft shadow. Scrollable headers and
+preview overlays leave space for that shadow without disabling content clipping.
+Zoom controls retain an internal divider in either orientation. Input outlines,
+selection indicators and in-page separators remain functional boundaries, not
+floating surfaces, and do not inherit map shadows.
+Map controls use viewport-based positions rather than the space left by headers
+and recording statistics. The photo slot has a fixed extent even while absent;
+starting/stopping recording, expanding stats and displaying errors cannot shift
+the existing controls. Compact viewports use a horizontal toolbar in both idle
+and recording states. Header and footer content is constrained to separate areas
+and can scroll without covering the 48px controls.
+
+`MaterialApp` and platform-adaptive pages remain the navigation/keyboard host;
+`FTheme` wraps the navigator so routes and modal sheets share styling and Forui
+accessibility settings. Views use Forui buttons, fields, tiles and selection
+controls. Shared wrappers enforce touch sizing and text wrapping, not business
+logic. Individually outlined tiles use `AppTileList` with the shared 8px spacing
+token; this covers endpoints, achievements and sheet actions.
+`AppSheet` gives modal forms and action sheets the same subtle upward shadow
+and rounded surface without tinting the background or adding layout padding.
+Segmented controls and the zoom toolbar remain visually connected groups.
+Loop planning offers a 2x2 grid of 1/3/5/10 km presets. The adjacent custom
+distance action opens a numeric-only sheet; custom values remain visible without
+selecting a preset. The A/B endpoint form determines the shared settings height;
+the Loop grid fills those bounds. Editing and preview are separate View states:
+generation opens the result, Edit restores the form without clearing a valid plan,
+and Show route returns to that same preview without another request. The panel
+wraps its content, with a regular gap before commands, and its maximum height is
+viewport-limited, keeping the map visible without a full-screen expansion mode.
+The app bar exposes only map centering beside the title. Settings and results have a
+scrollbar when they overflow; primary commands and preview tools stay outside the
+scroll area. Loop regeneration is a 48 px refresh tool beside
+Start walk, with a tooltip and accessibility label. Short, wide panels place
+commands beside the form; portrait panels allow more height for large text.
+Camera framing uses the laid-out panel height.
+Route tolerance
+remains unchanged at +/-10%.
+
+After Stop completes, Route details says "Route saved" and naming is optional;
+leaving without renaming retains the completed recording. Both the checkmark and
+keyboard submission accept a blank name. Unchanged names
+finish without a database write; clearing an existing name stores NULL in both
+name fields, restoring the date-based label and removing the old search entry.
+Name persistence keeps its checkmark and reports pending text instead of replacing
+the icon with a spinner.
+Reaching the final checkpoint never stops recording automatically: the live summary
+says "Recording continues". Checkpoint distances are labeled straight-line, not
+remaining walking distance or turn-by-turn guidance.
+
+Local view changes use a shared 180 ms fade-through (`AppMotion`): Loop/A/B fades
+inside the endpoint form's bounds, while editor/preview, planning/exploration and statistics
+periods use `AppFadeSwitcher`. Outgoing content cannot receive pointer, focus,
+or accessibility actions and does not determine the incoming view's height.
+Content fades out before the new content fades in, without overlapping labels.
+Reduced-motion settings skip transitions, including one already in progress.
+Keys represent view/period changes, not GPS, counters, or chart selections;
+animation frames do not rebuild their content. Map canvases stay outside these
+transitions, and navigation retains platform page transitions.
+Modal commands use bottom/action sheets. No extra ticker or state stream
+was added to map rendering for the design-system migration.
 
 The photo milestone adds camera/library selection while recording, circular
 photo pins, a saved-route gallery, and a paged, zoomable viewer. Photo deletion
@@ -225,6 +394,8 @@ its `PhotoPicker` and `PhotoFiles` interfaces isolate the native plugin and disk
 The composition root owns this repository and joins its writes before SQLite
 closes. Screens own only subscriptions and presentation state. Stop and duplicate
 captures are disabled while a picker/import is in flight; GPS recording continues.
+The photo button keeps its camera icon during capture/import/recovery instead
+of replacing it with a loading spinner. Failures remain visible and retryable.
 
 Capture intent (route ID, coordinates, timestamp and generated file name) is
 committed before opening the picker. The chosen temporary path is journaled,
@@ -236,6 +407,24 @@ Deletion cascades photo metadata and then removes unreferenced owned files.
 Cleanup failures are logged and retried on launch, not reported as a failed
 metadata deletion. Originals, unrelated files and pending imports are protected.
 
+Saved route details link to `/routes/:id/timeline`. The timeline has its own
+screen-owned `RouteDetailsCubit`, reusing route/photo loading and mutations
+without sharing a presentation lifetime with the name editor. Its lazy list
+shows start, photos ordered by capture time (ID breaks ties), and finish, with
+recorded coordinates and local timestamps. Missing legacy endpoint times remain
+unknown; no intermediate stops or movement events are inferred. An overview map
+retains the recorded geometry and photo pins.
+
+Photo comments are optional plain text, edited in a bottom sheet from the
+timeline or saved-route photo viewer. Empty text removes a comment. The
+repository trims and limits text to 1000 grapheme clusters, serializes the write,
+and notifies other open screens only after SQLite commits. Failed saves preserve
+the editor draft and allow retry; repeated submits are blocked without replacing
+the command icon with a spinner. Screen closure cannot cancel an accepted write.
+Comments change neither image files nor coordinates/timestamps. Both camera and
+gallery attachments use the GPS fix and wall-clock time before opening the native
+picker, not shutter-time metadata or EXIF coordinates.
+
 ## Data And Services
 
 - `domain_models`: Flutter-independent values with domain types and equality.
@@ -243,7 +432,7 @@ metadata deletion. Originals, unrelated files and pending imports are protected.
 - `route_planning`: cancellable walking-route generation through HeiGIT
   (OpenRouteService). Credentials and the endpoint are injected at composition.
 - `sqlite_storage`: explicitly owned connections, `RoutesDao`, and
-  `GeocodingCacheDao`, `RoutePhotosDao`, `RouteStatisticsDao`, and `ExplorationDao`. Version 8 migrates versions 1/2/3/4/5/6/7 without deleting route
+  `GeocodingCacheDao`, `RoutePhotosDao`, `RouteStatisticsDao`, and `ExplorationDao`. Version 9 migrates versions 1/2/3/4/5/6/7/8 without deleting route
   data. Nullable `source_id` preserves legacy points; a unique per-route sample
   index makes repeated delivery idempotent. Transactions reject a second active
   route and prevent appending to a completed route. The Android worker has an
@@ -261,6 +450,8 @@ metadata deletion. Originals, unrelated files and pending imports are protected.
   Version 7 adds versioned walk plans, ordered checkpoints, discovered geohash
   cells and achievements. The storage package depends on pure domain models to
   run shared exploration rules in the same transaction as the recording write.
+  Version 9 adds a default-empty photo comment; old attachments and pending
+  capture recovery keep their original coordinates, time and file names.
 - `foreground_location_service`: `LocationService` contract and its platform
   implementation. Modes are stopped, preview, and recording. Transitions are
   serialized; startup failures, stream errors, and stream completion can be
@@ -294,7 +485,7 @@ and prevents different dependency versions within the same application.
 
 `make get` resolves dependencies once. `make verify` checks formatting, analyzes
 the workspace, and runs unit, database, and widget tests, including stream
-failure/restart, every recording retry operation, migration from versions 1/2/3/4/5/6/7,
+failure/restart, every recording retry operation, migration from versions 1/2/3/4/5/6/7/8,
 deduplication, shutdown ordering, and a background writer with no UI connection.
 Golden tests cover the map, saving, history, and photo viewer using a bundled
 font, fixture tiles, and a photo extracted from the supplied PDF. Layout tests

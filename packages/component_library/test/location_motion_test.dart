@@ -1,6 +1,6 @@
+import 'package:component_library/component_library.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:map/src/location_motion.dart';
 
 void main() {
   late LocationMotion motion;
@@ -8,11 +8,17 @@ void main() {
   const target = LatLng(56.001, 60);
   final epoch = DateTime.utc(2026, 9, 6);
 
-  void send(LatLng point, int milliseconds, {bool animate = true}) {
+  void send(
+    LatLng point,
+    int milliseconds, {
+    bool animate = true,
+    bool stationary = false,
+  }) {
     motion.moveTo(
       point,
       timestamp: epoch.add(Duration(milliseconds: milliseconds)),
       animate: animate,
+      isStationary: stationary,
     );
   }
 
@@ -20,6 +26,123 @@ void main() {
     motion = LocationMotion(vsync: const TestVSync());
   });
   tearDown(() => motion.dispose());
+
+  testWidgets(
+    'course accumulates short steps but ignores sub-three-meter jitter',
+    (tester) async {
+      const distance = DistanceHaversine(roundResult: false);
+      send(start, 0, animate: false);
+      expect(motion.heading.value, isNull);
+      for (final meters in [1.0, -1.0, 2.0, -0.5]) {
+        send(
+          distance.offset(start, meters.abs(), meters < 0 ? 180 : 0),
+          1000,
+          animate: false,
+        );
+        expect(motion.heading.value, isNull);
+      }
+      send(distance.offset(start, 4, 90), 2000, animate: false);
+      expect(motion.heading.value, closeTo(90, 0.001));
+      expect(tester.binding.transientCallbackCount, 0);
+    },
+  );
+
+  testWidgets('course follows the displayed leg, not future buffered turns', (
+    tester,
+  ) async {
+    send(start, 0);
+    send(target, 1000);
+    expect(motion.heading.value, isNull);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(motion.heading.value, closeTo(0, 0.001));
+    send(const LatLng(56.001, 60.001), 2000);
+    expect(motion.heading.value, closeTo(0, 0.001));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(motion.value!.latitude, lessThan(target.latitude));
+    expect(motion.heading.value, closeTo(0, 0.001));
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(motion.value!.longitude, greaterThan(target.longitude));
+    expect(motion.heading.value, closeTo(90, 0.001));
+    await tester.pumpAndSettle();
+    expect(motion.heading.value, closeTo(90, 0.001));
+    expect(tester.binding.transientCallbackCount, 0);
+  });
+
+  testWidgets('a ten-minute stop preserves the course without idle ticks', (
+    tester,
+  ) async {
+    send(start, 0);
+    send(target, 1000, animate: false);
+    var changes = 0;
+    motion.heading.addListener(() => changes++);
+    for (var second = 2; second <= 602; second += 10) {
+      send(target, second * 1000, stationary: true);
+      expect(motion.heading.value, closeTo(0, 0.001));
+      expect(tester.binding.transientCallbackCount, 0);
+      await tester.pump(const Duration(seconds: 10));
+    }
+    expect(changes, 0);
+    send(const LatLng(56.001, 60.001), 603000, animate: false);
+    expect(motion.heading.value, closeTo(90, 0.001));
+  });
+
+  testWidgets('stationary drift does not redefine the course', (tester) async {
+    send(start, 0);
+    send(target, 1000, animate: false);
+    send(const LatLng(56.001, 60.0001), 2000, animate: false, stationary: true);
+    expect(motion.heading.value, closeTo(0, 0.001));
+    expect(tester.binding.transientCallbackCount, 0);
+  });
+
+  testWidgets(
+    'relocation or a moving fix after signal loss resets the course',
+    (tester) async {
+      send(start, 0);
+      send(target, 1000, animate: false);
+      send(const LatLng(37, -122), 2000);
+      expect(motion.heading.value, isNull);
+      send(const LatLng(37.001, -122), 3000, animate: false);
+      expect(motion.heading.value, closeTo(0, 0.001));
+      send(const LatLng(37.002, -122), 14000);
+      expect(motion.heading.value, isNull);
+      expect(tester.binding.transientCallbackCount, 0);
+    },
+  );
+
+  testWidgets('invalid and stale fixes cannot change the course', (
+    tester,
+  ) async {
+    send(start, 0);
+    send(target, 1000, animate: false);
+    send(const LatLng(56.001, 60.001), 500);
+    send(const LatLng(56.001, 60.001), 1000);
+    send(const LatLng(double.nan, 60), 2000);
+    expect(motion.heading.value, closeTo(0, 0.001));
+    expect(motion.value, target);
+  });
+
+  testWidgets('date line course uses the short geographic direction', (
+    tester,
+  ) async {
+    send(const LatLng(0, 179.999), 0);
+    send(const LatLng(0, -179.999), 1000, animate: false);
+    expect(motion.heading.value, closeTo(90, 0.001));
+    send(const LatLng(0, 179.999), 2000, animate: false);
+    expect(motion.heading.value, closeTo(270, 0.001));
+  });
+
+  testWidgets('reduced motion publishes the target course immediately', (
+    tester,
+  ) async {
+    send(start, 0);
+    send(target, 1000);
+    await tester.pump();
+    send(target, 1000, animate: false);
+    expect(motion.heading.value, closeTo(0, 0.001));
+    expect(motion.value, target);
+    expect(tester.binding.transientCallbackCount, 0);
+  });
 
   testWidgets('first fix appears immediately without flying from zero', (
     tester,

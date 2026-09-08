@@ -9,13 +9,19 @@ import 'theme/app_theme.dart';
 const _gap = 12.0;
 const _unitGap = 4.0;
 const _valueStyle = TextStyle(
+  fontFamily: 'packages/component_library/RobotoCondensed',
   fontSize: 20,
   height: 1.2,
   color: AppTheme.ink,
   fontFeatures: [FontFeature.tabularFigures()],
 );
 const _unitStyle = TextStyle(fontSize: 12);
-const _labelStyle = TextStyle(fontSize: 9, height: 1.2, color: AppTheme.muted);
+const _labelStyle = TextStyle(
+  fontFamily: 'packages/component_library/RobotoCondensed',
+  fontSize: 9,
+  height: 1.2,
+  color: AppTheme.muted,
+);
 const _labels = ['Current speed', 'Average speed', 'Distance', 'Duration'];
 
 class LiveRouteStats extends StatefulWidget {

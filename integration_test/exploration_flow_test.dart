@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -14,9 +15,11 @@ import 'package:integration_test/integration_test.dart';
 import 'package:map/map.dart';
 import 'package:recording_service/recording_service.dart';
 import 'package:route_planning/route_planning.dart';
+import 'package:route_snapshots/route_snapshots.dart';
 import 'package:routes_repository/routes_repository.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
 
+import '../packages/component_library/test/pump_map_ui.dart';
 import '../packages/domain_models/test/walk_fixtures.dart';
 import '../packages/features/map/test/fakes.dart';
 import '../test/design_golden_test.dart' show tileFixture;
@@ -117,10 +120,17 @@ void main() {
         final planner = OpenRouteServicePlanner(
           endpoint: Uri.parse('http://127.0.0.1:${server.port}/heigit'),
         );
+        final snapshots = RouteSnapshotRepository(
+          config: WalkFixtureConfig(server.port).map,
+          store: FileSnapshotStore(
+            directory: () async => Directory('${directory.path}/snapshots'),
+          ),
+        );
         final resources = ResourceDisposer()
           ..add('storage', storage.close)
           ..add('location', location.dispose)
           ..add('planner', () async => planner.dispose())
+          ..add('snapshots', snapshots.dispose)
           ..add('recording', recording.dispose);
         addTearDown(() async {
           await resources.dispose();
@@ -130,6 +140,7 @@ void main() {
         });
         await recording.initialize();
         final dependencies = DependenciesContainer(
+          routeSnapshots: snapshots,
           foregroundLocationService: location,
           sqliteStorage: storage,
           routesRepository: routes,
@@ -158,17 +169,17 @@ void main() {
           tester,
           () => find.text('Generate route').hitTestable().evaluate().isNotEmpty,
         );
-        await tester.pumpAndSettle();
+        await pumpMapUi(tester);
         if (mode == RoutePlanMode.pointToPoint) {
           await until(
             tester,
             () => find.text('A to B').hitTestable().evaluate().isNotEmpty,
           );
-          await tester.pumpAndSettle();
+          await pumpMapUi(tester);
           await tester.tap(find.text('A to B'));
-          await tester.pumpAndSettle();
+          await pumpMapUi(tester);
           await tester.tap(find.text('Destination'));
-          await tester.pumpAndSettle();
+          await pumpMapUi(tester);
           expect(find.byType(BottomSheet), findsNothing);
           final map = tester
               .widget<FlutterMap>(find.byType(FlutterMap))
@@ -176,10 +187,10 @@ void main() {
           final bounds = tester.getRect(find.byType(FlutterMap));
           final pointOffset = Offset(0, -bounds.height * 0.2);
           map.move(plan.points.last.latLng, 15, offset: pointOffset);
-          await tester.pumpAndSettle();
+          await pumpMapUi(tester);
           await tester.tapAt(bounds.center + pointOffset);
           await tester.pump(const Duration(milliseconds: 350));
-          await tester.pumpAndSettle();
+          await pumpMapUi(tester);
         }
         await tester.ensureVisible(find.text('Generate route'));
         await tester.tap(find.text('Generate route'));
@@ -190,6 +201,25 @@ void main() {
         expect(requestedMethod, 'POST');
         if (mode == RoutePlanMode.loop) {
           expect(requestedRoute?['options']['round_trip']['length'], 3000);
+          final regenerate = find.byWidgetPredicate(
+            (widget) =>
+                widget is AppIconButton && widget.tooltip == 'Generate another',
+          );
+          final actionBounds = tester.getRect(regenerate);
+          final panelBounds = tester.getRect(
+            find.byKey(const ValueKey('explore-panel')),
+          );
+          expect(panelBounds.intersect(actionBounds), actionBounds);
+          expect(regenerate.hitTestable(), findsOneWidget);
+          requestedRoute = null;
+          await tester.tap(regenerate);
+          await until(
+            tester,
+            () =>
+                requestedRoute != null &&
+                find.text('Start walk').hitTestable().evaluate().isNotEmpty,
+          );
+          expect(requestedRoute?['options']['round_trip']['length'], 3000);
         } else {
           expect(requestedRoute?['options']['round_trip'], isNull);
           expect(requestedRoute?['coordinates'], hasLength(2));
@@ -199,7 +229,7 @@ void main() {
         }
         expect(location.currentLocationRequests, 1);
         expect(recording.state.isRecording, isFalse);
-        await tester.tap(find.byTooltip('Clear route'));
+        await tester.tap(find.byTooltip('Clear route').hitTestable());
         await until(
           tester,
           () => find.text('Generate route').hitTestable().evaluate().isNotEmpty,
@@ -212,6 +242,21 @@ void main() {
           tester,
           () => find.text('Start walk').hitTestable().evaluate().isNotEmpty,
         );
+        location.send(fix(const GeoPoint(1, 1), 0));
+        await pumpMapUi(tester);
+        expect(
+          tester
+              .widget<AppButton>(find.widgetWithText(AppButton, 'Start walk'))
+              .onPressed,
+          isNull,
+        );
+        expect(find.textContaining('Move within 100 m'), findsOneWidget);
+        await tester.tap(find.text('Start walk'));
+        await pumpMapUi(tester);
+        expect(recording.state.isRecording, isFalse);
+        expect(await routes.getRoutes(), isEmpty);
+        location.send(fix(plan.points.first, 1));
+        await pumpMapUi(tester);
         await tester.tap(find.text('Start walk'));
         await until(
           tester,
@@ -230,14 +275,16 @@ void main() {
         await until(
           tester,
           () => find
-              .text(plan.isLoop ? 'Loop completed' : 'Walk completed')
+              .text(plan.isLoop ? 'Loop completed' : 'Destination reached')
               .evaluate()
               .isNotEmpty,
         );
+        expect(find.text('Recording continues'), findsOneWidget);
+        expect(recording.state.isRecording, isTrue);
         await tester.tap(find.text('Stop recording'));
         await until(
           tester,
-          () => find.text('SAVE ROUTE').evaluate().isNotEmpty,
+          () => find.text('Route saved').evaluate().isNotEmpty,
         );
         expect((await walks.getProfile()).completedWalks, 1);
         expect(

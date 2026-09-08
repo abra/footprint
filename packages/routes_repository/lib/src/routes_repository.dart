@@ -41,12 +41,13 @@ class RoutesRepository {
     return rows.map((route) => route.toDomain()).toList();
   }
 
+  /// A blank name restores the default date-based label.
   Future<void> renameRoute(int id, String name) {
     final trimmed = name.trim();
-    if (trimmed.isEmpty || trimmed.runes.length > 80) {
-      throw ArgumentError('Route name must contain 1 to 80 characters.');
+    if (trimmed.runes.length > 80) {
+      throw ArgumentError('Route name must contain at most 80 characters.');
     }
-    return _routes.rename(id, trimmed);
+    return _routes.rename(id, trimmed.isEmpty ? null : trimmed);
   }
 
   Future<RouteDM?> getRoute(int id) async =>

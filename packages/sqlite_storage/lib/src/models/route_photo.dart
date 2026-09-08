@@ -7,6 +7,7 @@ class RoutePhoto {
     required this.longitude,
     required this.capturedAt,
     this.sourcePath,
+    this.comment = '',
   });
 
   final String id;
@@ -16,6 +17,7 @@ class RoutePhoto {
   final double longitude;
   final DateTime capturedAt;
   final String? sourcePath;
+  final String comment;
 
   factory RoutePhoto.fromMap(Map<String, Object?> row) => RoutePhoto(
     id: row['id'] as String,
@@ -25,6 +27,7 @@ class RoutePhoto {
     longitude: (row['longitude'] as num).toDouble(),
     capturedAt: DateTime.parse(row['captured_at'] as String),
     sourcePath: row['source_path'] as String?,
+    comment: row['comment'] as String? ?? '',
   );
 
   Map<String, Object?> toMap() => {

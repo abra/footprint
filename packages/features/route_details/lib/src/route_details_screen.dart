@@ -16,6 +16,7 @@ class RouteDetailsScreen extends StatelessWidget {
     this.config = const MapTileConfig(),
     this.justRecorded = false,
     this.walksRepository,
+    this.onTimelineRequested,
   });
   final int routeId;
   final RoutesRepository repository;
@@ -24,6 +25,7 @@ class RouteDetailsScreen extends StatelessWidget {
   final ValueChanged<bool> onClosed;
   final bool justRecorded;
   final WalksRepository? walksRepository;
+  final VoidCallback? onTimelineRequested;
 
   @override
   Widget build(BuildContext context) => BlocProvider(
@@ -37,6 +39,7 @@ class RouteDetailsScreen extends StatelessWidget {
       config: config,
       onClosed: onClosed,
       justRecorded: justRecorded,
+      onTimelineRequested: onTimelineRequested,
     ),
   );
 }

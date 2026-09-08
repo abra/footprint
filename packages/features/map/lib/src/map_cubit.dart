@@ -179,9 +179,13 @@ class MapCubit extends Cubit<MapState> {
               'Recording could not be stopped. Please try again.',
           };
     final routeChanged = state.routeId != recording.routeId;
-    final pointsChanged = !identical(_points, recording.points);
-    _points = recording.points;
-    if (pointsChanged) _trace = RouteMetrics.fromLocations(recording.points);
+    // Starting a new recording must not briefly replay the previous route.
+    final points = recording.isRecording && recording.routeId == null
+        ? const <LocationDM>[]
+        : recording.points;
+    final pointsChanged = !identical(_points, points);
+    _points = points;
+    if (pointsChanged) _trace = RouteMetrics.fromLocations(points);
     final completedId = state.isRecording && !recording.isRecording
         ? state.routeId
         : null;
@@ -198,7 +202,7 @@ class MapCubit extends Cubit<MapState> {
       state.copyWith(
         location: recording.location,
         locationLoading: recording.location == null && error == null,
-        points: pointsChanged ? recording.points : null,
+        points: pointsChanged ? points : null,
         isRecording: recording.isRecording,
         recordingAction: recording.isBusy
             ? (recording.phase == RecordingPhase.stopping
@@ -210,6 +214,9 @@ class MapCubit extends Cubit<MapState> {
         clearRoute: recording.routeId == null,
         photos: routeChanged ? const [] : null,
         completedRouteId: completedId,
+        lastRouteHidden: routeChanged && recording.routeId != null
+            ? false
+            : state.lastRouteHidden,
         metrics: _metrics(recording),
         statsExpanded: routeChanged || !recording.isRecording
             ? false
@@ -243,7 +250,11 @@ class MapCubit extends Cubit<MapState> {
   }
 
   RouteMetrics _metrics(RecordingState recording) {
-    if (!recording.isRecording || recording.points.isEmpty) return _trace;
+    if (!recording.isRecording ||
+        recording.routeId == null ||
+        recording.points.isEmpty) {
+      return _trace;
+    }
     return _trace.atTime(
       start: recording.points.first.timestamp,
       lastSample: recording.points.last.timestamp,
@@ -285,9 +296,29 @@ class MapCubit extends Cubit<MapState> {
     if (_closing == null && !isClosed) emit(state.copyWith(centered: value));
   }
 
+  void cycleFollowMode() {
+    if (_closing != null || isClosed) return;
+    if (!state.centered) {
+      emit(state.copyWith(centered: true));
+    } else {
+      emit(
+        state.copyWith(
+          orientation: state.orientation == MapOrientation.northUp
+              ? MapOrientation.courseUp
+              : MapOrientation.northUp,
+        ),
+      );
+    }
+  }
+
   void toggleStats() {
     if (_closing != null || isClosed || !state.isRecording) return;
     emit(state.copyWith(statsExpanded: !state.statsExpanded));
+  }
+
+  void hideLastRoute() {
+    if (_closing != null || isClosed || !state.showsLastRoute) return;
+    emit(state.copyWith(lastRouteHidden: true));
   }
 
   void tilesFailed() {

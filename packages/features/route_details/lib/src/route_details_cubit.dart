@@ -133,10 +133,12 @@ class RouteDetailsCubit extends Cubit<RouteDetailsState> {
       return;
     }
     final name = current.name.trim();
-    if (name.isEmpty || name.runes.length > 80) {
-      emit(
-        current.copyWith(error: 'Enter a name between 1 and 80 characters.'),
-      );
+    if (name.runes.length > 80) {
+      emit(current.copyWith(error: 'Use a name of 80 characters or fewer.'));
+      return;
+    }
+    if (!current.dirty) {
+      emit(current.copyWith(name: name, saved: true, clearError: true));
       return;
     }
     emit(current.copyWith(name: name, saving: true, clearError: true));
@@ -209,6 +211,51 @@ class RouteDetailsCubit extends Cubit<RouteDetailsState> {
         if (state case final RouteDetailsReady ready) {
           emit(ready.copyWith(photoBusy: false));
         }
+      }
+    }
+  }
+
+  Future<bool> updatePhotoComment(String id, String comment) async {
+    final current = state;
+    if (isClosed ||
+        current is! RouteDetailsReady ||
+        current.photoBusy ||
+        current.saving ||
+        current.route.status != Status.completed ||
+        !current.photos.any((photo) => photo.id == id)) {
+      return false;
+    }
+    emit(current.copyWith(photoBusy: true, clearPhotoError: true));
+    try {
+      await _photos.updateComment(_routeId, id, comment);
+      if (!isClosed) {
+        // Invalidate reads that started before this write was committed.
+        _photoRequest++;
+        final ready = state as RouteDetailsReady;
+        emit(
+          ready.copyWith(
+            photos: [
+              for (final photo in ready.photos)
+                if (photo.id == id)
+                  photo.copyWith(comment: comment.trim())
+                else
+                  photo,
+            ],
+          ),
+        );
+      }
+      return true;
+    } on Object catch (error, stack) {
+      if (!isClosed) {
+        addError(error, stack);
+        final ready = state as RouteDetailsReady;
+        emit(ready.copyWith(photoError: 'Comment could not be saved.'));
+      }
+      return false;
+    } finally {
+      if (!isClosed) {
+        final ready = state as RouteDetailsReady;
+        emit(ready.copyWith(photoBusy: false));
       }
     }
   }

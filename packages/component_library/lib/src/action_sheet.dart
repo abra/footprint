@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
+
+import 'app_button.dart';
+import 'app_sheet.dart';
+import 'app_tile_list.dart';
 
 class SheetAction<T> {
   const SheetAction({
@@ -21,11 +26,8 @@ Future<T?> showAppActionSheet<T>(
   String? message,
   required List<SheetAction<T>> actions,
   String cancelLabel = 'Cancel',
-}) => showModalBottomSheet<T>(
+}) => showAppSheet<T>(
   context: context,
-  useSafeArea: true,
-  isScrollControlled: true,
-  showDragHandle: true,
   builder: (context) => ConstrainedBox(
     constraints: BoxConstraints(
       maxHeight: MediaQuery.sizeOf(context).height * 0.8,
@@ -42,28 +44,33 @@ Future<T?> showAppActionSheet<T>(
               Text(title, style: Theme.of(context).textTheme.titleLarge),
               if (message != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 8),
+                  padding: const EdgeInsets.only(top: 8),
                   child: Text(message),
                 ),
-              const SizedBox(height: 8),
-              for (final action in actions)
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                  leading: Icon(action.icon),
-                  title: Text(action.label),
-                  selected: action.selected,
-                  trailing: action.selected ? const Icon(Icons.check) : null,
-                  textColor: action.destructive
-                      ? Theme.of(context).colorScheme.error
-                      : null,
-                  iconColor: action.destructive
-                      ? Theme.of(context).colorScheme.error
-                      : null,
-                  onTap: () => Navigator.pop(context, action.value),
-                ),
-              TextButton(
+              const SizedBox(height: 16),
+              AppTileList(
+                children: [
+                  for (final action in actions)
+                    FTile(
+                      style: const .delta(shape: null),
+                      prefix: Icon(action.icon),
+                      title: Text(action.label, overflow: TextOverflow.visible),
+                      selected: action.selected,
+                      suffix: action.selected
+                          ? const Icon(FLucideIcons.check)
+                          : null,
+                      variant: action.destructive
+                          ? FItemVariant.destructive
+                          : FItemVariant.primary,
+                      onPress: () => Navigator.pop(context, action.value),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              AppButton(
+                variant: FButtonVariant.secondary,
                 onPressed: () => Navigator.pop(context),
-                child: Text(cancelLabel),
+                label: cancelLabel,
               ),
             ],
           ),

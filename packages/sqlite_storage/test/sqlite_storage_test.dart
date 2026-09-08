@@ -134,7 +134,7 @@ void main() {
     },
   );
 
-  for (final legacyVersion in [1, 2, 3, 4, 5, 6, 7]) {
+  for (final legacyVersion in [1, 2, 3, 4, 5, 6, 7, 8]) {
     test(
       'version $legacyVersion migration preserves existing route data and repairs indexes',
       () async {
@@ -196,6 +196,9 @@ void main() {
               }
               if (legacyVersion >= 7) {
                 await DatabaseHelper.createExplorationTables(db);
+              }
+              if (legacyVersion >= 8) {
+                await DatabaseHelper.createStatisticsTable(db);
               }
               await db.insert('routes', {
                 'id': 7,
@@ -292,12 +295,42 @@ void main() {
         expect(filtered.rawLatitude, 56.01001);
         expect(filtered.rawLongitude, 60.00001);
         expect(filtered.isStationary, isTrue);
+        if (legacyVersion >= 5) {
+          expect(
+            (await migrated.routePhotos.getForRoute(7)).single.comment,
+            '',
+          );
+          await migrated.routePhotos.updateComment(
+            7,
+            'photo',
+            'Old photo, new comment',
+          );
+          final pending = (await migrated.routePhotos.getPending())!;
+          expect(pending.sourcePath, '/pending.jpg');
+          await migrated.routePhotos.finishCapture(pending);
+          expect(await migrated.routePhotos.getPending(), isNull);
+          expect(await migrated.routePhotos.getForRoute(7), hasLength(2));
+        }
         await migrated.close();
         final check = await databaseFactoryFfi.openDatabase(path);
-        expect(await check.getVersion(), 8);
+        expect(await check.getVersion(), 9);
         if (legacyVersion >= 5) {
-          expect((await check.query('route_photos')).single['id'], 'photo');
-          expect((await check.query('pending_photo')).single['id'], 'pending');
+          final oldPhoto = (await check.query(
+            'route_photos',
+            where: 'id = ?',
+            whereArgs: ['photo'],
+          )).single;
+          expect(oldPhoto['comment'], 'Old photo, new comment');
+          expect(oldPhoto['file_name'], 'photo.jpg');
+          expect(
+            (await check.query(
+              'route_photos',
+              where: 'id = ?',
+              whereArgs: ['pending'],
+            )).single['comment'],
+            '',
+          );
+          expect(await check.query('pending_photo'), isEmpty);
         }
         expect(
           await check.rawQuery(

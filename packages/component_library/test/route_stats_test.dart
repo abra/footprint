@@ -98,7 +98,8 @@ void main() {
           await tester.pumpWidget(
             MaterialApp(
               theme: AppTheme.light,
-              builder: (context, child) => Material(child: child),
+              builder: (context, child) =>
+                  AppTheme.builder(context, Material(child: child)),
               home: MediaQuery(
                 data: MediaQueryData(textScaler: TextScaler.linear(scale)),
                 child: Center(
@@ -162,7 +163,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
-        builder: (context, child) => Material(child: child),
+        builder: (context, child) =>
+            AppTheme.builder(context, Material(child: child)),
         home: const Center(
           child: SizedBox(
             width: 200,
@@ -204,7 +206,8 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light,
-          builder: (context, child) => Material(child: child),
+          builder: (context, child) =>
+              AppTheme.builder(context, Material(child: child)),
           home: Center(
             child: SizedBox(
               width: 364,
@@ -270,7 +273,8 @@ void main() {
           await tester.pumpWidget(
             MaterialApp(
               theme: AppTheme.light,
-              builder: (context, child) => Material(child: child),
+              builder: (context, child) =>
+                  AppTheme.builder(context, Material(child: child)),
               home: Center(
                 child: SizedBox(
                   width: columns == 4 ? 364 : 200,
@@ -371,7 +375,8 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             theme: AppTheme.light,
-            builder: (context, child) => Material(child: child),
+            builder: (context, child) =>
+                AppTheme.builder(context, Material(child: child)),
             home: Center(
               child: SizedBox(
                 width: 364,

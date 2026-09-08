@@ -24,6 +24,7 @@ class ExploreCubit extends Cubit<ExploreState> {
   final DateTime Function() _now;
   StreamSubscription<RecordingState>? _subscription;
   Timer? _viewportTimer;
+  Timer? _locationExpiry;
   Completer<LocationDM?>? _locationRequest;
   int _generation = 0;
   int _viewportRequest = 0;
@@ -36,6 +37,7 @@ class ExploreCubit extends Cubit<ExploreState> {
     _attached = true;
     _subscription = _recording.states.listen((recording) {
       if (_closing) return;
+      _scheduleLocationExpiry(recording.location);
       final needsLocation =
           state.mode == RoutePlanMode.loop ||
           state.start == null ||
@@ -43,6 +45,8 @@ class ExploreCubit extends Cubit<ExploreState> {
       emit(
         state.copyWith(
           location: recording.location,
+          hasRecentLocation:
+              _usable(recording.location) && recording.locationError == null,
           recording: recording.isRecording,
           locationError: !needsLocation || recording.locationError == null
               ? null
@@ -57,9 +61,13 @@ class ExploreCubit extends Cubit<ExploreState> {
     emit(
       state.copyWith(
         location: _recording.state.location,
+        hasRecentLocation:
+            _usable(_recording.state.location) &&
+            _recording.state.locationError == null,
         recording: _recording.state.isRecording,
       ),
     );
+    _scheduleLocationExpiry(_recording.state.location);
     await _recording.attachPreview();
     await refreshProfile();
   }
@@ -78,13 +86,22 @@ class ExploreCubit extends Cubit<ExploreState> {
   void selectDistance(double meters) {
     if (_closing ||
         state.starting ||
+        state.recording ||
+        state.distance == meters ||
         !meters.isFinite ||
         meters < 1000 ||
         meters > 20000) {
       return;
     }
     cancelGeneration();
-    emit(state.copyWith(distance: meters, clearPlan: true, clearError: true));
+    emit(
+      state.copyWith(
+        distance: meters,
+        clearPlan: true,
+        newAreas: 0,
+        clearError: true,
+      ),
+    );
   }
 
   void showProgress(bool value) {
@@ -177,9 +194,31 @@ class ExploreCubit extends Cubit<ExploreState> {
         age <= const Duration(seconds: 30);
   }
 
-  Future<LocationDM?> _readyLocation() async {
+  void _scheduleLocationExpiry(LocationDM? point) {
+    _locationExpiry?.cancel();
+    if (!_usable(point)) return;
+    final remaining = point!.timestamp
+        .add(const Duration(seconds: 30, milliseconds: 1))
+        .difference(_now());
+    _locationExpiry = Timer(remaining, () {
+      if (!_closing) emit(state.copyWith(hasRecentLocation: false));
+    });
+  }
+
+  Future<void> refreshStartLocation() async {
+    if (_closing ||
+        state.locating ||
+        state.generating ||
+        state.starting ||
+        state.recording) {
+      return;
+    }
+    await _readyLocation(refresh: true);
+  }
+
+  Future<LocationDM?> _readyLocation({bool refresh = false}) async {
     final cached = _recording.state.location;
-    if (_recording.state.locationError == null && _usable(cached)) {
+    if (!refresh && _recording.state.locationError == null && _usable(cached)) {
       return cached;
     }
     final cancellation = Completer<LocationDM?>();
@@ -224,25 +263,29 @@ class ExploreCubit extends Cubit<ExploreState> {
     _ => 'Location is unavailable. Please try again.',
   };
 
-  Future<void> generate() async {
-    if (_closing || state.generating || state.starting || state.recording) {
-      return;
+  /// Whether this request installed a new preview, rather than failed or cancelled.
+  Future<bool> generate() async {
+    if (_closing ||
+        state.generating ||
+        state.locating ||
+        state.starting ||
+        state.recording) {
+      return false;
     }
     if (!_planner.available) {
       emit(state.copyWith(error: 'Route planning is not configured.'));
-      return;
+      return false;
     }
     final loop = state.mode == RoutePlanMode.loop;
     final end = state.end;
     if (!loop && end == null) {
       emit(state.copyWith(error: 'Choose a destination on the map.'));
-      return;
+      return false;
     }
     final request = ++_generation;
     emit(
       state.copyWith(
         generating: true,
-        clearPlan: true,
         clearError: true,
         clearLocationError: true,
       ),
@@ -250,11 +293,11 @@ class ExploreCubit extends Cubit<ExploreState> {
     try {
       final manualStart = loop ? null : state.start;
       final location = manualStart == null ? await _readyLocation() : null;
-      if (_closing || request != _generation) return;
+      if (_closing || request != _generation) return false;
       if ((manualStart == null && location == null) ||
           _recording.state.isRecording) {
         emit(state.copyWith(generating: false));
-        return;
+        return false;
       }
       final start =
           manualStart ?? GeoPoint(location!.latitude, location.longitude);
@@ -270,7 +313,7 @@ class ExploreCubit extends Cubit<ExploreState> {
         west: wrap(start.longitude - longitudeRadius),
         east: wrap(start.longitude + longitudeRadius),
       );
-      if (_closing || request != _generation) return;
+      if (_closing || request != _generation) return false;
       final known = cells.map((c) => c.id).toSet();
       final plan = loop
           ? await _planner.generate(
@@ -279,20 +322,31 @@ class ExploreCubit extends Cubit<ExploreState> {
               exploredCells: known,
             )
           : await _planner.generateBetween(start: start, end: end!);
-      if (_closing || request != _generation) return;
+      if (_closing || request != _generation) return false;
       final newAreas = plan.explorationSamples
           .map(ExplorationCell.at)
           .map((c) => c.id)
           .toSet()
           .difference(known)
           .length;
-      emit(state.copyWith(plan: plan, newAreas: newAreas, generating: false));
+      final previous = state.plan;
+      emit(
+        state.copyWith(
+          plan: plan,
+          newAreas: newAreas,
+          generating: false,
+          previousPreview: previous == null
+              ? null
+              : (plan: previous, newAreas: state.newAreas),
+        ),
+      );
+      return true;
     } on PlanningCancelled {
       if (!_closing && request == _generation) {
         emit(state.copyWith(generating: false));
       }
     } on Object catch (error, stack) {
-      if (_closing || request != _generation) return;
+      if (_closing || request != _generation) return false;
       addError(error, stack);
       emit(
         state.copyWith(
@@ -303,6 +357,7 @@ class ExploreCubit extends Cubit<ExploreState> {
         ),
       );
     }
+    return false;
   }
 
   void cancelGeneration() {
@@ -319,14 +374,32 @@ class ExploreCubit extends Cubit<ExploreState> {
     emit(state.copyWith(clearPlan: true, newAreas: 0, clearError: true));
   }
 
-  Future<void> start() async {
+  void restorePreviousPreview() {
+    final previous = state.previousPreview;
+    if (_closing || state.starting || state.recording || previous == null) {
+      return;
+    }
+    cancelGeneration();
+    emit(
+      state.copyWith(
+        plan: previous.plan,
+        newAreas: previous.newAreas,
+        clearPreviousPreview: true,
+        clearError: true,
+      ),
+    );
+  }
+
+  /// Returns feedback for this attempt even if later GPS updates clear the state.
+  Future<String?> start() async {
     final plan = state.plan;
     if (_closing ||
         state.starting ||
         state.generating ||
+        state.locating ||
         state.recording ||
         plan == null) {
-      return;
+      return null;
     }
     emit(
       state.copyWith(
@@ -336,39 +409,36 @@ class ExploreCubit extends Cubit<ExploreState> {
       ),
     );
     final location = await _readyLocation();
-    if (_closing) return;
+    if (_closing) return null;
     if (location == null || _recording.state.isRecording) {
+      final message = _recording.state.isRecording
+          ? 'A recording is already in progress.'
+          : state.locationError ?? 'Location is unavailable. Please try again.';
       emit(state.copyWith(starting: false));
-      return;
+      return message;
     }
     if (GeoPoint(
           location.latitude,
           location.longitude,
         ).distanceTo(plan.points.first) >
-        100) {
-      emit(
-        state.copyWith(
-          starting: false,
-          error: plan.isLoop
-              ? 'The start is no longer nearby. Generate a new route.'
-              : 'Go to the route start before starting this walk.',
-        ),
-      );
-      return;
+        ExploreState.startRadiusMeters) {
+      final message = plan.isLoop
+          ? 'The start is no longer nearby. Generate a new route.'
+          : 'Go to the route start (within 100 m) before starting this walk.';
+      emit(state.copyWith(starting: false, error: message));
+      return message;
     }
     await _recording.start(plan: plan);
-    if (_closing) return;
+    if (_closing) return null;
     final recording = _recording.state;
     if (recording.failure != null || recording.routeId == null) {
-      emit(
-        state.copyWith(
-          starting: false,
-          error: 'Recording could not be started. Return to the map to retry.',
-        ),
-      );
-    } else {
-      emit(state.copyWith(starting: false, startedRouteId: recording.routeId));
+      const message =
+          'Recording could not be started. Return to the map to retry.';
+      emit(state.copyWith(starting: false, error: message));
+      return message;
     }
+    emit(state.copyWith(starting: false, startedRouteId: recording.routeId));
+    return null;
   }
 
   void loadCells({
@@ -406,6 +476,7 @@ class ExploreCubit extends Cubit<ExploreState> {
     _closing = true;
     cancelGeneration();
     _viewportTimer?.cancel();
+    _locationExpiry?.cancel();
     await _subscription?.cancel();
     if (_attached) await _recording.detachPreview();
     await super.close();

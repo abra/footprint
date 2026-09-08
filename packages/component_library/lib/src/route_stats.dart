@@ -40,12 +40,12 @@ class RouteStats extends StatelessWidget {
     ];
     return LayoutBuilder(
       builder: (context, constraints) {
-        final minimum = 82 * MediaQuery.textScalerOf(context).scale(1);
+        final minimum = 140 * MediaQuery.textScalerOf(context).scale(1);
         final availableColumns = (constraints.maxWidth / minimum).floor();
         final columnCount = vertical
             ? 1
             : availableColumns.clamp(1, columns ?? 4);
-        final fontSize = vertical ? 19.0 : 22.0;
+        final fontSize = vertical ? 19.0 : 20.0;
         final valueStyle = TextStyle(
           fontSize: fontSize,
           color: AppTheme.ink,
@@ -63,9 +63,7 @@ class RouteStats extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 3),
                     child: Column(
-                      crossAxisAlignment: vertical
-                          ? CrossAxisAlignment.start
-                          : CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(value, style: valueStyle),
                         Text(

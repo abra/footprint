@@ -1,20 +1,23 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:forui/forui.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'config.dart';
 import 'center_location_icon.dart';
 import 'extensions.dart';
-import 'location_motion.dart';
 import 'map_app_bar.dart';
 import 'map_cubit.dart';
+import 'map_follow_motion.dart';
 import 'map_state.dart';
 import 'map_photo_controls.dart';
+import 'last_route_notice.dart';
 import 'route_trace.dart';
 import 'recording_stats_panel.dart';
 import 'recording_indicator.dart';
@@ -63,22 +66,34 @@ class _MapCanvas extends StatefulWidget {
   State<_MapCanvas> createState() => _MapCanvasState();
 }
 
-class _MapCanvasState extends State<_MapCanvas>
-    with SingleTickerProviderStateMixin {
+class _MapCanvasState extends State<_MapCanvas> with TickerProviderStateMixin {
   final _controller = MapController();
   late final LocationMotion _locationMotion;
+  late final HeadingMotion _headingMotion;
+  late final MapFollowMotion _followMotion;
   bool _ready = false;
-  bool _hasLocation = false;
   bool _animateLocation = true;
 
   @override
   void initState() {
     super.initState();
-    _locationMotion = LocationMotion(vsync: this)..addListener(_center);
+    _locationMotion = LocationMotion(vsync: this);
+    _headingMotion = HeadingMotion(
+      vsync: this,
+      heading: _locationMotion.heading,
+    );
+    _followMotion = MapFollowMotion(
+      vsync: this,
+      controller: _controller,
+      position: _locationMotion,
+      heading: _headingMotion,
+      defaultZoom: widget.config.defaultZoom,
+    );
     if (context.read<MapCubit>().state.location case final location?) {
       _locationMotion.moveTo(
         location.toLatLng(),
         timestamp: location.timestamp,
+        isStationary: location.isStationary,
         animate: false,
       );
     }
@@ -90,30 +105,23 @@ class _MapCanvasState extends State<_MapCanvas>
     _animateLocation =
         !MediaQuery.disableAnimationsOf(context) &&
         TickerMode.valuesOf(context).enabled;
+    _headingMotion.enabled = _animateLocation;
+    _followMotion.enabled = _animateLocation;
     if (context.read<MapCubit>().state.location case final location?
         when !_animateLocation) {
       _locationMotion.moveTo(
         location.toLatLng(),
         timestamp: location.timestamp,
+        isStationary: location.isStationary,
         animate: false,
       );
     }
   }
 
-  void _center() {
-    final point = _locationMotion.value;
-    if (!_ready || !context.read<MapCubit>().state.centered || point == null) {
-      return;
-    }
-    _controller.move(
-      point,
-      _hasLocation ? _controller.camera.zoom : widget.config.defaultZoom,
-    );
-    _hasLocation = true;
-  }
-
   @override
   void dispose() {
+    _followMotion.dispose();
+    _headingMotion.dispose();
     _locationMotion.dispose();
     _controller.dispose();
     super.dispose();
@@ -125,16 +133,21 @@ class _MapCanvasState extends State<_MapCanvas>
     return BlocListener<MapCubit, MapState>(
       listenWhen: (before, after) =>
           before.location != after.location ||
-          before.centered != after.centered,
+          before.centered != after.centered ||
+          before.orientation != after.orientation,
       listener: (context, state) {
         if (state.location case final location?) {
           _locationMotion.moveTo(
             location.toLatLng(),
             timestamp: location.timestamp,
+            isStationary: location.isStationary,
             animate: _animateLocation,
           );
         }
-        _center();
+        _followMotion.update(
+          following: state.centered,
+          courseUp: state.orientation == MapOrientation.courseUp,
+        );
       },
       child: Stack(
         children: [
@@ -151,11 +164,23 @@ class _MapCanvasState extends State<_MapCanvas>
                 maxZoom: widget.config.maxZoom,
                 onMapReady: () {
                   _ready = true;
-                  _center();
+                  _followMotion.attach(
+                    following: cubit.state.centered,
+                    courseUp:
+                        cubit.state.orientation == MapOrientation.courseUp,
+                  );
                 },
                 onPositionChanged: (camera, hasGesture) {
-                  if (hasGesture && cubit.state.centered) {
-                    cubit.setCentered(false);
+                  if (hasGesture) _releaseFollow();
+                },
+                onMapEvent: (event) {
+                  if (event is MapEventMoveStart ||
+                      event is MapEventRotateStart ||
+                      (event is MapEventRotate &&
+                          (event.source == MapEventSource.onMultiFinger ||
+                              event.source ==
+                                  MapEventSource.cursorKeyboardRotation))) {
+                    _releaseFollow();
                   }
                 },
               ),
@@ -169,8 +194,11 @@ class _MapCanvasState extends State<_MapCanvas>
                   ),
                 ),
                 BlocBuilder<MapCubit, MapState>(
-                  buildWhen: (before, after) => before.walk != after.walk,
-                  builder: (context, state) => state.walk == null
+                  buildWhen: (before, after) =>
+                      before.walk != after.walk ||
+                      before.isRecording != after.isRecording,
+                  builder: (context, state) =>
+                      state.walk == null || !state.isRecording
                       ? const SizedBox.shrink()
                       : PlannedRouteLayer(
                           plan: state.walk!.plan,
@@ -180,137 +208,130 @@ class _MapCanvasState extends State<_MapCanvas>
                 BlocBuilder<MapCubit, MapState>(
                   buildWhen: (before, after) =>
                       before.points != after.points ||
-                      before.isRecording != after.isRecording,
-                  builder: (context, state) => RouteTrace(
-                    points: state.points,
-                    isRecording: state.isRecording,
-                    motion: _locationMotion,
-                  ),
-                ),
-                ValueListenableBuilder<LatLng?>(
-                  valueListenable: _locationMotion,
-                  builder: (context, point, child) => MarkerLayer(
-                    key: const ValueKey('current-location-layer'),
-                    markers: [
-                      if (point != null)
-                        Marker(
-                          point: point,
-                          width: 28,
-                          height: 28,
-                          child: Semantics(
-                            label: 'Current location',
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(0xFF8057D8),
-                                border: Border.all(
-                                  color: AppTheme.route,
-                                  width: 4,
-                                ),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Color(0x26000000),
-                                    blurRadius: 4,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                      before.isRecording != after.isRecording ||
+                      before.lastRouteHidden != after.lastRouteHidden,
+                  builder: (context, state) => !state.showsRoute
+                      ? const SizedBox.shrink()
+                      : RouteTrace(
+                          points: state.points,
+                          isRecording: state.isRecording,
+                          motion: _locationMotion,
+                          muted: state.showsLastRoute,
                         ),
-                    ],
-                  ),
+                ),
+                CurrentLocationLayer.withHeadingMotion(
+                  position: _locationMotion,
+                  headingMotion: _headingMotion,
                 ),
                 BlocSelector<MapCubit, MapState, List<RoutePhotoDM>>(
-                  selector: (state) => state.photos,
+                  selector: (state) =>
+                      state.showsRoute ? state.photos : const [],
                   builder: (context, photos) =>
                       RoutePhotoMarkers(photos: photos),
                 ),
                 BlocBuilder<MapCubit, MapState>(
-                  buildWhen: (before, after) => before.points != after.points,
-                  builder: (context, state) => state.points.length < 2
-                      ? const SizedBox.shrink()
-                      : MarkerLayer(
-                          key: const ValueKey('route-start-layer'),
-                          markers: [
-                            Marker(
-                              point: state.points.first.toLatLng(),
-                              width: 32,
-                              height: 32,
-                              // The pole ends at (6, 21) in the 24px glyph.
-                              // Scale to 30px and include 1px of padding.
-                              alignment: Marker.computePixelAlignment(
-                                width: 32,
-                                height: 32,
-                                left: 8.5,
-                                top: 27.25,
+                  buildWhen: (before, after) =>
+                      before.points != after.points ||
+                      before.isRecording != after.isRecording ||
+                      before.lastRouteHidden != after.lastRouteHidden,
+                  builder: (context, state) {
+                    final points = state.points.where(
+                      (point) => point.hasValidCoordinates,
+                    );
+                    return !state.showsRoute || points.length < 2
+                        ? const SizedBox.shrink()
+                        : MarkerLayer(
+                            key: const ValueKey('route-start-layer'),
+                            markers: [
+                              RecordedRouteMarker.start(
+                                point: points.first.toLatLng(),
+                                opacity: state.showsLastRoute ? 0.55 : 1,
                               ),
-                              rotate: true,
-                              child: const Tooltip(
-                                message: 'Route start',
-                                child: Icon(
-                                  Icons.flag,
-                                  color: AppTheme.coral,
-                                  size: 30,
-                                  applyTextScaling: false,
+                              if (state.showsLastRoute)
+                                RecordedRouteMarker.end(
+                                  point: points.last.toLatLng(),
+                                  opacity: 0.55,
                                 ),
-                              ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          );
+                  },
                 ),
               ],
             ),
           ),
           SafeArea(
-            minimum: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+            minimum: const EdgeInsets.fromLTRB(0, 16, 0, 32),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                return Column(
+                // Panels may grow or scroll, but must not move the map controls.
+                final horizontal = constraints.maxHeight < 640;
+                final controlsSize = horizontal
+                    ? _MapControls.horizontalSize
+                    : _MapControls.verticalSize;
+                final controlsTop =
+                    (constraints.maxHeight * (horizontal ? 0.43 : 0.5) -
+                            controlsSize.height / 2)
+                        .roundToDouble();
+                final footerTop = controlsTop + controlsSize.height + 12;
+                return Stack(
                   children: [
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: constraints.maxHeight * 0.36,
-                      ),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            MapAppBar(onPageChange: widget.onRoutesRequested),
-                            const _MapError(),
-                            const MapPhotoError(),
-                            BlocBuilder<MapCubit, MapState>(
-                              buildWhen: (before, after) =>
-                                  before.walk != after.walk ||
-                                  before.isRecording != after.isRecording ||
-                                  before.location != after.location,
-                              builder: (_, state) =>
-                                  state.walk == null || !state.isRecording
-                                  ? const SizedBox.shrink()
-                                  : Padding(
-                                      padding: const EdgeInsets.only(top: 12),
-                                      child: MapSurface(
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(12),
-                                          child: WalkSummary(
-                                            progress: state.walk!,
-                                            location: state.location,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
+                    Positioned.fill(
+                      child: Column(
+                        children: [
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxHeight: math.min(
+                                constraints.maxHeight * 0.36,
+                                controlsTop - 12,
+                              ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: LayoutBuilder(
-                        builder: (context, available) => Stack(
-                          children: [
-                            Align(
+                            child: SingleChildScrollView(
+                              // Keep the surface's shadow inside the clipped viewport.
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                children: [
+                                  MapAppBar(
+                                    onPageChange: widget.onRoutesRequested,
+                                    onExploreRequested:
+                                        widget.onExploreRequested,
+                                  ),
+                                  const _MapError(),
+                                  const MapPhotoError(),
+                                  BlocBuilder<MapCubit, MapState>(
+                                    buildWhen: (before, after) =>
+                                        before.walk != after.walk ||
+                                        before.isRecording !=
+                                            after.isRecording ||
+                                        before.location != after.location,
+                                    builder: (_, state) =>
+                                        state.walk == null || !state.isRecording
+                                        ? const SizedBox.shrink()
+                                        : Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 12,
+                                            ),
+                                            child: MapSurface(
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(
+                                                  12,
+                                                ),
+                                                child: WalkSummary(
+                                                  progress: state.walk!,
+                                                  location: state.location,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Align(
                               alignment: Alignment.bottomLeft,
                               child: Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.fromLTRB(16, 0, 0, 8),
                                 child: MapSurface(
                                   child: MapAttributionButton(
                                     config: widget.config,
@@ -318,71 +339,83 @@ class _MapCanvasState extends State<_MapCanvas>
                                 ),
                               ),
                             ),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: IconTheme.merge(
-                                data: const IconThemeData(
-                                  applyTextScaling: false,
-                                ),
-                                child: _MapControls(
-                                  horizontal: available.maxHeight < 270,
-                                  onZoom: _zoom,
-                                  onCenter: () {
-                                    cubit.setCentered(true);
-                                    _center();
-                                  },
-                                ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxHeight: constraints.maxHeight - footerTop,
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    BlocBuilder<MapCubit, MapState>(
-                      buildWhen: (before, after) =>
-                          before.isRecording != after.isRecording ||
-                          before.metrics != after.metrics ||
-                          before.statsExpanded != after.statsExpanded,
-                      builder: (context, state) => !state.isRecording
-                          ? const SizedBox.shrink()
-                          : Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxHeight:
-                                      constraints.maxHeight *
-                                      (state.statsExpanded ? 0.35 : 0.25),
-                                ),
-                                child: RecordingStatsPanel(
-                                  metrics: state.metrics,
-                                  expanded: state.statsExpanded,
-                                  onToggle: cubit.toggleStats,
-                                ),
-                              ),
-                            ),
-                    ),
-                    if (widget.onExploreRequested != null)
-                      BlocSelector<MapCubit, MapState, bool>(
-                        selector: (state) =>
-                            state.isRecording || state.recordingBusy,
-                        builder: (_, busy) => busy
-                            ? const SizedBox.shrink()
-                            : Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  child: FilledButton.icon(
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: explorationColor,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: BlocBuilder<MapCubit, MapState>(
+                                      buildWhen: (before, after) =>
+                                          before.isRecording !=
+                                              after.isRecording ||
+                                          before.metrics != after.metrics ||
+                                          before.showsLastRoute !=
+                                              after.showsLastRoute ||
+                                          before.statsExpanded !=
+                                              after.statsExpanded,
+                                      builder: (context, state) =>
+                                          !state.isRecording
+                                          ? AppFadeSwitcher(
+                                              value: state.showsLastRoute,
+                                              child: state.showsLastRoute
+                                                  ? Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                            bottom: 12,
+                                                          ),
+                                                      child: LastRouteNotice(
+                                                        onHide:
+                                                            cubit.hideLastRoute,
+                                                      ),
+                                                    )
+                                                  : const SizedBox.shrink(),
+                                            )
+                                          : Padding(
+                                              padding: const EdgeInsets.only(
+                                                bottom: 12,
+                                              ),
+                                              child: ConstrainedBox(
+                                                constraints: BoxConstraints(
+                                                  maxHeight:
+                                                      constraints.maxHeight *
+                                                      (state.statsExpanded
+                                                          ? 0.35
+                                                          : 0.25),
+                                                ),
+                                                child: RecordingStatsPanel(
+                                                  metrics: state.metrics,
+                                                  expanded: state.statsExpanded,
+                                                  onToggle: cubit.toggleStats,
+                                                ),
+                                              ),
+                                            ),
                                     ),
-                                    onPressed: widget.onExploreRequested,
-                                    icon: const Icon(Icons.explore_outlined),
-                                    label: const Text('Explore'),
                                   ),
-                                ),
+                                  const _RecordButton(),
+                                ],
                               ),
+                            ),
+                          ),
+                        ],
                       ),
-                    const _RecordButton(),
+                    ),
+                    Positioned(
+                      right: 16,
+                      top: controlsTop,
+                      width: controlsSize.width,
+                      height: controlsSize.height,
+                      child: _MapControls(
+                        horizontal: horizontal,
+                        onZoom: _zoom,
+                        onCenter: cubit.cycleFollowMode,
+                      ),
+                    ),
                   ],
                 );
               },
@@ -391,6 +424,16 @@ class _MapCanvasState extends State<_MapCanvas>
         ],
       ),
     );
+  }
+
+  void _releaseFollow() {
+    final cubit = context.read<MapCubit>();
+    if (!cubit.state.centered) return;
+    _followMotion.update(
+      following: false,
+      courseUp: cubit.state.orientation == MapOrientation.courseUp,
+    );
+    cubit.setCentered(false);
   }
 
   void _zoom(double delta) {
@@ -413,39 +456,55 @@ class _MapControls extends StatelessWidget {
   final ValueChanged<double> onZoom;
   final VoidCallback onCenter;
 
+  static const horizontalSize = Size(48 + 12 + 97 + 12 + 48, 48);
+  static const verticalSize = Size(48, 48 + 24 + 97 + 24 + 48);
+
   @override
   Widget build(BuildContext context) {
     final center = MapSurface(
-      child: BlocSelector<MapCubit, MapState, bool>(
-        selector: (state) => state.centered,
-        builder: (context, centered) => IconButton(
-          tooltip: 'Center on location',
-          isSelected: centered,
-          icon: CenterLocationIcon(centered: centered),
-          onPressed: onCenter,
+      child: BlocBuilder<MapCubit, MapState>(
+        buildWhen: (before, after) =>
+            before.centered != after.centered ||
+            before.orientation != after.orientation,
+        builder: (context, state) => Semantics(
+          value: !state.centered
+              ? 'Free map'
+              : state.orientation == MapOrientation.courseUp
+              ? 'Course up'
+              : 'North up',
+          child: AppIconButton(
+            key: const ValueKey('map-follow-button'),
+            tooltip: state.followActionLabel,
+            selected: state.centered,
+            icon: CenterLocationIcon(
+              centered: state.centered,
+              courseUp: state.orientation == MapOrientation.courseUp,
+            ),
+            onPressed: onCenter,
+          ),
         ),
       ),
     );
     // The shared surface clips the outer corners; the divider edges stay square.
-    const zoomButtonStyle = ButtonStyle(
-      shape: WidgetStatePropertyAll(RoundedRectangleBorder()),
-    );
     final zoom = MapSurface(
       child: Flex(
         direction: horizontal ? Axis.horizontal : Axis.vertical,
         mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
+          AppIconButton(
             tooltip: 'Zoom in',
-            style: zoomButtonStyle,
-            icon: const Icon(Icons.add, size: 30),
+            square: true,
+            icon: const Icon(FLucideIcons.plus),
             onPressed: () => onZoom(1),
           ),
-          if (!horizontal) const SizedBox(width: 32, child: Divider(height: 1)),
-          IconButton(
+          if (horizontal)
+            const SizedBox(height: 32, child: VerticalDivider(width: 1))
+          else
+            const SizedBox(width: 32, child: Divider(height: 1)),
+          AppIconButton(
             tooltip: 'Zoom out',
-            style: zoomButtonStyle,
-            icon: const Icon(Icons.remove, size: 30),
+            square: true,
+            icon: const Icon(FLucideIcons.minus),
             onPressed: () => onZoom(-1),
           ),
         ],
@@ -460,10 +519,12 @@ class _MapControls extends StatelessWidget {
           center,
           SizedBox(width: horizontal ? 12 : 0, height: horizontal ? 0 : 24),
           zoom,
-          if (recording) ...[
-            SizedBox(width: horizontal ? 12 : 0, height: horizontal ? 0 : 24),
-            const MapPhotoButton(),
-          ],
+          SizedBox(width: horizontal ? 12 : 0, height: horizontal ? 0 : 24),
+          // The photo action must not re-center or resize the existing controls.
+          SizedBox.square(
+            dimension: 48,
+            child: recording ? const MapPhotoButton() : null,
+          ),
         ],
       ),
     );
@@ -481,10 +542,7 @@ class _RecordButton extends StatelessWidget {
         before.recordingAction != after.recordingAction ||
         before.photoBusy != after.photoBusy,
     builder: (context, state) {
-      final background = state.isRecording ? Colors.white : AppTheme.coral;
-      final foreground = state.isRecording
-          ? const Color(0xFFBD3942)
-          : Colors.white;
+      final foreground = state.isRecording ? AppTheme.coral : Colors.white;
       final label = state.recordingAction == RecordingAction.stop
           ? 'Saving route...'
           : state.isRecording
@@ -492,33 +550,31 @@ class _RecordButton extends StatelessWidget {
           : 'Record route';
       return SizedBox(
         width: double.infinity,
-        child: FilledButton.icon(
-          style: FilledButton.styleFrom(
-            backgroundColor: background,
-            foregroundColor: foreground,
-            disabledBackgroundColor: background,
-            disabledForegroundColor: state.recordingBusy
-                ? foreground
-                : foreground.withValues(alpha: 0.65),
-            elevation: 3,
-            shadowColor: const Color(0x26000000),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: MapSurface(
+          child: AppButton(
+            variant: state.isRecording
+                ? FButtonVariant.ghost
+                : FButtonVariant.primary,
+            foreground: state.location == null && !state.recordingBusy
+                ? foreground.withValues(alpha: 0.65)
+                : foreground,
+            preserveDisabledAppearance: state.recordingBusy,
+            onPressed:
+                state.location == null || state.recordingBusy || state.photoBusy
+                ? null
+                : () {
+                    final cubit = context.read<MapCubit>();
+                    unawaited(
+                      state.isRecording
+                          ? cubit.stopRecording()
+                          : cubit.startRecording(),
+                    );
+                  },
+            prefix: state.isRecording
+                ? RecordingIndicator(pulsing: !state.recordingBusy)
+                : const Icon(FLucideIcons.circle, size: 18),
+            label: label,
           ),
-          onPressed:
-              state.location == null || state.recordingBusy || state.photoBusy
-              ? null
-              : () {
-                  final cubit = context.read<MapCubit>();
-                  unawaited(
-                    state.isRecording
-                        ? cubit.stopRecording()
-                        : cubit.startRecording(),
-                  );
-                },
-          icon: state.isRecording
-              ? RecordingIndicator(pulsing: !state.recordingBusy)
-              : const Icon(Icons.play_arrow),
-          label: Text(label, textAlign: TextAlign.center),
         ),
       );
     },
@@ -560,9 +616,9 @@ class _MapError extends StatelessWidget {
                     ),
                   ),
                 ),
-                IconButton(
+                AppIconButton(
                   tooltip: 'Retry',
-                  icon: const Icon(Icons.refresh),
+                  icon: const Icon(FLucideIcons.refreshCw),
                   onPressed: () {
                     final cubit = context.read<MapCubit>();
                     if (state.error != null) {

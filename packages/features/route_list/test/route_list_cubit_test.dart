@@ -87,13 +87,22 @@ void main() {
     'active routes are protected; saved routes are deleted and reloaded',
     () async {
       final repository = PageRepository()..response = (_) async => [route(1)];
-      final cubit = RouteListCubit(routesRepository: repository);
+      final removedSnapshots = <int>[];
+      final cubit = RouteListCubit(
+        routesRepository: repository,
+        onRouteDeleted: (id) async {
+          expect(repository.deleted, contains(id));
+          removedSnapshots.add(id);
+        },
+      );
       addTearDown(cubit.close);
       await cubit.load();
       await cubit.delete(route(2, status: Status.active));
       expect(repository.deleted, isEmpty);
+      expect(removedSnapshots, isEmpty);
       await cubit.delete(route(1));
       expect(repository.deleted, [1]);
+      expect(removedSnapshots, [1]);
       expect(repository.requests, hasLength(2));
     },
   );

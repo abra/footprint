@@ -1,3 +1,4 @@
+import 'package:component_library/component_library.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -52,7 +53,7 @@ void main() {
               textDirection: direction,
               child: IconTheme(
                 data: const IconThemeData(applyTextScaling: true),
-                child: child!,
+                child: AppTheme.builder(context, child),
               ),
             ),
           ),
@@ -66,7 +67,9 @@ void main() {
       final map = find.byType(FlutterMap);
       final controller = tester.widget<FlutterMap>(map).mapController!;
       final lineStart = tester
-          .widget<PolylineLayer>(find.byType(PolylineLayer))
+          .widget<PolylineLayer>(
+            find.byKey(const ValueKey('route-history-layer')),
+          )
           .polylines
           .single
           .points

@@ -43,6 +43,7 @@ void main() {
           await tester.pumpWidget(
             MaterialApp(
               theme: AppTheme.light,
+              builder: AppTheme.builder,
               home: Center(
                 child: SizedBox(
                   width: 396,
@@ -80,6 +81,7 @@ void main() {
         var expanded = false;
         await tester.pumpWidget(
           MaterialApp(
+            builder: AppTheme.builder,
             home: Center(
               child: SizedBox(
                 width: 396,
@@ -125,6 +127,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light,
+          builder: AppTheme.builder,
           home: Center(
             child: SizedBox(
               width: 396,
@@ -168,6 +171,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light,
+          builder: AppTheme.builder,
           home: MediaQuery(
             data: const MediaQueryData(
               textScaler: TextScaler.linear(2),
@@ -204,6 +208,7 @@ void main() {
   ) async {
     Future<void> show(RouteMetrics metrics) => tester.pumpWidget(
       MaterialApp(
+        builder: AppTheme.builder,
         home: Center(
           child: SizedBox(
             width: 396,

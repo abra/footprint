@@ -4,6 +4,7 @@ import 'package:domain_models/domain_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foreground_location_service/foreground_location_service.dart';
 import 'package:map/src/map_cubit.dart';
+import 'package:map/src/map_state.dart';
 import 'package:recording_service/recording_service.dart';
 
 import 'fakes.dart';
@@ -35,6 +36,38 @@ void main() {
     await cubit.close();
     await recording.dispose();
     await service.dispose();
+  });
+
+  test('follow button cycles orientation and restores it after a gesture', () {
+    expect(cubit.state.centered, isTrue);
+    expect(cubit.state.orientation, MapOrientation.northUp);
+    cubit.cycleFollowMode();
+    expect(cubit.state.orientation, MapOrientation.courseUp);
+    expect(cubit.state.followActionLabel, 'Keep north up');
+    final courseUp = cubit.state;
+    cubit.setCentered(false);
+    expect(cubit.state.orientation, MapOrientation.courseUp);
+    expect(cubit.state.followActionLabel, 'Center on location');
+    cubit.cycleFollowMode();
+    expect(cubit.state, courseUp);
+    cubit.cycleFollowMode();
+    expect(cubit.state.orientation, MapOrientation.northUp);
+    expect(cubit.state.followActionLabel, 'Follow direction of travel');
+    expect(cubit.state, isNot(courseUp));
+    expect(
+      cubit.state.copyWith(address: 'Park').orientation,
+      MapOrientation.northUp,
+    );
+    expect(service.starts, 0);
+    expect(repository.added, isEmpty);
+  });
+
+  test('follow actions after closing do not emit', () async {
+    await cubit.close();
+    final closed = cubit.state;
+    cubit.cycleFollowMode();
+    cubit.setCentered(false);
+    expect(cubit.state, closed);
   });
 
   test('permission denial is displayed and Retry restarts tracking', () async {

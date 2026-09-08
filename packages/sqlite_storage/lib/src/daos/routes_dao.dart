@@ -150,11 +150,11 @@ class RoutesDao {
     ];
   });
 
-  Future<void> rename(int id, String name) async {
+  Future<void> rename(int id, String? name) async {
     final count = await retryOnDatabaseBusy(
       () => _db.update(
         'routes',
-        {'name': name, 'name_search': name.toLowerCase()},
+        {'name': name, 'name_search': name?.toLowerCase()},
         where: 'id = ? AND status = ?',
         whereArgs: [id, 'completed'],
       ),

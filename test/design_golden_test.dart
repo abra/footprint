@@ -5,6 +5,10 @@ import 'dart:io';
 import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
+
+import '../packages/component_library/test/load_fonts.dart';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -15,6 +19,9 @@ import 'package:map/src/map_view.dart';
 import 'package:recording_service/recording_service.dart';
 import 'package:route_details/route_details.dart';
 import 'package:route_list/route_list.dart';
+import 'package:route_snapshots/route_snapshots.dart';
+
+import '../packages/route_snapshots/test/fakes.dart';
 
 import '../packages/features/map/test/fakes.dart';
 import '../packages/domain_models/test/walk_fixtures.dart' as walking;
@@ -51,15 +58,7 @@ void main() {
   late Uint8List tile;
   setUpAll(() async {
     tile = await tileFixture();
-    await (FontLoader('packages/component_library/RobotoCondensed')..addFont(
-          rootBundle.load(
-            'packages/component_library/fonts/RobotoCondensed.ttf',
-          ),
-        ))
-        .load();
-    await (FontLoader(
-      'MaterialIcons',
-    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+    await loadAppFonts();
   });
   final start = DateTime(2026, 9, 6, 10);
   final points = [
@@ -105,6 +104,7 @@ void main() {
   ]) {
     for (final screen in [
       'idle',
+      'last_route',
       'recording',
       'recording_walk',
       'recording_expanded',
@@ -121,6 +121,7 @@ void main() {
       'recording_photo_pressed',
       'center_uncentered',
       'center_transition',
+      'course_up',
     ]) {
       testWidgets('$screen design $variant', (tester) async {
         debugDisableShadows = false;
@@ -142,6 +143,18 @@ void main() {
           );
           final repository = FakeRoutesRepository()
             ..saved.addAll({1: route(1), 2: route(2)});
+          final snapshots = RouteSnapshotRepository(
+            config: config,
+            store: MemorySnapshotStore(),
+          );
+          addTearDown(snapshots.dispose);
+          if (screen == 'routes') {
+            await tester.runAsync(() async {
+              for (final id in [1, 2]) {
+                await snapshots.request(RouteSnapshotScene(route(id))).image;
+              }
+            });
+          }
           final photo = RoutePhotoDM(
             id: 'fixture',
             routeId: 1,
@@ -171,7 +184,7 @@ void main() {
               location: points.last,
               locationLoading: false,
               address: '243 Deer Run Dr S, Ponte Vedra Beach, FL',
-              points: isRecording ? points : [],
+              points: isRecording || screen == 'last_route' ? points : [],
               isRecording: isRecording,
               walk: screen == 'recording_walk'
                   ? WalkProgress(
@@ -217,6 +230,7 @@ void main() {
               onClosed: (_) {},
             ),
             'routes' => RouteListScreen(
+              snapshots: snapshots,
               onStatisticsRequested: () {},
               routesRepository: repository,
               config: config,
@@ -225,7 +239,11 @@ void main() {
             ),
             _ => BlocProvider.value(
               value: cubit,
-              child: MapView(config: config, onRoutesRequested: () {}),
+              child: MapView(
+                config: config,
+                onRoutesRequested: () {},
+                onExploreRequested: () {},
+              ),
             ),
           };
           // Warm the cache before widgets start image loads in the fake zone.
@@ -233,6 +251,16 @@ void main() {
           await tester.runAsync(() async {
             final context = tester.element(find.byType(MaterialApp));
             await precacheImage(MemoryImage(tile), context);
+            if (screen == 'routes') {
+              for (final id in [1, 2]) {
+                final image = await snapshots
+                    .request(RouteSnapshotScene(route(id)))
+                    .image;
+                if (context.mounted) {
+                  await precacheImage(MemoryImage(image), context);
+                }
+              }
+            }
             await precacheImage(
               ResizeImage(FileImage(File(photo.path)), width: 384),
               context,
@@ -255,7 +283,7 @@ void main() {
                     textScaler: TextScaler.linear(scale),
                     disableAnimations: screen != 'center_transition',
                   ),
-                  child: child!,
+                  child: AppTheme.builder(context, child),
                 ),
                 home: home,
               ),
@@ -270,7 +298,12 @@ void main() {
               ),
             );
           }
-          await tester.pumpAndSettle();
+          if (screen == 'center_transition') {
+            await tester.pump();
+            await tester.pump(const Duration(seconds: 1));
+          } else {
+            await tester.pumpAndSettle();
+          }
           if (screen == 'center_uncentered' || screen == 'center_transition') {
             cubit.setCentered(false);
             await tester.pump();
@@ -278,15 +311,28 @@ void main() {
             await tester.pump(const Duration(milliseconds: 100));
             if (screen == 'center_transition') {
               final filled = tester.widget<FadeTransition>(
-                find
-                    .ancestor(
-                      of: find.byIcon(Icons.navigation),
-                      matching: find.byType(FadeTransition),
-                    )
-                    .first,
+                find.byKey(const ValueKey('follow-active-opacity')),
               );
               expect(filled.opacity.value, inExclusiveRange(0, 1));
             }
+          }
+          if (screen == 'course_up') {
+            final last = points.last;
+            cubit.emit(
+              cubit.state.copyWith(
+                location: LocationDM(
+                  id: 'east',
+                  latitude: last.latitude,
+                  longitude: last.longitude + 0.0002,
+                  timestamp: last.timestamp.add(const Duration(seconds: 1)),
+                ),
+              ),
+            );
+            await tester.pumpAndSettle();
+            await tester.tap(find.byTooltip('Follow direction of travel'));
+            await tester.pumpAndSettle();
+            expect(find.byTooltip('Keep north up'), findsOneWidget);
+            expect(find.byIcon(Icons.navigation_rounded), findsOneWidget);
           }
           if (screen.endsWith('expanded')) {
             await tester.tap(
@@ -299,10 +345,10 @@ void main() {
           if (isRecording) {
             expect(
               tester
-                  .getRect(find.byTooltip('Center on location'))
+                  .getRect(find.byKey(const ValueKey('map-follow-button')))
                   .overlaps(
                     tester.getRect(
-                      find.widgetWithText(FilledButton, 'Stop recording'),
+                      find.widgetWithText(AppButton, 'Stop recording'),
                     ),
                   ),
               isFalse,
@@ -311,7 +357,7 @@ void main() {
           final pressedTooltip = switch (screen) {
             'zoom_in_pressed' => 'Zoom in',
             'zoom_out_pressed' => 'Zoom out',
-            'center_pressed' => 'Center on location',
+            'center_pressed' => 'Follow direction of travel',
             'recording_photo_pressed' => 'Add route photo',
             _ => null,
           };
@@ -325,14 +371,19 @@ void main() {
             await tester.pump(const Duration(milliseconds: 200));
             final button = find.byWidgetPredicate(
               (widget) =>
-                  widget is IconButton && widget.tooltip == pressedTooltip,
+                  widget is AppIconButton && widget.tooltip == pressedTooltip,
             );
-            final ink = tester.widget<InkWell>(
-              find.descendant(of: button, matching: find.byType(InkWell)),
+            expect(tester.getSize(button), const Size(48, 48));
+            expect(
+              find.descendant(of: button, matching: find.byType(FButton)),
+              findsOneWidget,
             );
-            expect(ink.statesController!.value, contains(WidgetState.pressed));
           }
           if (variant == 'phone' ||
+              screen == 'idle' ||
+              screen == 'last_route' ||
+              screen == 'recording' ||
+              screen == 'course_up' ||
               (variant == 'landscape_large_text' &&
                   screen.startsWith('zoom_'))) {
             final suffix = variant == 'phone' ? '' : '_$variant';

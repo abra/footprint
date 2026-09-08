@@ -1,11 +1,10 @@
+import 'package:component_library/component_library.dart';
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 
 Future<double?> showDistanceSheet(BuildContext context, double distance) =>
-    showModalBottomSheet<double>(
+    showAppSheet<double>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
       builder: (_) => _DistanceSheet(distance: distance),
     );
 
@@ -37,66 +36,51 @@ class _DistanceSheetState extends State<_DistanceSheet> {
   }
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-    child: ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.75,
-      ),
-      child: SingleChildScrollView(
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Form(
-              key: _form,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Walking distance',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.sizeOf(context).height * 0.75,
+    ),
+    child: SingleChildScrollView(
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Form(
+            key: _form,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Custom distance',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 16),
+                FTextFormField(
+                  control: FTextFieldControl.managed(controller: _controller),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
                   ),
-                  for (final km in [1, 3, 5, 10])
-                    ListTile(
-                      title: Text('$km km'),
-                      trailing: widget.distance == km * 1000
-                          ? const Icon(Icons.check)
-                          : null,
-                      onTap: () => Navigator.pop(context, km * 1000.0),
-                    ),
-                  const Divider(),
-                  TextFormField(
-                    controller: _controller,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    textInputAction: TextInputAction.done,
-                    decoration: const InputDecoration(
-                      labelText: 'Custom distance',
-                      suffixText: 'km',
-                      errorMaxLines: 3,
-                    ),
-                    validator: (text) {
-                      final value = _kilometers(text);
-                      return value == null ||
-                              !value.isFinite ||
-                              value < 1 ||
-                              value > 20
-                          ? 'Enter a distance between 1 and 20 km'
-                          : null;
-                    },
-                    onFieldSubmitted: (_) => _submit(),
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton.icon(
-                    onPressed: _submit,
-                    icon: const Icon(Icons.check),
-                    label: const Text('Set distance'),
-                  ),
-                ],
-              ),
+                  textInputAction: TextInputAction.done,
+                  label: const Text('Distance (km)'),
+                  validator: (text) {
+                    final value = _kilometers(text);
+                    return value == null ||
+                            !value.isFinite ||
+                            value < 1 ||
+                            value > 20
+                        ? 'Enter a distance between 1 and 20 km'
+                        : null;
+                  },
+                  onSubmit: (_) => _submit(),
+                ),
+                const SizedBox(height: 16),
+                AppButton(
+                  onPressed: _submit,
+                  prefix: const Icon(FLucideIcons.check),
+                  label: 'Set distance',
+                ),
+              ],
             ),
           ),
         ),

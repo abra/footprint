@@ -1,3 +1,5 @@
+import 'package:component_library/component_library.dart';
+
 import 'dart:async';
 
 import 'package:domain_models/domain_models.dart';
@@ -6,6 +8,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:route_list/route_list.dart';
 import 'package:route_list/src/route_list_cubit.dart';
 import 'package:routes_repository/routes_repository.dart';
+import 'package:route_snapshots/route_snapshots.dart';
+
+import '../../../route_snapshots/test/fakes.dart';
 
 class TestRoutes extends Fake implements RoutesRepository {
   Future<List<RouteDM>> Function() response = () async => [];
@@ -19,6 +24,11 @@ class TestRoutes extends Fake implements RoutesRepository {
 }
 
 void main() {
+  late RouteSnapshotRepository snapshots;
+  setUp(() {
+    snapshots = unavailableSnapshots();
+    addTearDown(snapshots.dispose);
+  });
   testWidgets('list renders loading, error, retry and empty states', (
     tester,
   ) async {
@@ -26,7 +36,9 @@ void main() {
     final repository = TestRoutes()..response = () => result.future;
     await tester.pumpWidget(
       MaterialApp(
+        builder: AppTheme.builder,
         home: RouteListScreen(
+          snapshots: snapshots,
           routesRepository: repository,
           onPageChangeRequested: () {},
         ),
@@ -58,7 +70,9 @@ void main() {
       ];
     await tester.pumpWidget(
       MaterialApp(
+        builder: AppTheme.builder,
         home: RouteListScreen(
+          snapshots: snapshots,
           routesRepository: repository,
           onPageChangeRequested: () => navigated = true,
         ),
@@ -73,6 +87,7 @@ void main() {
     );
     expect(find.text('Recording'), findsOneWidget);
     await tester.tap(find.byTooltip('Back to map'));
+    await tester.pumpAndSettle();
     expect(navigated, isTrue);
   });
 

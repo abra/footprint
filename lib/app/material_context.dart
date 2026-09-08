@@ -1,5 +1,6 @@
 import 'package:component_library/component_library.dart';
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:footprint/app/dependency_scope.dart';
 import 'package:footprint/app/routing.dart';
 import 'package:go_router/go_router.dart';
@@ -31,11 +32,12 @@ class _MaterialContextState extends State<MaterialContext> {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      localizationsDelegates: FLocalizations.localizationsDelegates,
       routerConfig: _router,
       builder: (context, child) {
         return MediaQuery.withClampedTextScaling(
           maxScaleFactor: 2,
-          child: child!,
+          child: AppTheme.builder(context, child),
         );
       },
     );

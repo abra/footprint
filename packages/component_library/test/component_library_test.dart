@@ -9,6 +9,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light,
+          builder: AppTheme.builder,
           home: Builder(
             builder: (context) => Scaffold(
               body: ColoredBox(

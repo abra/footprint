@@ -1,13 +1,20 @@
 import 'package:domain_models/domain_models.dart';
+
+import '../app_button.dart';
+
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../theme/app_theme.dart';
+import '../map_surface.dart';
 import '../photos/route_photo_markers.dart';
 import 'map_attribution.dart';
 import 'map_tile_config.dart';
 import 'map_tiles.dart';
+import 'recorded_route_layer.dart';
+import 'recorded_route_marker.dart';
 
 class RoutePreview extends StatefulWidget {
   const RoutePreview({
@@ -96,36 +103,15 @@ class _RoutePreviewState extends State<RoutePreview> {
                 onError: () => setState(() => _failed = true),
               ),
               if (_points.length >= 2)
-                PolylineLayer(
-                  polylines: [
-                    Polyline(
-                      points: _points,
-                      strokeWidth: 4,
-                      color: AppTheme.route,
-                    ),
-                  ],
+                RecordedRouteLayer(
+                  points: _points,
+                  strokeWidth: widget.interactive ? 7 : 5,
                 ),
               MarkerLayer(
                 markers: [
-                  Marker(
-                    point: _points.first,
-                    width: 28,
-                    height: 28,
-                    child: const Icon(
-                      Icons.location_on_outlined,
-                      color: AppTheme.ink,
-                    ),
-                  ),
+                  RecordedRouteMarker.start(point: _points.first),
                   if (_points.length > 1)
-                    Marker(
-                      point: _points.last,
-                      width: 28,
-                      height: 28,
-                      child: const Icon(
-                        Icons.flag_outlined,
-                        color: AppTheme.coral,
-                      ),
-                    ),
+                    RecordedRouteMarker.end(point: _points.last),
                 ],
               ),
               if (widget.photos.isNotEmpty)
@@ -136,17 +122,17 @@ class _RoutePreviewState extends State<RoutePreview> {
           if (_failed)
             Align(
               alignment: Alignment.topRight,
-              child: Material(
-                color: Colors.white,
-                shape: AppTheme.controlShape,
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  tooltip: 'Retry map tiles',
-                  icon: const Icon(Icons.cloud_off_outlined),
-                  onPressed: () => setState(() {
-                    _failed = false;
-                    _generation++;
-                  }),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: MapSurface(
+                  child: AppIconButton(
+                    tooltip: 'Retry map tiles',
+                    icon: const Icon(FLucideIcons.cloudOff),
+                    onPressed: () => setState(() {
+                      _failed = false;
+                      _generation++;
+                    }),
+                  ),
                 ),
               ),
             ),

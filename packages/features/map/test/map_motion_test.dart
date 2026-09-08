@@ -14,7 +14,7 @@ import 'package:map/src/map_view.dart';
 import 'package:recording_service/recording_service.dart';
 
 import 'fakes.dart';
-import 'pump_recording_ui.dart';
+import '../../../component_library/test/pump_map_ui.dart';
 import '../../../foreground_location_service/test/gps_fixtures.dart';
 
 LatLng markerPoint(WidgetTester tester) => tester
@@ -26,6 +26,158 @@ LatLng markerPoint(WidgetTester tester) => tester
 class _UnusedRecordingService extends Fake implements RecordingService {}
 
 void main() {
+  testWidgets(
+    'follow UX toggles, releases on gestures and restores the chosen mode',
+    (tester) async {
+      final cubit = MapCubit(
+        recordingService: _UnusedRecordingService(),
+        photosRepository: FakeRoutePhotosRepository(),
+        geocodingManager: FakeGeocodingManager(),
+      )..emit(MapState(location: location(1), locationLoading: false));
+      final visible = ValueNotifier(true);
+      var states = 0;
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: AppTheme.builder,
+            home: ValueListenableBuilder<bool>(
+              valueListenable: visible,
+              builder: (context, enabled, child) =>
+                  TickerMode(enabled: enabled, child: child!),
+              child: BlocProvider.value(
+                value: cubit,
+                child: BlocListener<MapCubit, MapState>(
+                  listener: (_, _) => states++,
+                  child: MapView(
+                    config: const MapConfig(),
+                    onRoutesRequested: () {},
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final map = tester.widget<FlutterMap>(find.byType(FlutterMap));
+        final controller = map.mapController!;
+        final bounds = tester.getRect(
+          find.byKey(const ValueKey('map-follow-button')),
+        );
+        expect(find.byTooltip('Follow direction of travel'), findsOneWidget);
+        await tester.tap(find.byTooltip('Follow direction of travel'));
+        await tester.pumpAndSettle();
+        expect(cubit.state.orientation, MapOrientation.courseUp);
+        expect(find.byTooltip('Keep north up'), findsOneWidget);
+        expect(find.byIcon(Icons.navigation), findsOneWidget);
+        cubit.emit(
+          cubit.state.copyWith(
+            location: location(2).withFilteredPosition(
+              latitude: location(1).latitude,
+              longitude: 60.0002,
+              isStationary: false,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(controller.camera.rotation, closeTo(-90, 0.01));
+        final zoom = controller.camera.zoom;
+        await tester.tap(find.byTooltip('Zoom in'));
+        await tester.pumpAndSettle();
+        expect(controller.camera.zoom, zoom + 1);
+        expect(cubit.state.centered, isTrue);
+        expect(cubit.state.orientation, MapOrientation.courseUp);
+        expect(
+          tester.getRect(find.byKey(const ValueKey('map-follow-button'))),
+          bounds,
+        );
+
+        await tester.drag(find.byType(FlutterMap), const Offset(80, 60));
+        await tester.pumpAndSettle();
+        expect(cubit.state.centered, isFalse);
+        expect(find.byTooltip('Center on location'), findsOneWidget);
+        await tester.tap(find.byTooltip('Center on location'));
+        await tester.pumpAndSettle();
+        expect(cubit.state.orientation, MapOrientation.courseUp);
+        expect(controller.camera.center, markerPoint(tester));
+        // Pure rotation has no onPositionChanged callback in flutter_map.
+        map.options.onMapEvent!(
+          MapEventRotate(
+            id: null,
+            source: MapEventSource.onMultiFinger,
+            oldCamera: controller.camera,
+            camera: controller.camera.withRotation(45),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(cubit.state.centered, isFalse);
+        await tester.tap(find.byTooltip('Center on location'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byTooltip('Keep north up'));
+        await tester.pumpAndSettle();
+        expect(controller.camera.rotation, 0);
+        expect(cubit.state.orientation, MapOrientation.northUp);
+
+        await tester.tap(find.byTooltip('Follow direction of travel'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 80));
+        visible.value = false;
+        await tester.pumpAndSettle();
+        expect(controller.camera.rotation, closeTo(-90, 0.01));
+        expect(tester.binding.transientCallbackCount, 0);
+        visible.value = true;
+        await tester.pumpAndSettle();
+        states = 0;
+        final oldObserver = debugOnRebuildDirtyWidget;
+        final rebuilt = <Type>[];
+        debugOnRebuildDirtyWidget = (element, builtOnce) {
+          oldObserver?.call(element, builtOnce);
+          rebuilt.add(element.widget.runtimeType);
+        };
+        try {
+          cubit.emit(
+            cubit.state.copyWith(
+              location: location(3).withFilteredPosition(
+                latitude: location(1).latitude + 0.0001,
+                longitude: 60.0002,
+                isStationary: false,
+              ),
+            ),
+          );
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 400));
+          rebuilt.clear();
+          states = 0;
+          for (var frame = 0; frame < 60; frame++) {
+            await tester.pump(const Duration(milliseconds: 16));
+            final box = tester.renderObject<RenderBox>(
+              find.byIcon(Icons.navigation_rounded),
+            );
+            final localCenter = box.size.center(Offset.zero);
+            final direction =
+                box.localToGlobal(Offset(localCenter.dx, 0)) -
+                box.localToGlobal(localCenter);
+            expect(
+              (direction - Offset(0, -localCenter.dy)).distance,
+              lessThan(0.001),
+            );
+          }
+          expect(states, 0);
+          for (final type in [MapView, MapAppBar, AppButton, AppIconButton]) {
+            expect(rebuilt, isNot(contains(type)));
+          }
+        } finally {
+          debugOnRebuildDirtyWidget = oldObserver;
+        }
+        await tester.pumpAndSettle();
+        expect(tester.binding.transientCallbackCount, 0);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await cubit.close();
+        visible.dispose();
+      }
+    },
+  );
+
   testWidgets(
     'stationary fixes keep the marker, camera and route still while time advances',
     (tester) async {
@@ -51,15 +203,16 @@ void main() {
       );
       await tester.pumpWidget(
         MaterialApp(
+          builder: AppTheme.builder,
           home: BlocProvider(
             create: (_) => cubit..initialize(),
             child: MapView(config: const MapConfig(), onRoutesRequested: () {}),
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await pumpMapUi(tester);
       await tester.tap(find.text('Record route'));
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       final controller = tester
           .widget<FlutterMap>(find.byType(FlutterMap))
           .mapController!;
@@ -69,7 +222,7 @@ void main() {
       for (var second = 30; second <= 600; second += 30) {
         now = gpsEpoch.add(Duration(seconds: second));
         service.send(filter.add(fix(second, second % 60 == 0 ? 1 : -1))!);
-        await pumpRecordingUi(tester);
+        await pumpMapUi(tester);
         expect(markerPoint(tester), marker);
         expect(controller.camera.center, camera);
         expect(cubit.state.metrics.distance, 0);
@@ -108,6 +261,7 @@ void main() {
       );
       await tester.pumpWidget(
         MaterialApp(
+          builder: AppTheme.builder,
           home: MapScreen(
             photosRepository: FakeRoutePhotosRepository(),
             recordingService: recording,
@@ -116,14 +270,15 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await pumpMapUi(tester);
       final cubit = tester.element(find.byType(MapView)).read<MapCubit>();
       final controller = tester
           .widget<FlutterMap>(find.byType(FlutterMap))
           .mapController!;
       final first = markerPoint(tester);
+      expect(find.byIcon(Icons.navigation_rounded), findsNothing);
       await tester.tap(find.text('Record route'));
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       final fix = location(2);
       service.send(fix);
       await tester.pump();
@@ -131,6 +286,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       final moving = markerPoint(tester);
       expect(moving.latitude, inExclusiveRange(first.latitude, fix.latitude));
+      expect(find.byIcon(Icons.navigation_rounded), findsOneWidget);
       expect(
         const DistanceHaversine(roundResult: false)(
           moving,
@@ -149,11 +305,11 @@ void main() {
       expect(tail.first, first);
       expect(tail.last, moving);
       expect(tail, isNot(contains(LatLng(fix.latitude, fix.longitude))));
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       expect(markerPoint(tester).latitude, fix.latitude);
 
       await tester.drag(find.byType(FlutterMap), const Offset(100, 80));
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       expect(cubit.state.centered, isFalse);
       expect(
         tester
@@ -163,7 +319,7 @@ void main() {
       );
       final cameraAfterPan = controller.camera.center;
       service.send(location(3));
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       expect(markerPoint(tester).latitude, location(3).latitude);
       expect(controller.camera.center, cameraAfterPan);
       await tester.tap(find.byTooltip('Center on location'));
@@ -177,18 +333,13 @@ void main() {
       );
       final iconOpacity = tester
           .widget<FadeTransition>(
-            find
-                .ancestor(
-                  of: find.byIcon(Icons.navigation),
-                  matching: find.byType(FadeTransition),
-                )
-                .first,
+            find.byKey(const ValueKey('follow-active-opacity')),
           )
           .opacity;
       expect(iconOpacity.value, 0);
       await tester.pump(const Duration(milliseconds: 100));
       expect(iconOpacity.value, inExclusiveRange(0, 1));
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       expect(iconOpacity.value, 1);
       expect(
         controller.camera.center.latitude,
@@ -220,7 +371,7 @@ void main() {
       MaterialApp(
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(disableAnimations: true),
-          child: child!,
+          child: AppTheme.builder(context, child),
         ),
         home: MapScreen(
           photosRepository: FakeRoutePhotosRepository(),
@@ -230,7 +381,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpMapUi(tester);
     service.send(location(2));
     await tester.pump();
     await tester.pump();
@@ -261,6 +412,7 @@ void main() {
     var states = 0;
     await tester.pumpWidget(
       MaterialApp(
+        builder: AppTheme.builder,
         home: BlocProvider.value(
           value: cubit,
           child: BlocListener<MapCubit, MapState>(
@@ -270,7 +422,7 @@ void main() {
         ),
       ),
     );
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     cubit.emit(cubit.state.copyWith(location: location(2)));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
@@ -292,7 +444,8 @@ void main() {
       expect(rebuilt, isNot(contains(MapView)));
       expect(rebuilt, isNot(contains(MapAppBar)));
       expect(rebuilt, isNot(contains(MapSurface)));
-      expect(rebuilt, isNot(contains(FilledButton)));
+      expect(rebuilt, isNot(contains(AppButton)));
+      expect(rebuilt, isNot(contains(AppIconButton)));
       expect(states, 0);
     } finally {
       debugOnRebuildDirtyWidget = previousObserver;
@@ -313,6 +466,7 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        builder: AppTheme.builder,
         home: ValueListenableBuilder<bool>(
           valueListenable: visible,
           builder: (context, enabled, child) =>
@@ -326,7 +480,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpMapUi(tester);
     service.send(location(2));
     await tester.pump();
     await tester.pump();
@@ -340,7 +494,7 @@ void main() {
     expect(markerPoint(tester).latitude, location(3).latitude);
     expect(tester.binding.transientCallbackCount, 0);
     visible.value = true;
-    await tester.pumpAndSettle();
+    await pumpMapUi(tester);
     expect(markerPoint(tester).latitude, location(3).latitude);
     service.send(location(4));
     await tester.pump();

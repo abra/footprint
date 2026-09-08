@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:component_library/component_library.dart';
 
 class RecordingIndicator extends StatefulWidget {
   const RecordingIndicator({super.key, required this.pulsing});
@@ -58,7 +59,12 @@ class _RecordingIndicatorState extends State<RecordingIndicator>
       child: Center(
         child: FadeTransition(
           opacity: _opacity,
-          child: const Icon(Icons.circle, size: 14),
+          child: const Icon(
+            Icons.circle,
+            size: 14,
+            color: AppTheme.coral,
+            applyTextScaling: false,
+          ),
         ),
       ),
     ),

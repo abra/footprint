@@ -1,6 +1,7 @@
 import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 
 import 'route_speed_chart.dart';
 
@@ -52,10 +53,10 @@ class RecordingStatsPanel extends StatelessWidget {
         label: 'Recording statistics',
         button: true,
         expanded: expanded,
-        child: InkWell(
+        child: FTappable(
           key: const ValueKey('recording-stats-panel'),
-          customBorder: AppTheme.controlShape,
-          onTap: onToggle,
+          style: const .delta(motion: FTappableMotion.none),
+          onPress: onToggle,
           child: MediaQuery.disableAnimationsOf(context)
               ? content
               : AnimatedSize(

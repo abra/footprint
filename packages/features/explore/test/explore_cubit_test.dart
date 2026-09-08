@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:domain_models/domain_models.dart';
 import 'package:explore/explore.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recording_service/recording_service.dart';
 import 'package:route_planning/route_planning.dart';
@@ -40,6 +41,170 @@ void main() {
     await location.dispose();
   });
 
+  for (final fails in [false, true]) {
+    test(
+      'regeneration preserves the preview after ${fails ? 'failure' : 'cancellation'}',
+      () async {
+        await cubit.generate();
+        final before = cubit.state;
+        planner.pending = Completer<RoutePlan>();
+        final generating = cubit.generate();
+        await Future<void>.delayed(Duration.zero);
+        expect(cubit.state.generating, isTrue);
+        expect(cubit.state.plan, same(before.plan));
+        expect(cubit.state.newAreas, before.newAreas);
+        await cubit.start();
+        expect(recording.state.isRecording, isFalse);
+        if (fails) {
+          planner.pending!.completeError(
+            const RoutePlanningException('Offline'),
+          );
+        } else {
+          cubit.cancelGeneration();
+          planner.pending!.complete(loopPlan(start: const GeoPoint(0.0001, 0)));
+        }
+        expect(await generating, isFalse);
+        expect(cubit.state.generating, isFalse);
+        expect(cubit.state.plan, same(before.plan));
+        expect(cubit.state.newAreas, before.newAreas);
+        expect(cubit.state.previousPreview, isNull);
+        expect(cubit.state.error, fails ? 'Offline' : null);
+      },
+    );
+  }
+
+  test('location refresh is single-flight and blocks overlapping plan/start commands', () async {
+    await cubit.generate();
+    final plan = cubit.state.plan;
+    location.currentLocationGate = Completer<LocationDM>();
+    final refresh = cubit.refreshStartLocation();
+    await Future<void>.delayed(Duration.zero);
+    await cubit.refreshStartLocation();
+    expect(await cubit.generate(), isFalse);
+    await cubit.start();
+    expect(location.currentLocationRequests, 1);
+    expect(planner.calls, 1);
+    expect(recording.state.isRecording, isFalse);
+    location.currentLocationGate!.complete(walkFix(plan!.points.first, 1));
+    await refresh;
+    expect(cubit.state.locating, isFalse);
+    expect(cubit.state.plan, same(plan));
+  });
+
+  test('previous preview restores its geometry and estimate without another request', () async {
+    expect(await cubit.generate(), isTrue);
+    final before = cubit.state;
+    walks.cells = [ExplorationCell.at(loopPlan().points.first)];
+    planner.pending = Completer<RoutePlan>()
+      ..complete(loopPlan(start: const GeoPoint(0.0001, 0)));
+    await cubit.generate();
+    expect(cubit.state.plan, isNot(same(before.plan)));
+    expect(cubit.state.previousPreview!.plan, same(before.plan));
+    cubit.restorePreviousPreview();
+    expect(cubit.state.plan, same(before.plan));
+    expect(cubit.state.newAreas, before.newAreas);
+    expect(cubit.state.previousPreview, isNull);
+    expect(planner.calls, 2);
+    cubit.restorePreviousPreview();
+    expect(cubit.state.plan, same(before.plan));
+  });
+
+  test(
+    'undo cancels a replacement in flight and rejects the late result',
+    () async {
+      await cubit.generate();
+      final first = cubit.state.plan;
+      await cubit.generate();
+      planner.pending = Completer<RoutePlan>();
+      final generating = cubit.generate();
+      await Future<void>.delayed(Duration.zero);
+      cubit.restorePreviousPreview();
+      planner.pending!.complete(loopPlan(start: const GeoPoint(0.0001, 0)));
+      await generating;
+      expect(cubit.state.plan, same(first));
+      expect(cubit.state.previousPreview, isNull);
+      expect(cubit.state.generating, isFalse);
+    },
+  );
+
+  for (final change in ['distance', 'mode', 'start', 'end', 'clear']) {
+    test('$change invalidates both the preview and its undo history', () async {
+      await cubit.generate();
+      await cubit.generate();
+      expect(cubit.state.previousPreview, isNotNull);
+      switch (change) {
+        case 'distance':
+          cubit.selectDistance(5000);
+        case 'mode':
+          cubit.selectMode(RoutePlanMode.pointToPoint);
+        case 'start':
+          cubit.selectStart(const GeoPoint(1, 1));
+        case 'end':
+          cubit.selectEnd(const GeoPoint(2, 2));
+        case 'clear':
+          cubit.clearPlan();
+      }
+      cubit.restorePreviousPreview();
+      expect(cubit.state.plan, isNull);
+      expect(cubit.state.previousPreview, isNull);
+      expect(cubit.state.newAreas, 0);
+    });
+  }
+
+  test('start distance follows valid fixes and expires without polling', () {
+    fakeAsync((clock) {
+      final service = FakeLocationService()
+        ..lastLocation = walkFix(loopPlan().points.first, 0);
+      final recorder = RecordingService(
+        locationService: service,
+        routesRepository: FakeRoutesRepository(),
+      );
+      final subject = ExploreCubit(
+        planner: FakePlanner(),
+        walks: FakeWalks(),
+        recording: recorder,
+        now: () => walkEpoch.add(clock.elapsed),
+      );
+      unawaited(subject.initialize());
+      clock.flushMicrotasks();
+      unawaited(subject.generate());
+      clock.flushMicrotasks();
+      expect(subject.state.distanceToStart, closeTo(0, 0.01));
+      service.send(walkFix(const GeoPoint(0.01, 0), 1));
+      clock.flushMicrotasks();
+      expect(subject.state.startTooFar, isTrue);
+      clock.elapse(const Duration(seconds: 32));
+      expect(subject.state.hasRecentLocation, isFalse);
+      expect(subject.state.distanceToStart, isNull);
+      expect(subject.state.startTooFar, isFalse);
+      service.send(walkFix(loopPlan().points.first, 32));
+      clock.flushMicrotasks();
+      expect(subject.state.distanceToStart, closeTo(0, 0.01));
+      unawaited(subject.close());
+      clock.flushMicrotasks();
+      unawaited(recorder.dispose());
+      unawaited(service.dispose());
+      clock.flushMicrotasks();
+      expect(clock.nonPeriodicTimerCount, 0);
+    });
+  });
+
+  test('refresh at a distant start obtains a new fix without changing the plan or starting', () async {
+    await cubit.generate();
+    final plan = cubit.state.plan;
+    location.send(walkFix(const GeoPoint(1, 1), 1));
+    await Future<void>.delayed(Duration.zero);
+    expect(cubit.state.startTooFar, isTrue);
+    location.currentFix = walkFix(plan!.points.first, 2);
+    await cubit.refreshStartLocation();
+    await Future<void>.delayed(Duration.zero);
+    expect(cubit.state.startTooFar, isFalse);
+    expect(cubit.state.plan, same(plan));
+    expect(location.currentLocationRequests, 1);
+    expect(recording.state.isRecording, isFalse);
+    expect(planner.calls, 1);
+  });
+
   test('manual A to B plans without GPS and cannot start far from A', () async {
     cubit.selectMode(RoutePlanMode.pointToPoint);
     const start = GeoPoint(49.4, 8.67);
@@ -53,12 +218,13 @@ void main() {
     expect(location.currentLocationRequests, 0);
     expect(cubit.state.visibleError, isNull);
     expect(recording.state.isRecording, isFalse);
-    await cubit.start();
+    final feedback = await cubit.start();
     expect(recording.state.isRecording, isFalse);
     expect(cubit.state.visibleError, contains('Go to the route start'));
+    expect(feedback, contains('100 m'));
     location.send(walkFix(start, 1));
     await Future<void>.delayed(Duration.zero);
-    await cubit.start();
+    expect(await cubit.start(), isNull);
     expect(recording.state.isRecording, isTrue);
     expect(routes.startedPlan!.mode, RoutePlanMode.pointToPoint);
   });
@@ -473,6 +639,44 @@ void main() {
     );
   }
 
+  for (final (failure, message) in [
+    (TimeoutException('No fix'), 'did not respond in time'),
+    (LocationServiceDisabledStateException(), 'Location services are off'),
+    (LocationServicePermissionDeniedException(), 'permission is required'),
+    (LocationServicePermanentlyDeniedException(), 'device settings'),
+  ]) {
+    test(
+      'manual start returns GPS failure feedback and can be retried: $failure',
+      () async {
+        final plan = pointToPointPlan();
+        cubit.selectMode(RoutePlanMode.pointToPoint);
+        cubit.selectStart(plan.points.first);
+        cubit.selectEnd(plan.points.last);
+        await cubit.generate();
+        final generated = cubit.state.plan;
+        location.send(walkFix(plan.points.first, -600));
+        await Future<void>.delayed(Duration.zero);
+        location.currentLocationError = failure;
+        final feedback = await cubit.start();
+        expect(feedback, contains(message));
+        expect(cubit.state.starting, isFalse);
+        expect(cubit.state.locating, isFalse);
+        expect(cubit.state.plan, same(generated));
+        expect(recording.state.isRecording, isFalse);
+        expect(routes.saved, isEmpty);
+        location.currentLocationError = null;
+        location.send(walkFix(plan.points.first, 1));
+        await Future<void>.delayed(Duration.zero);
+        expect(cubit.state.visibleError, isNull);
+        expect(feedback, contains(message));
+        expect(await cubit.start(), isNull);
+        expect(recording.state.isRecording, isTrue);
+        expect(routes.startedPlan, same(generated));
+        expect(planner.calls, 1);
+      },
+    );
+  }
+
   for (final close in [false, true]) {
     test(
       '${close ? 'closing' : 'cancel'} stops waiting and ignores late GPS',
@@ -534,8 +738,9 @@ void main() {
     () async {
       await cubit.generate();
       routes.failStart = true;
-      await cubit.start();
+      final feedback = await cubit.start();
       expect(cubit.state.startedRouteId, isNull);
+      expect(feedback, contains('could not be started'));
       expect(cubit.state.error, contains('could not be started'));
       expect(cubit.state.starting, isFalse);
     },

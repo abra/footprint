@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'route_details_cubit.dart';
@@ -14,10 +15,12 @@ class RouteDetailsView extends StatelessWidget {
     required this.config,
     required this.onClosed,
     required this.justRecorded,
+    this.onTimelineRequested,
   });
   final MapTileConfig config;
   final ValueChanged<bool> onClosed;
   final bool justRecorded;
+  final VoidCallback? onTimelineRequested;
 
   Future<void> _close(BuildContext context) async {
     final state = context.read<RouteDetailsCubit>().state;
@@ -33,7 +36,7 @@ class RouteDetailsView extends StatelessWidget {
             SheetAction(
               value: true,
               label: 'Discard changes',
-              icon: Icons.undo,
+              icon: FLucideIcons.undo2,
               destructive: true,
             ),
           ],
@@ -62,32 +65,29 @@ class RouteDetailsView extends StatelessWidget {
         },
         child: Scaffold(
           appBar: AppBar(
-            title: Text(justRecorded ? 'SAVE ROUTE' : 'ROUTE'),
-            leading: IconButton(
+            title: Text(justRecorded ? 'Route saved' : 'Route'),
+            leading: AppIconButton(
               tooltip: 'Back',
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(FLucideIcons.arrowLeft),
               onPressed: ready?.saving == true
                   ? null
                   : () => unawaited(_close(context)),
             ),
             actions: [
+              if (ready != null && onTimelineRequested != null)
+                AppIconButton(
+                  tooltip: 'Route timeline',
+                  icon: const Icon(FLucideIcons.listOrdered),
+                  onPressed: ready.saving ? null : onTimelineRequested,
+                ),
               if (ready != null && ready.route.status == Status.completed)
-                IconButton(
+                AppIconButton(
                   tooltip: 'Save route name',
                   onPressed: ready.saving
                       ? null
                       : () =>
                             unawaited(context.read<RouteDetailsCubit>().save()),
-                  icon: ready.saving
-                      ? const SizedBox.square(
-                          dimension: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(
-                          Icons.check,
-                          color: Color(0xFF2196F3),
-                          size: 30,
-                        ),
+                  icon: const Icon(FLucideIcons.check, color: AppTheme.primary),
                 ),
             ],
           ),
@@ -102,10 +102,13 @@ class RouteDetailsView extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(message),
-                    TextButton.icon(
+                    const SizedBox(height: 8),
+                    AppButton(
+                      variant: FButtonVariant.ghost,
+                      compact: true,
                       onPressed: context.read<RouteDetailsCubit>().load,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
+                      prefix: const Icon(FLucideIcons.refreshCw),
+                      label: 'Retry',
                     ),
                   ],
                 ),
@@ -113,6 +116,7 @@ class RouteDetailsView extends StatelessWidget {
               RouteDetailsReady() => _RouteContent(
                 state: state,
                 config: config,
+                justRecorded: justRecorded,
               ),
             },
           ),
@@ -123,9 +127,14 @@ class RouteDetailsView extends StatelessWidget {
 }
 
 class _RouteContent extends StatelessWidget {
-  const _RouteContent({required this.state, required this.config});
+  const _RouteContent({
+    required this.state,
+    required this.config,
+    required this.justRecorded,
+  });
   final RouteDetailsReady state;
   final MapTileConfig config;
+  final bool justRecorded;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -136,12 +145,20 @@ class _RouteContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (state.route.status == Status.completed) ...[
-            const Text(
-              'ROUTE NAME',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            Text(
+              justRecorded ? 'Name this walk (optional)' : 'Route name',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
             _NameField(state: state),
+            if (state.saving)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Semantics(
+                  liveRegion: true,
+                  child: const Text('Saving name...'),
+                ),
+              ),
           ] else ...[
             Text(
               RouteLabels.title(context, state.route),
@@ -199,28 +216,34 @@ class _NameFieldState extends State<_NameField> {
   }
 
   @override
-  Widget build(BuildContext context) => TextField(
-    controller: _controller,
+  Widget build(BuildContext context) => FTextField(
+    control: FTextFieldControl.managed(
+      controller: _controller,
+      onChange: (value) {
+        final cubit = context.read<RouteDetailsCubit>();
+        if (cubit.state case RouteDetailsReady(:final name)
+            when name != value.text) {
+          cubit.changeName(value.text);
+        }
+      },
+    ),
     enabled: !widget.state.saving,
     maxLength: 80,
     maxLines: 1,
     textCapitalization: TextCapitalization.sentences,
     textInputAction: TextInputAction.done,
-    onChanged: context.read<RouteDetailsCubit>().changeName,
-    onSubmitted: (_) => unawaited(context.read<RouteDetailsCubit>().save()),
-    decoration: InputDecoration(
-      hintText: RouteLabels.title(context, widget.state.route),
-      counterText: '',
-      suffixIcon: IconButton(
-        tooltip: 'Clear name',
-        icon: const Icon(Icons.close),
-        onPressed: widget.state.saving
-            ? null
-            : () {
-                _controller.clear();
-                context.read<RouteDetailsCubit>().changeName('');
-              },
-      ),
+    onSubmit: (_) => unawaited(context.read<RouteDetailsCubit>().save()),
+    hint: RouteLabels.title(context, widget.state.route),
+    counterBuilder: (_, _, _, _) => null,
+    suffixBuilder: (_, _, _) => AppIconButton(
+      tooltip: 'Clear name',
+      icon: const Icon(FLucideIcons.x),
+      onPressed: widget.state.saving
+          ? null
+          : () {
+              _controller.clear();
+              context.read<RouteDetailsCubit>().changeName('');
+            },
     ),
   );
 }

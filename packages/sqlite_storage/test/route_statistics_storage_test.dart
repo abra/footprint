@@ -111,6 +111,7 @@ void main() {
           onCreate: (db, version) async {
             await DatabaseHelper.create(db, version);
             await db.execute('DROP TABLE route_statistics');
+            await db.execute('ALTER TABLE route_photos DROP COLUMN comment');
           },
         ),
       );
@@ -155,7 +156,7 @@ void main() {
       expect((await migrated.routes.getById(1))!.name, 'Legacy route');
       await migrated.close();
       final check = await databaseFactoryFfi.openDatabase(path);
-      expect(await check.getVersion(), 8);
+      expect(await check.getVersion(), 9);
       expect(await check.query('route_statistics'), hasLength(1));
       expect(await check.query('explored_cells'), hasLength(1));
       // A cached query must not depend on loading the trace again.

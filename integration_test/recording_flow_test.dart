@@ -3,11 +3,13 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foreground_location_service/foreground_location_service.dart';
 import 'package:route_planning/route_planning.dart';
+import 'package:route_snapshots/route_snapshots.dart';
 import 'package:footprint/app/composition.dart';
 import 'package:footprint/app/config/application_config.dart';
 import 'package:footprint/app/dependency_container.dart';
@@ -19,9 +21,10 @@ import 'package:routes_repository/routes_repository.dart';
 import 'package:recording_service/recording_service.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
 import 'package:statistics/src/statistics_view.dart';
+import 'package:route_list/src/route_thumbnail.dart';
 
 import '../packages/features/map/test/fakes.dart';
-import '../packages/features/map/test/pump_recording_ui.dart';
+import '../packages/component_library/test/pump_map_ui.dart';
 
 Future<Uint8List> fixtureTile() async {
   final recorder = ui.PictureRecorder();
@@ -127,10 +130,17 @@ void main() {
       locationService: service,
       routesRepository: repository,
     );
+    final snapshots = RouteSnapshotRepository(
+      config: FixtureConfig(server.port).map,
+      store: FileSnapshotStore(
+        directory: () async => Directory('${directory.path}/snapshots'),
+      ),
+    );
     final resources = ResourceDisposer()
       ..add('database', storage.close)
       ..add('photos', photos.dispose)
       ..add('location', service.dispose)
+      ..add('snapshots', snapshots.dispose)
       ..add('recording', recording.dispose);
     addTearDown(() async {
       await resources.dispose();
@@ -139,6 +149,7 @@ void main() {
       await directory.delete(recursive: true);
     });
     final dependencies = DependenciesContainer(
+      routeSnapshots: snapshots,
       routePlanner: OpenRouteServicePlanner(),
       walksRepository: WalksRepository(storage: storage),
       photosRepository: photos,
@@ -158,7 +169,7 @@ void main() {
         ),
       ),
     );
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     await pumpUntil(
       tester,
       () => find.text('Map tiles could not be loaded.').evaluate().isNotEmpty,
@@ -174,15 +185,15 @@ void main() {
     expect(find.text('Map tiles could not be loaded.'), findsNothing);
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('Record route'));
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     final statsPanel = find.byKey(const ValueKey('recording-stats-panel'));
     await tester.tap(statsPanel);
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     expect(tester.widget<RouteStats>(find.byType(RouteStats)).columns, 2);
     service.send(location(2));
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     await tester.tap(find.byTooltip('Add route photo'));
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     await tester.tap(find.text('Choose photo'));
     await pumpUntil(
       tester,
@@ -191,10 +202,10 @@ void main() {
           .any((layer) => layer.photos.length == 1),
     );
     await tester.tap(find.byTooltip('Routes'));
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     expect(find.text('Recording'), findsOneWidget);
     service.send(location(3));
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     if (Platform.isIOS) {
       final size = tester.view.physicalSize / tester.view.devicePixelRatio;
       await tester.dragFrom(
@@ -204,10 +215,10 @@ void main() {
     } else {
       await tester.tap(find.byTooltip('Back to map'));
     }
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     expect(tester.widget<RouteStats>(find.byType(RouteStats)).columns, 2);
     await tester.tap(statsPanel);
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     expect(tester.widget<RouteStats>(find.byType(RouteStats)).columns, isNull);
     final distanceBeforeStop =
         (await repository.getActiveRoute())!.metrics.distance;
@@ -232,43 +243,134 @@ void main() {
     expect(recording.state.points.last.isStationary, isTrue);
     expect(recording.state.points.last.latitude, location(3).latitude);
     await tester.tap(find.text('Stop recording'));
-    await pumpRecordingUi(tester);
-    expect(find.text('SAVE ROUTE'), findsOneWidget);
-    await tester.enterText(find.byType(TextField), 'Morning walk');
+    await pumpMapUi(tester);
+    expect(find.text('Route saved'), findsOneWidget);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      '',
+    );
     await tester.tap(find.byTooltip('Save route name'));
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
+    expect(find.text('Record route'), findsOneWidget);
+    expect(find.text('Last route'), findsOneWidget);
+    final completedTrace = tester
+        .widget<PolylineLayer>(
+          find.byKey(const ValueKey('route-history-layer')),
+        )
+        .polylines
+        .single;
+    expect(completedTrace.color, AppTheme.route.withValues(alpha: 0.25));
+    expect(completedTrace.strokeWidth, 4);
+    await tester.tap(find.byTooltip('Hide last route'));
+    await pumpMapUi(tester);
+    expect(find.byKey(const ValueKey('route-history-layer')), findsNothing);
+    expect(find.text('Last route'), findsNothing);
+    final unnamed = (await repository.getRoutes()).single;
+    expect(unnamed.name, isNull);
+    expect(unnamed.status, Status.completed);
+    final defaultTitle = RouteLabels.title(
+      tester.element(find.byType(MapScreen)),
+      unnamed,
+    );
+    await tester.tap(find.byTooltip('Routes'));
+    await pumpMapUi(tester);
+    expect(find.text(defaultTitle), findsOneWidget);
+    final thumbnail = find.byType(RouteThumbnail);
+    expect(
+      find.descendant(of: thumbnail, matching: find.byType(FlutterMap)),
+      findsNothing,
+    );
+    await pumpUntil(
+      tester,
+      () => tester
+          .widgetList<RawImage>(
+            find.descendant(of: thumbnail, matching: find.byType(RawImage)),
+          )
+          .any(
+            (image) => image.image?.width == 720 && image.image?.height == 400,
+          ),
+    );
+    final snapshotFiles = await Directory('${directory.path}/snapshots')
+        .list()
+        .toList();
+    expect(
+      snapshotFiles.where((entry) => entry.path.endsWith('.png')),
+      isNotEmpty,
+    );
+    await tester.tap(find.text(defaultTitle));
+    await pumpMapUi(tester);
+    await tester.enterText(find.byType(EditableText), 'Morning walk');
+    await tester.tap(find.byTooltip('Save route name'));
+    await pumpMapUi(tester);
+    await tester.tap(find.byTooltip('Back to map'));
+    await pumpMapUi(tester);
     final route = (await repository.getRoutes()).single;
     final savedPhoto = (await photos.getPhotos(route.id)).single;
     expect(savedPhoto.latitude, location(2).latitude);
     expect(await File(savedPhoto.path).readAsBytes(), pixel);
     expect((await repository.getRoute(route.id))!.routePoints, hasLength(23));
     await tester.tap(find.byTooltip('Routes'));
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     expect(find.text('Morning walk'), findsOneWidget);
     await tester.tap(find.byTooltip('Statistics'));
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     await pumpUntil(
       tester,
       () => find.text('Recordings').evaluate().isNotEmpty,
     );
     await tester.tap(find.text('All time'));
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     expect(find.byType(StatisticsView), findsOneWidget);
     final summary = (await repository.getRecordedSummaries()).single;
     expect(summary.id, route.id);
     expect(summary.distance, route.metrics.distance);
     expect(summary.duration, route.metrics.duration);
     await tester.tap(find.byTooltip('Back to routes'));
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     expect(find.text('Morning walk'), findsOneWidget);
+    await tester.tap(find.text('Morning walk'));
+    await pumpMapUi(tester);
+    await tester.tap(find.byTooltip('Route timeline'));
+    await pumpMapUi(tester);
+    await tester.scrollUntilVisible(find.text('Add comment'), 200);
+    await pumpMapUi(tester);
+    await tester.tap(find.text('Add comment'));
+    await pumpMapUi(tester);
+    await tester.enterText(
+      find.byType(EditableText),
+      'A photo from the morning walk',
+    );
+    await tester.ensureVisible(find.text('Save comment'));
+    await pumpMapUi(tester);
+    await tester.tap(find.text('Save comment'));
+    await pumpUntil(
+      tester,
+      () => find.text('Photo comment').evaluate().isEmpty,
+    );
+    expect(find.text('A photo from the morning walk'), findsOneWidget);
+    expect(
+      (await photos.getPhotos(route.id)).single.comment,
+      'A photo from the morning walk',
+    );
+    await tester.tap(find.byTooltip('Back to route'));
+    await pumpMapUi(tester);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'Morning walk',
+    );
+    await tester.tap(find.byTooltip('Clear name'));
+    await tester.tap(find.byTooltip('Save route name'));
+    await pumpMapUi(tester);
+    expect(find.text(defaultTitle), findsOneWidget);
+    expect((await repository.getRoute(route.id))!.name, isNull);
     await tester.pumpWidget(const SizedBox.shrink());
-    await pumpRecordingUi(tester);
+    await pumpMapUi(tester);
     await resources.dispose();
     final reopened = await SqliteStorage.open(path: path);
     try {
       final saved = (await reopened.routes.getById(route.id))!;
       expect(saved.status, 'completed');
-      expect(saved.name, 'Morning walk');
+      expect(saved.name, isNull);
       expect(saved.routePoints, hasLength(23));
       expect(saved.routePoints!.last.isStationary, isTrue);
       expect(saved.routePoints!.last.filteredSpeed, 0);
@@ -277,6 +379,10 @@ void main() {
         isNot(saved.routePoints!.last.latitude),
       );
       expect(await reopened.routePhotos.getForRoute(route.id), hasLength(1));
+      expect(
+        (await reopened.routePhotos.getForRoute(route.id)).single.comment,
+        'A photo from the morning walk',
+      );
       expect((await reopened.statistics.getSummaries()).single, summary);
       await reopened.routes.delete(route.id);
       expect(await reopened.statistics.getSummaries(), isEmpty);

@@ -40,6 +40,7 @@ GoRouter buildRouter({required DependenciesContainer dependencies}) {
         pageBuilder: (context, state) => _materialPage<void>(
           state,
           RouteListScreen(
+            snapshots: dependencies.routeSnapshots,
             onStatisticsRequested: () => context.push(AppRoutes.statistics),
             routesRepository: dependencies.routesRepository,
             config: dependencies.config.map,
@@ -87,11 +88,33 @@ GoRouter buildRouter({required DependenciesContainer dependencies}) {
             repository: dependencies.routesRepository,
             config: dependencies.config.map,
             justRecorded: state.uri.queryParameters['recorded'] == 'true',
+            onTimelineRequested: () => context.push(
+              '${AppRoutes.routes}/${state.pathParameters['id']}/timeline',
+            ),
             onClosed: (changed) => context.canPop()
                 ? context.pop(changed)
                 : context.go(AppRoutes.routes),
           ),
         ),
+        routes: [
+          GoRoute(
+            path: 'timeline',
+            pageBuilder: (context, state) => _materialPage<void>(
+              state,
+              RouteTimelineScreen(
+                routeId: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
+                repository: dependencies.routesRepository,
+                photosRepository: dependencies.photosRepository,
+                config: dependencies.config.map,
+                onBack: () => context.canPop()
+                    ? context.pop()
+                    : context.go(
+                        '${AppRoutes.routes}/${state.pathParameters['id']}',
+                      ),
+              ),
+            ),
+          ),
+        ],
       ),
     ],
   );

@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import '../app_button.dart';
+
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -28,9 +31,9 @@ class MapAttributionButton extends StatelessWidget {
   final MapTileConfig config;
 
   @override
-  Widget build(BuildContext context) => IconButton(
+  Widget build(BuildContext context) => AppIconButton(
     tooltip: 'Attributions',
-    icon: const Icon(Icons.info_outline),
+    icon: const Icon(FLucideIcons.info),
     onPressed: () async {
       final open = await showAppActionSheet<bool>(
         context,
@@ -40,7 +43,7 @@ class MapAttributionButton extends StatelessWidget {
           SheetAction(
             value: true,
             label: config.attribution,
-            icon: Icons.open_in_new,
+            icon: FLucideIcons.externalLink,
           ),
         ],
       );

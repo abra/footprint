@@ -193,6 +193,8 @@ class WalkSummary extends StatelessWidget {
           progress.completed
               ? progress.plan.isLoop
                     ? 'Loop completed'
+                    : progress.recording
+                    ? 'Destination reached'
                     : 'Walk completed'
               : progress.recording
               ? 'Walking route'
@@ -204,6 +206,10 @@ class WalkSummary extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
+        if (progress.completed && progress.recording) ...[
+          const Text('Recording continues'),
+          const SizedBox(height: 4),
+        ],
         Wrap(
           spacing: 16,
           runSpacing: 4,
@@ -212,7 +218,8 @@ class WalkSummary extends StatelessWidget {
               '${progress.reached} / ${progress.plan.checkpoints.length} checkpoints',
             ),
             Text('${progress.newCells} new areas'),
-            if (distance != null) Text('Next: ${distance.round()} m away'),
+            if (distance != null)
+              Text('Next checkpoint: ${distance.round()} m straight-line'),
           ],
         ),
         const SizedBox(height: 8),

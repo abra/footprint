@@ -314,6 +314,22 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  forui:
+    dependency: "direct main"
+    description:
+      name: forui
+      sha256: a00251e8db89430f388990049ea30ec62f7d1c9270f1fe6ab0d316b1a9415a72
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.26.0"
+  forui_lucide:
+    dependency: transitive
+    description:
+      name: forui_lucide
+      sha256: "5c797b7455b4c491504fc0f76c3d2d6eebe7cb49aeac1d5c02026f06ae1d2607"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.26.1"
   frontend_server_client:
     dependency: transitive
     description:
@@ -1089,6 +1105,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
+  sugar:
+    dependency: transitive
+    description:
+      name: sugar
+      sha256: a0a97f1d3552a3ef4cbec7c6e62c7b52c151cd5c11e984e8311700a918f73dc5
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.0"
   sync_http:
     dependency: transitive
     description:

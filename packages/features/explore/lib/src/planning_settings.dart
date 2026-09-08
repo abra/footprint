@@ -1,11 +1,13 @@
 import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'distance_sheet.dart';
 import 'explore_cubit.dart';
 import 'explore_state.dart';
+import 'loop_distance_picker.dart';
 
 enum RouteEndpoint { start, end }
 
@@ -29,74 +31,58 @@ class PlanningSettings extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<ExploreCubit>();
     final disabled = state.starting || state.recording;
+    final showEndpoints = state.mode == RoutePlanMode.pointToPoint;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SegmentedButton<RoutePlanMode>(
+        AppSegmentedControl<RoutePlanMode>(
           segments: const [
-            ButtonSegment(
+            AppSegment(
               value: RoutePlanMode.loop,
-              icon: Icon(Icons.loop),
-              label: Text('Loop'),
+              icon: FLucideIcons.repeat,
+              label: 'Loop',
             ),
-            ButtonSegment(
+            AppSegment(
               value: RoutePlanMode.pointToPoint,
-              icon: Icon(Icons.route),
-              label: Text('A to B'),
+              icon: FLucideIcons.route,
+              label: 'A to B',
             ),
           ],
-          selected: {state.mode},
-          showSelectedIcon: false,
-          onSelectionChanged: disabled
+          value: state.mode,
+          onChanged: disabled
               ? null
-              : (modes) {
+              : (mode) {
                   onCancelPick();
-                  cubit.selectMode(modes.single);
+                  cubit.selectMode(mode);
                 },
         ),
         const SizedBox(height: 12),
-        if (state.mode == RoutePlanMode.loop)
-          Row(
+        // Only the endpoint form determines the shared settings height.
+        AnimatedCrossFade(
+          key: ValueKey(MediaQuery.disableAnimationsOf(context)),
+          duration: AppMotion.durationOf(context),
+          firstCurve: AppMotion.fadeOut,
+          secondCurve: AppMotion.fadeIn,
+          crossFadeState: showEndpoints
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
+          layoutBuilder: (top, topKey, bottom, bottomKey) => Stack(
             children: [
-              const Icon(Icons.directions_walk, color: explorationColor),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  '${(state.distance / 1000).toStringAsFixed(state.distance % 1000 == 0 ? 0 : 1)} km loop',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+              KeyedSubtree(
+                key: showEndpoints ? topKey : bottomKey,
+                child: showEndpoints ? top : bottom,
               ),
-              IconButton(
-                tooltip: 'Change distance',
-                onPressed: disabled
-                    ? null
-                    : () async {
-                        final distance = await showDistanceSheet(
-                          context,
-                          state.distance,
-                        );
-                        if (context.mounted && distance != null) {
-                          cubit.selectDistance(distance);
-                        }
-                      },
-                icon: const Icon(Icons.tune),
+              Positioned.fill(
+                key: showEndpoints ? bottomKey : topKey,
+                child: showEndpoints ? bottom : top,
               ),
-              if (state.plan != null)
-                IconButton(
-                  tooltip: 'Clear route',
-                  onPressed: disabled ? null : cubit.clearPlan,
-                  icon: const Icon(Icons.close),
-                ),
             ],
           ),
-        if (state.mode == RoutePlanMode.pointToPoint)
-          Row(
+          secondChild: Row(
+            key: const ValueKey('route-endpoint-settings'),
             children: [
               Expanded(
-                child: Column(
+                child: AppTileList(
                   children: [
                     _EndpointTile(
                       label: 'Start',
@@ -121,10 +107,11 @@ class PlanningSettings extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
+                  AppIconButton(
                     tooltip: 'Use current location for start',
                     onPressed: disabled || state.start == null
                         ? null
@@ -132,9 +119,9 @@ class PlanningSettings extends StatelessWidget {
                             onCancelPick();
                             cubit.selectStart(null);
                           },
-                    icon: const Icon(Icons.my_location),
+                    icon: const Icon(FLucideIcons.locateFixed),
                   ),
-                  IconButton(
+                  AppIconButton(
                     tooltip: 'Swap start and destination',
                     onPressed:
                         disabled || state.start == null || state.end == null
@@ -143,9 +130,9 @@ class PlanningSettings extends StatelessWidget {
                             onCancelPick();
                             cubit.swapEndpoints();
                           },
-                    icon: const Icon(Icons.swap_vert),
+                    icon: const Icon(FLucideIcons.arrowDownUp),
                   ),
-                  IconButton(
+                  AppIconButton(
                     tooltip: 'Clear route',
                     onPressed: disabled || state.plan == null
                         ? null
@@ -153,12 +140,30 @@ class PlanningSettings extends StatelessWidget {
                             onCancelPick();
                             cubit.clearPlan();
                           },
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(FLucideIcons.x),
                   ),
                 ],
               ),
             ],
           ),
+          firstChild: LoopDistancePicker(
+            distance: state.distance,
+            onSelected: disabled ? null : cubit.selectDistance,
+            onCustomRequested: disabled
+                ? null
+                : () async {
+                    final distance = await showDistanceSheet(
+                      context,
+                      state.distance,
+                    );
+                    if (context.mounted && distance != null) {
+                      cubit.selectDistance(distance);
+                    }
+                  },
+            hasPlan: state.plan != null,
+            onClear: disabled ? null : cubit.clearPlan,
+          ),
+        ),
       ],
     );
   }
@@ -179,35 +184,53 @@ class _EndpointTile extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    contentPadding: EdgeInsets.zero,
-    dense: true,
+  Widget build(BuildContext context) => FTile(
     selected: selected,
-    selectedColor: letter == 'A' ? explorationColor : AppTheme.coral,
-    selectedTileColor: (letter == 'A' ? explorationColor : AppTheme.coral)
-        .withValues(alpha: 0.08),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-      side: BorderSide(
-        color: selected
-            ? letter == 'A'
-                  ? explorationColor
-                  : AppTheme.coral
-            : Colors.transparent,
+    style: .delta(
+      padding: .value(EdgeInsets.zero),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: selected
+              ? letter == 'A'
+                    ? explorationColor
+                    : AppTheme.coral
+              : Colors.transparent,
+        ),
       ),
     ),
-    leading: CircleAvatar(
-      radius: 16,
-      backgroundColor: letter == 'A' ? explorationColor : AppTheme.coral,
-      child: Text(
-        letter,
-        textScaler: TextScaler.noScaling,
-        style: const TextStyle(color: Colors.white),
-      ),
+    prefix: MediaQuery.textScalerOf(context).scale(1) > 1.4
+        ? null
+        : CircleAvatar(
+            radius: 16,
+            backgroundColor: letter == 'A' ? explorationColor : AppTheme.coral,
+            child: Text(
+              letter,
+              textScaler: TextScaler.noScaling,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+    title: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (MediaQuery.textScalerOf(context).scale(1) > 1.4)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: RouteEndpointBadge(letter: letter),
+          ),
+        Text(
+          label,
+          overflow: TextOverflow.visible,
+          style: const TextStyle(fontSize: 14),
+        ),
+      ],
     ),
-    title: Text(label),
-    subtitle: Text(value),
-    onTap: onTap,
+    subtitle: Text(
+      value,
+      overflow: TextOverflow.visible,
+      style: const TextStyle(fontSize: 12),
+    ),
+    onPress: onTap,
     enabled: onTap != null,
   );
 }

@@ -5,6 +5,7 @@ import 'package:component_library/component_library.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:forui/forui.dart';
 import 'package:map/map.dart';
 import 'package:map/src/map_cubit.dart';
 import 'package:map/src/map_view.dart';
@@ -13,7 +14,7 @@ import 'package:map/src/route_speed_chart.dart';
 import 'package:recording_service/recording_service.dart';
 
 import 'fakes.dart';
-import 'pump_recording_ui.dart';
+import '../../../component_library/test/pump_map_ui.dart';
 
 class StreamRecording extends Fake implements RecordingService {
   final controller = StreamController<RecordingState>.broadcast(sync: true);
@@ -45,9 +46,14 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light,
+          builder: AppTheme.builder,
           home: BlocProvider.value(
             value: cubit,
-            child: MapView(config: const MapConfig(), onRoutesRequested: () {}),
+            child: MapView(
+              config: const MapConfig(),
+              onRoutesRequested: () {},
+              onExploreRequested: () {},
+            ),
           ),
         ),
       );
@@ -64,17 +70,33 @@ void main() {
         final label = phase == RecordingPhase.starting
             ? 'Stop recording'
             : 'Saving route...';
-        final button = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, label),
+        final button = tester.widget<AppButton>(
+          find.widgetWithText(AppButton, label),
         );
         expect(button.onPressed, isNull);
-        final states = {WidgetState.disabled};
-        expect(button.style!.backgroundColor!.resolve(states), Colors.white);
-        final foreground = button.style!.foregroundColor!.resolve(states)!;
+        expect(button.variant, FButtonVariant.ghost);
+        expect(
+          find.ancestor(
+            of: find.widgetWithText(AppButton, label),
+            matching: find.byType(MapSurface),
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Explore'), findsNothing);
+        expect(find.byTooltip('Routes').hitTestable(), findsOneWidget);
+        final indicator = tester.widget<Icon>(
+          find.descendant(
+            of: find.byType(RecordingIndicator),
+            matching: find.byType(Icon),
+          ),
+        );
+        expect(indicator.color, AppTheme.coral);
+        expect(button.preserveDisabledAppearance, isTrue);
+        final foreground = button.foreground!;
         expect(foreground.a, 1);
         expect(
           find.descendant(
-            of: find.byType(FilledButton),
+            of: find.byType(AppButton),
             matching: find.byType(CircularProgressIndicator),
           ),
           findsNothing,
@@ -99,7 +121,7 @@ void main() {
           ),
         ),
       );
-      await pumpRecordingUi(tester);
+      await pumpMapUi(tester);
       expect(find.text('Saving route...'), findsNothing);
       expect(
         tester
@@ -109,9 +131,7 @@ void main() {
       );
       expect(
         tester
-            .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Stop recording'),
-            )
+            .widget<AppButton>(find.widgetWithText(AppButton, 'Stop recording'))
             .onPressed,
         isNotNull,
       );
@@ -230,7 +250,7 @@ void main() {
         MaterialApp(
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(disableAnimations: true),
-            child: child!,
+            child: AppTheme.builder(context, child),
           ),
           home: MapScreen(
             photosRepository: FakeRoutePhotosRepository(),

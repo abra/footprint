@@ -9,6 +9,8 @@ class ExploreState extends Equatable {
     this.start,
     this.end,
     this.plan,
+    this.previousPreview,
+    this.hasRecentLocation = false,
     this.generating = false,
     this.locating = false,
     this.starting = false,
@@ -29,6 +31,26 @@ class ExploreState extends Equatable {
   final GeoPoint? start;
   final GeoPoint? end;
   final RoutePlan? plan;
+  final ({RoutePlan plan, int newAreas})? previousPreview;
+  final bool hasRecentLocation;
+  static const startRadiusMeters = 100.0;
+
+  double? get distanceToStart {
+    final point = location;
+    final route = plan;
+    if (!hasRecentLocation ||
+        locationError != null ||
+        point == null ||
+        route == null) {
+      return null;
+    }
+    return GeoPoint(
+      point.latitude,
+      point.longitude,
+    ).distanceTo(route.points.first);
+  }
+
+  bool get startTooFar => (distanceToStart ?? 0) > startRadiusMeters;
   final bool generating;
   final bool locating;
   final bool starting;
@@ -52,6 +74,9 @@ class ExploreState extends Equatable {
     bool clearEnd = false,
     RoutePlan? plan,
     bool clearPlan = false,
+    ({RoutePlan plan, int newAreas})? previousPreview,
+    bool clearPreviousPreview = false,
+    bool? hasRecentLocation,
     bool? generating,
     bool? locating,
     bool? starting,
@@ -72,6 +97,10 @@ class ExploreState extends Equatable {
     start: clearStart ? null : start ?? this.start,
     end: clearEnd ? null : end ?? this.end,
     plan: clearPlan ? null : plan ?? this.plan,
+    previousPreview: clearPlan || clearPreviousPreview
+        ? null
+        : previousPreview ?? this.previousPreview,
+    hasRecentLocation: hasRecentLocation ?? this.hasRecentLocation,
     generating: generating ?? this.generating,
     locating: locating ?? this.locating,
     starting: starting ?? this.starting,
@@ -95,6 +124,8 @@ class ExploreState extends Equatable {
     start,
     end,
     plan,
+    previousPreview,
+    hasRecentLocation,
     generating,
     locating,
     starting,

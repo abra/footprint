@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:latlong2/latlong.dart';
 
-/// Presentation coordinates only; recorded GPS samples are never interpolated.
+/// Shared map presentation coordinates; recorded GPS samples are never interpolated.
 class LocationMotion extends ValueNotifier<LatLng?> {
   LocationMotion({
     required TickerProvider vsync,
@@ -19,6 +19,7 @@ class LocationMotion extends ValueNotifier<LatLng?> {
   static const _bufferMargin = Duration(milliseconds: 200);
   static const _resetGap = Duration(seconds: 10);
   static const _maxSamples = 32;
+  static const _minimumHeadingDistance = 3.0;
 
   late final Ticker _ticker;
   final double maxAnimatedDistance;
@@ -30,6 +31,13 @@ class LocationMotion extends ValueNotifier<LatLng?> {
   _LocationSample? _segmentEnd;
   double _meters = 0;
   double _bearing = 0;
+  final _heading = ValueNotifier<double?>(null);
+  LatLng? _headingAnchor;
+  double? _latestHeading;
+
+  /// Travel direction in degrees clockwise from north, at the displayed leg.
+  /// Null until filtered coordinates establish a reliable direction.
+  ValueListenable<double?> get heading => _heading;
 
   /// GPS time corresponding to [value], clamped to known samples.
   DateTime? get displayedAt {
@@ -49,6 +57,7 @@ class LocationMotion extends ValueNotifier<LatLng?> {
     LatLng target, {
     required DateTime timestamp,
     bool animate = true,
+    bool isStationary = false,
   }) {
     if (!target.latitude.isFinite ||
         !target.longitude.isFinite ||
@@ -61,11 +70,25 @@ class LocationMotion extends ValueNotifier<LatLng?> {
             (animate && timestamp == previous.timestamp))) {
       return;
     }
-    final sample = _LocationSample(target, timestamp);
+    final gap =
+        previous != null &&
+        timestamp.difference(previous.timestamp) >= _resetGap;
+    final relocated =
+        previous != null &&
+        _distance(previous.point, target) > maxAnimatedDistance;
+    final interrupted =
+        previous == null ||
+        relocated ||
+        (gap && previous.point != target && !isStationary);
+    final sample = _LocationSample(
+      target,
+      timestamp,
+      _courseFor(target, isStationary: isStationary, reset: interrupted),
+    );
     if (previous == null ||
         !animate ||
-        timestamp.difference(previous.timestamp) >= _resetGap ||
-        _distance(previous.point, target) > maxAnimatedDistance ||
+        gap ||
+        relocated ||
         _samples.length >= _maxSamples ||
         (_samples.length == 1 && previous.point == target) ||
         (_playhead != null && sample.time - _playhead! > _maximumDelay * 2)) {
@@ -94,6 +117,23 @@ class LocationMotion extends ValueNotifier<LatLng?> {
     }
   }
 
+  double? _courseFor(
+    LatLng target, {
+    required bool isStationary,
+    required bool reset,
+  }) {
+    if (reset) {
+      _headingAnchor = target;
+      _latestHeading = null;
+    } else if (isStationary) {
+      _headingAnchor = target;
+    } else if (_distance(_headingAnchor!, target) >= _minimumHeadingDistance) {
+      _latestHeading = (_distance.bearing(_headingAnchor!, target) + 360) % 360;
+      _headingAnchor = target;
+    }
+    return _latestHeading;
+  }
+
   void _tick(Duration elapsed) {
     final frameDuration = elapsed - _lastTick;
     _lastTick = elapsed;
@@ -116,7 +156,11 @@ class LocationMotion extends ValueNotifier<LatLng?> {
       _ticker.stop();
       _playhead = null;
       _segmentEnd = null;
-      _publish(from.point, timelineChanged: from != previousSample);
+      _publish(
+        from.point,
+        heading: from.heading,
+        timelineChanged: from != previousSample,
+      );
       return;
     }
     final to = _samples.elementAt(1);
@@ -125,7 +169,11 @@ class LocationMotion extends ValueNotifier<LatLng?> {
         ? 1.0
         : ((playhead - from.time).inMicroseconds / span).clamp(0.0, 1.0);
     if (fraction == 0) {
-      _publish(from.point, timelineChanged: from != previousSample);
+      _publish(
+        from.point,
+        heading: from.heading,
+        timelineChanged: from != previousSample,
+      );
       return;
     }
     if (_segmentEnd != to) {
@@ -137,11 +185,17 @@ class LocationMotion extends ValueNotifier<LatLng?> {
     final point = _distance.offset(from.point, _meters * fraction, _bearing);
     _publish(
       LatLng(point.latitude, (point.longitude + 180) % 360 - 180),
+      heading: to.heading,
       timelineChanged: from != previousSample,
     );
   }
 
-  void _publish(LatLng point, {required bool timelineChanged}) {
+  void _publish(
+    LatLng point, {
+    required double? heading,
+    required bool timelineChanged,
+  }) {
+    _heading.value = heading;
     if (value == point) {
       // A completed loop can advance the route without moving the marker.
       if (timelineChanged) notifyListeners();
@@ -161,21 +215,27 @@ class LocationMotion extends ValueNotifier<LatLng?> {
     _lastTick = Duration.zero;
     _lastArrival = Duration.zero;
     _segmentEnd = null;
-    _publish(sample.point, timelineChanged: hadPendingSamples);
+    _publish(
+      sample.point,
+      heading: sample.heading,
+      timelineChanged: hadPendingSamples,
+    );
   }
 
   @override
   void dispose() {
     _ticker.dispose();
+    _heading.dispose();
     super.dispose();
   }
 }
 
 class _LocationSample {
-  _LocationSample(this.point, this.timestamp)
+  _LocationSample(this.point, this.timestamp, this.heading)
     : time = Duration(microseconds: timestamp.microsecondsSinceEpoch);
 
   final LatLng point;
   final DateTime timestamp;
   final Duration time;
+  final double? heading;
 }

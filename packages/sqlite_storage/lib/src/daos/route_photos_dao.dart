@@ -48,11 +48,10 @@ class RoutePhotosDao {
   Future<void> finishCapture(RoutePhoto photo) => _db.retryTransaction((
     txn,
   ) async {
-    await txn.insert(
-      'route_photos',
-      photo.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.ignore,
-    );
+    await txn.insert('route_photos', {
+      ...photo.toMap(),
+      'comment': photo.comment,
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
     await txn.delete('pending_photo', where: 'id = ?', whereArgs: [photo.id]);
   });
 
@@ -70,6 +69,18 @@ class RoutePhotosDao {
         whereArgs: [id, routeId],
       ),
     );
+  }
+
+  Future<void> updateComment(int routeId, String id, String comment) async {
+    final count = await retryOnDatabaseBusy(
+      () => _db.update(
+        'route_photos',
+        {'comment': comment},
+        where: 'id = ? AND route_id = ?',
+        whereArgs: [id, routeId],
+      ),
+    );
+    if (count != 1) throw StateError('Photo no longer exists.');
   }
 
   Future<Set<String>> referencedFiles() => _db.retryTransaction((txn) async {

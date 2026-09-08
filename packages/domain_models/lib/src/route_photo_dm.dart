@@ -10,7 +10,10 @@ class RoutePhotoDM extends Equatable {
     required this.latitude,
     required this.longitude,
     required this.capturedAt,
+    this.comment = '',
   });
+
+  static const maxCommentLength = 1000;
 
   final String id;
   final int routeId;
@@ -18,6 +21,17 @@ class RoutePhotoDM extends Equatable {
   final double latitude;
   final double longitude;
   final DateTime capturedAt;
+  final String comment;
+
+  RoutePhotoDM copyWith({String? comment}) => RoutePhotoDM(
+    id: id,
+    routeId: routeId,
+    path: path,
+    latitude: latitude,
+    longitude: longitude,
+    capturedAt: capturedAt,
+    comment: comment ?? this.comment,
+  );
 
   @override
   List<Object?> get props => [
@@ -27,5 +41,6 @@ class RoutePhotoDM extends Equatable {
     latitude,
     longitude,
     capturedAt,
+    comment,
   ];
 }

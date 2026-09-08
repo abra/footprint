@@ -1,6 +1,7 @@
 import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'distance_chart.dart';
@@ -21,17 +22,17 @@ class StatisticsView extends StatelessWidget {
         appBar: AppBar(
           title: const FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text('STATISTICS'),
+            child: Text('Statistics'),
           ),
-          leading: IconButton(
+          leading: AppIconButton(
             tooltip: 'Back to routes',
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(FLucideIcons.arrowLeft),
             onPressed: onBack,
           ),
           actions: [
-            IconButton(
+            AppIconButton(
               tooltip: 'About statistics',
-              icon: const Icon(Icons.info_outline),
+              icon: const Icon(FLucideIcons.info),
               onPressed: () => showAppActionSheet<void>(
                 context,
                 title: 'About statistics',
@@ -47,10 +48,10 @@ class StatisticsView extends StatelessWidget {
                 cancelLabel: 'Done',
               ),
             ),
-            IconButton(
+            AppIconButton(
               tooltip: 'Refresh statistics',
               onPressed: state.loading ? null : cubit.load,
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(FLucideIcons.refreshCw),
             ),
           ],
         ),
@@ -76,38 +77,23 @@ class StatisticsView extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            SegmentedButton<StatisticsPeriod>(
-                              showSelectedIcon: false,
-                              expandedInsets: EdgeInsets.zero,
-                              style: SegmentedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                  horizontal: 4,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
+                            AppSegmentedControl<StatisticsPeriod>(
                               segments: const [
-                                ButtonSegment(
+                                AppSegment(
                                   value: StatisticsPeriod.week,
-                                  label: Text('Week'),
+                                  label: 'Week',
                                 ),
-                                ButtonSegment(
+                                AppSegment(
                                   value: StatisticsPeriod.month,
-                                  label: Text('Month'),
+                                  label: 'Month',
                                 ),
-                                ButtonSegment(
+                                AppSegment(
                                   value: StatisticsPeriod.allTime,
-                                  label: Text(
-                                    'All time',
-                                    textAlign: TextAlign.center,
-                                  ),
+                                  label: 'All time',
                                 ),
                               ],
-                              selected: {state.period},
-                              onSelectionChanged: (value) =>
-                                  cubit.selectPeriod(value.single),
+                              value: state.period,
+                              onChanged: cubit.selectPeriod,
                             ),
                             if (state.failed) ...[
                               const SizedBox(height: 20),
@@ -122,37 +108,55 @@ class StatisticsView extends StatelessWidget {
                                   ),
                                 ),
                               ),
+                              const SizedBox(height: 8),
                               Align(
                                 alignment: Alignment.centerLeft,
-                                child: TextButton.icon(
+                                child: AppButton(
+                                  compact: true,
+                                  variant: FButtonVariant.ghost,
                                   onPressed: state.loading ? null : cubit.load,
-                                  icon: const Icon(Icons.refresh),
-                                  label: const Text('Retry'),
+                                  prefix: const Icon(FLucideIcons.refreshCw),
+                                  label: 'Retry',
                                 ),
                               ),
                             ],
                             if (data != null) ...[
                               const SizedBox(height: 16),
-                              _PeriodNavigation(state: state),
-                              const SizedBox(height: 24),
-                              _Totals(totals: data.totals),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 28),
-                                child: Divider(height: 1),
-                              ),
-                              if (data.totals.routes == 0)
-                                _EmptyPeriod(period: state.period)
-                              else
-                                DistanceChart(
-                                  key: ValueKey((
-                                    state.period,
-                                    data.start,
-                                    data.interval,
-                                  )),
-                                  data: data,
-                                  selected: state.selected,
-                                  onSelected: cubit.selectBucket,
+                              AppFadeSwitcher(
+                                value: (
+                                  state.period,
+                                  data.start,
+                                  data.endExclusive,
                                 ),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    _PeriodNavigation(state: state),
+                                    const SizedBox(height: 24),
+                                    _Totals(totals: data.totals),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 28,
+                                      ),
+                                      child: Divider(height: 1),
+                                    ),
+                                    if (data.totals.routes == 0)
+                                      _EmptyPeriod(period: state.period)
+                                    else
+                                      DistanceChart(
+                                        key: ValueKey((
+                                          state.period,
+                                          data.start,
+                                          data.interval,
+                                        )),
+                                        data: data,
+                                        selected: state.selected,
+                                        onSelected: cubit.selectBucket,
+                                      ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ],
                         ),
@@ -188,10 +192,10 @@ class _PeriodNavigation extends StatelessWidget {
     return Row(
       children: [
         if (state.period != StatisticsPeriod.allTime)
-          IconButton(
+          AppIconButton(
             tooltip: 'Previous period',
             onPressed: () => context.read<StatisticsCubit>().movePeriod(-1),
-            icon: const Icon(Icons.chevron_left),
+            icon: const Icon(FLucideIcons.chevronLeft),
           ),
         Expanded(
           child: Semantics(
@@ -204,12 +208,12 @@ class _PeriodNavigation extends StatelessWidget {
           ),
         ),
         if (state.period != StatisticsPeriod.allTime)
-          IconButton(
+          AppIconButton(
             tooltip: 'Next period',
             onPressed: state.canGoNext
                 ? () => context.read<StatisticsCubit>().movePeriod(1)
                 : null,
-            icon: const Icon(Icons.chevron_right),
+            icon: const Icon(FLucideIcons.chevronRight),
           ),
       ],
     );
@@ -241,25 +245,25 @@ class _Totals extends StatelessWidget {
             (
               'Distance',
               RouteLabels.distance(totals.distance),
-              Icons.route_outlined,
+              FLucideIcons.route,
               Theme.of(context).colorScheme.primary,
             ),
             (
               'Recording time',
               RouteLabels.duration(totals.duration),
-              Icons.schedule_outlined,
+              FLucideIcons.clock,
               AppTheme.ink,
             ),
             (
               'Recordings',
               labels.formatDecimal(totals.routes),
-              Icons.bookmark_border,
+              FLucideIcons.bookmark,
               AppTheme.coral,
             ),
             (
               'Active days',
               labels.formatDecimal(totals.activeDays),
-              Icons.calendar_today_outlined,
+              FLucideIcons.calendar,
               AppTheme.appColors.darkCyan,
             ),
           ])
@@ -308,7 +312,7 @@ class _EmptyPeriod extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: 24),
     child: Column(
       children: [
-        const Icon(Icons.route_outlined, size: 40, color: AppTheme.muted),
+        const Icon(FLucideIcons.route, size: 40, color: AppTheme.muted),
         const SizedBox(height: 12),
         Text(
           period == StatisticsPeriod.allTime
@@ -317,13 +321,17 @@ class _EmptyPeriod extends StatelessWidget {
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 18),
         ),
-        if (period != StatisticsPeriod.allTime)
-          TextButton(
+        if (period != StatisticsPeriod.allTime) ...[
+          const SizedBox(height: 8),
+          AppButton(
+            compact: true,
+            variant: FButtonVariant.ghost,
             onPressed: () => context.read<StatisticsCubit>().selectPeriod(
               StatisticsPeriod.allTime,
             ),
-            child: const Text('View all time'),
+            label: 'View all time',
           ),
+        ],
       ],
     ),
   );

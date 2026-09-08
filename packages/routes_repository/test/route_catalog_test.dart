@@ -89,15 +89,38 @@ void main() {
   );
   test('invalid names and pages are rejected without modifying data', () async {
     final id = await saved(1, 'Original');
-    expect(() => repository.renameRoute(id, '  '), throwsArgumentError);
     expect(() => repository.renameRoute(id, 'a' * 81), throwsArgumentError);
     await expectLater(repository.getRoutePage(offset: -1), throwsArgumentError);
     await expectLater(repository.getRoutePage(limit: 101), throwsArgumentError);
     expect((await repository.getRoute(id))!.name, 'Original');
   });
+  for (final name in ['', '   ']) {
+    test(
+      'blank name (${name.length} spaces) clears the title and search index, preserving the route',
+      () async {
+        final id = await saved(1, 'Original');
+        final before = (await repository.getRoute(id))!;
+        await repository.renameRoute(id, name);
+        final after = (await repository.getRoute(id))!;
+        expect(after.name, isNull);
+        expect(after.status, before.status);
+        expect(after.startTime, before.startTime);
+        expect(after.endTime, before.endTime);
+        expect(after.routePoints, before.routePoints);
+        expect(after.metrics, before.metrics);
+        expect(await repository.getRoutePage(query: 'Original'), isEmpty);
+        expect(
+          (await repository.getRoutePage(sort: RouteSort.name)).single.name,
+          isNull,
+        );
+        expect((await repository.getRoutePage()).single.id, id);
+      },
+    );
+  }
   test('active routes cannot be renamed or deleted', () async {
     final id = await repository.startRoute(location(1));
     await expectLater(repository.renameRoute(id, 'New name'), throwsStateError);
+    await expectLater(repository.renameRoute(id, ''), throwsStateError);
     await expectLater(repository.deleteRoute(id), throwsStateError);
     expect((await repository.getActiveRoute())!.id, id);
     expect((await repository.getRoute(id))!.routePoints, hasLength(1));

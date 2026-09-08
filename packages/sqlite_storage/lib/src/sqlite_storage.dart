@@ -38,7 +38,7 @@ class SqliteStorage {
       () => selectedFactory.openDatabase(
         databasePath,
         options: OpenDatabaseOptions(
-          version: 8,
+          version: 9,
           singleInstance: false,
           onConfigure: (db) async {
             // Native busy waits can block sqflite's shared Android worker and

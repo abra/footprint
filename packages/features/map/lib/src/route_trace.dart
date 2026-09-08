@@ -1,11 +1,9 @@
 import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'extensions.dart';
-import 'location_motion.dart';
 
 /// Renders a recording up to the marker's playback time, not the newest GPS fix.
 class RouteTrace extends StatefulWidget {
@@ -14,11 +12,13 @@ class RouteTrace extends StatefulWidget {
     required this.points,
     required this.isRecording,
     required this.motion,
+    this.muted = false,
   });
 
   final List<LocationDM> points;
   final bool isRecording;
   final LocationMotion motion;
+  final bool muted;
 
   @override
   State<RouteTrace> createState() => _RouteTraceState();
@@ -28,7 +28,7 @@ class _RouteTraceState extends State<RouteTrace> {
   final _coordinates = <LatLng>[];
   final _timestamps = <int>[];
   int _historyCount = -1;
-  Widget _history = const SizedBox.shrink();
+  List<LatLng> _history = const [];
 
   @override
   void initState() {
@@ -74,47 +74,36 @@ class _RouteTraceState extends State<RouteTrace> {
     return low;
   }
 
-  Widget _historyFor(int count) {
+  List<LatLng> _historyFor(int count) {
     if (count != _historyCount) {
       _historyCount = count;
-      _history = count < 2
-          ? const SizedBox.shrink()
-          : _line(_coordinates.sublist(0, count), 'route-history-layer');
+      _history = count < 2 ? const [] : _coordinates.sublist(0, count);
     }
     return _history;
   }
 
-  Widget _line(List<LatLng> points, String key) => PolylineLayer(
-    key: ValueKey(key),
-    polylines: [
-      Polyline(
-        points: points,
-        color: AppTheme.route,
-        strokeWidth: 5,
-        borderColor: AppTheme.route.withValues(alpha: 0.2),
-        borderStrokeWidth: 2,
-      ),
-    ],
-  );
-
   @override
   Widget build(BuildContext context) {
-    if (!widget.isRecording) return _historyFor(_coordinates.length);
+    if (!widget.isRecording) {
+      return RecordedRouteLayer(
+        points: _historyFor(_coordinates.length),
+        muted: widget.muted,
+        strokeWidth: widget.muted ? 4 : 7,
+      );
+    }
     return ValueListenableBuilder<LatLng?>(
       valueListenable: widget.motion,
       builder: (context, point, child) {
         final time = widget.motion.displayedAt;
         if (point == null || time == null) {
-          return _historyFor(_coordinates.length);
+          return RecordedRouteLayer(points: _historyFor(_coordinates.length));
         }
         final count = _visibleCount(time);
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            _historyFor(count),
-            if (count > 0 && _coordinates[count - 1] != point)
-              _line([_coordinates[count - 1], point], 'route-tail-layer'),
-          ],
+        return RecordedRouteLayer(
+          points: _historyFor(count),
+          tail: count > 0 && _coordinates[count - 1] != point
+              ? [_coordinates[count - 1], point]
+              : const [],
         );
       },
     );

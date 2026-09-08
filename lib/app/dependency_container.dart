@@ -4,6 +4,7 @@ import 'package:routes_repository/routes_repository.dart';
 import 'package:recording_service/recording_service.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
 import 'package:route_planning/route_planning.dart';
+import 'package:route_snapshots/route_snapshots.dart';
 
 import 'config/application_config.dart';
 import 'resource_disposer.dart';
@@ -20,6 +21,7 @@ class DependenciesContainer {
     required this.resources,
     required this.walksRepository,
     required this.routePlanner,
+    required this.routeSnapshots,
   });
 
   final LocationService foregroundLocationService;
@@ -32,6 +34,7 @@ class DependenciesContainer {
   final ResourceDisposer resources;
   final WalksRepository walksRepository;
   final RoutePlanner routePlanner;
+  final RouteSnapshotRepository routeSnapshots;
 
   Future<void> dispose() => resources.dispose();
 }

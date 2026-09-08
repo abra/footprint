@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
+
+import '../packages/component_library/test/load_fonts.dart';
+
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:statistics/src/distance_chart.dart';
@@ -16,15 +18,7 @@ import '../packages/features/statistics/test/fakes.dart';
 
 void main() {
   setUpAll(() async {
-    await (FontLoader('packages/component_library/RobotoCondensed')..addFont(
-          rootBundle.load(
-            'packages/component_library/fonts/RobotoCondensed.ttf',
-          ),
-        ))
-        .load();
-    await (FontLoader(
-      'MaterialIcons',
-    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+    await loadAppFonts();
   });
 
   Future<void> pumpView(
@@ -46,7 +40,7 @@ void main() {
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context)
                 .copyWith(textScaler: TextScaler.linear(scale)),
-            child: child!,
+            child: AppTheme.builder(context, child),
           ),
           home: BlocProvider.value(
             value: cubit,
@@ -89,10 +83,10 @@ void main() {
       }
       expect(
         tester
-            .widget<IconButton>(
+            .widget<AppIconButton>(
               find.byWidgetPredicate(
                 (widget) =>
-                    widget is IconButton && widget.tooltip == 'Next period',
+                    widget is AppIconButton && widget.tooltip == 'Next period',
               ),
             )
             .onPressed,
@@ -109,11 +103,39 @@ void main() {
       await tester.ensureVisible(bar);
       await tester.pumpAndSettle();
       await tester.tap(bar);
+      await tester.pump();
+      expect(
+        tester
+            .widget<FadeTransition>(
+              find.descendant(
+                of: find.byType(AppFadeSwitcher),
+                matching: find.byType(FadeTransition),
+              ),
+            )
+            .opacity
+            .value,
+        1,
+      );
       await tester.pumpAndSettle();
       expect(cubit.state.selected, 1);
       expect(find.text('5.1 km'), findsOneWidget);
       await tester.ensureVisible(find.text('Month'));
       await tester.tap(find.text('Month'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
+      final periodOpacities =
+          tester
+              .widgetList<FadeTransition>(
+                find.descendant(
+                  of: find.byType(AppFadeSwitcher),
+                  matching: find.byType(FadeTransition),
+                ),
+              )
+              .map((fade) => fade.opacity.value)
+              .toList()
+            ..sort();
+      expect(periodOpacities.first, 0);
+      expect(periodOpacities.last, inExclusiveRange(0, 1));
       await tester.pumpAndSettle();
       expect(cubit.state.data!.buckets, hasLength(30));
       expect(repository.reads, 1);
@@ -127,7 +149,7 @@ void main() {
       expect(find.byTooltip('Previous period'), findsNothing);
       await tester.tap(find.byTooltip('About statistics'));
       await tester.pumpAndSettle();
-      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(find.byType(AppSheet), findsOneWidget);
       expect(find.byType(AlertDialog), findsNothing);
       await tester.ensureVisible(find.text('Done'));
       await tester.tap(find.text('Done'));
@@ -216,6 +238,7 @@ void main() {
       final repository = StatisticsRepositoryFake();
       await tester.pumpWidget(
         MaterialApp(
+          builder: AppTheme.builder,
           home: StatisticsScreen(repository: repository, onBack: () {}),
         ),
       );

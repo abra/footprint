@@ -2,9 +2,14 @@ import 'package:component_library/component_library.dart';
 import 'package:flutter/material.dart';
 
 class CenterLocationIcon extends StatefulWidget {
-  const CenterLocationIcon({super.key, required this.centered});
+  const CenterLocationIcon({
+    super.key,
+    required this.centered,
+    this.courseUp = false,
+  });
 
   final bool centered;
+  final bool courseUp;
 
   @override
   State<CenterLocationIcon> createState() => _CenterLocationIconState();
@@ -62,6 +67,7 @@ class _CenterLocationIconState extends State<CenterLocationIcon>
           alignment: Alignment.center,
           children: [
             FadeTransition(
+              key: const ValueKey('follow-free-opacity'),
               opacity: _outlineOpacity,
               child: RotationTransition(
                 turns: _outlineTurns,
@@ -74,14 +80,25 @@ class _CenterLocationIconState extends State<CenterLocationIcon>
               ),
             ),
             FadeTransition(
+              key: const ValueKey('follow-active-opacity'),
               opacity: _progress,
               child: RotationTransition(
                 turns: _filledTurns,
-                child: const Icon(
-                  Icons.navigation,
-                  color: AppTheme.route,
-                  size: 28,
-                  applyTextScaling: false,
+                child: AnimatedSwitcher(
+                  key: ValueKey((
+                    MediaQuery.disableAnimationsOf(context),
+                    TickerMode.valuesOf(context).enabled,
+                  )),
+                  duration: TickerMode.valuesOf(context).enabled
+                      ? AppMotion.durationOf(context)
+                      : Duration.zero,
+                  child: Icon(
+                    widget.courseUp ? Icons.navigation : Icons.explore,
+                    key: ValueKey(widget.courseUp),
+                    color: AppTheme.route,
+                    size: 28,
+                    applyTextScaling: false,
+                  ),
                 ),
               ),
             ),

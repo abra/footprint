@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'route_list_cubit.dart';
@@ -11,12 +12,12 @@ class RouteListView extends StatelessWidget {
   const RouteListView({
     super.key,
     required this.onMapRequested,
-    this.config = const MapTileConfig(),
+    required this.thumbnailBuilder,
     this.onRouteRequested,
     this.onStatisticsRequested,
   });
   final VoidCallback onMapRequested;
-  final MapTileConfig config;
+  final Widget Function(RouteDM route, VoidCallback? onTap) thumbnailBuilder;
   final Future<void> Function(int)? onRouteRequested;
   final VoidCallback? onStatisticsRequested;
 
@@ -36,7 +37,7 @@ class RouteListView extends StatelessWidget {
         SheetAction(
           value: true,
           label: 'Delete',
-          icon: Icons.delete_outline,
+          icon: FLucideIcons.trash2,
           destructive: true,
         ),
       ],
@@ -49,28 +50,28 @@ class RouteListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('ROUTES'),
-      leading: IconButton(
+      title: const Text('Routes'),
+      leading: AppIconButton(
         tooltip: 'Back to map',
         onPressed: onMapRequested,
-        icon: const Icon(Icons.arrow_back),
+        icon: const Icon(FLucideIcons.arrowLeft),
       ),
       actions: [
         if (onStatisticsRequested != null)
-          IconButton(
+          AppIconButton(
             tooltip: 'Statistics',
-            icon: const Icon(Icons.bar_chart_outlined),
+            icon: const Icon(FLucideIcons.chartNoAxesColumn),
             onPressed: onStatisticsRequested,
           ),
-        IconButton(
+        AppIconButton(
           tooltip: 'Refresh',
-          icon: const Icon(Icons.refresh),
+          icon: const Icon(FLucideIcons.refreshCw),
           onPressed: context.read<RouteListCubit>().load,
         ),
         BlocBuilder<RouteListCubit, RouteListState>(
-          builder: (context, state) => IconButton(
+          builder: (context, state) => AppIconButton(
             tooltip: 'Sort routes',
-            icon: const Icon(Icons.sort),
+            icon: const Icon(FLucideIcons.listFilter),
             onPressed: () async {
               final cubit = context.read<RouteListCubit>();
               final sort = await showAppActionSheet<RouteSort>(
@@ -80,19 +81,19 @@ class RouteListView extends StatelessWidget {
                   SheetAction(
                     value: RouteSort.newest,
                     label: 'Newest first',
-                    icon: Icons.arrow_downward,
+                    icon: FLucideIcons.arrowDown,
                     selected: cubit.sort == RouteSort.newest,
                   ),
                   SheetAction(
                     value: RouteSort.oldest,
                     label: 'Oldest first',
-                    icon: Icons.arrow_upward,
+                    icon: FLucideIcons.arrowUp,
                     selected: cubit.sort == RouteSort.oldest,
                   ),
                   SheetAction(
                     value: RouteSort.name,
                     label: 'Name',
-                    icon: Icons.sort_by_alpha,
+                    icon: FLucideIcons.arrowDownAZ,
                     selected: cubit.sort == RouteSort.name,
                   ),
                 ],
@@ -122,10 +123,13 @@ class RouteListView extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text('Routes could not be loaded.'),
-                      TextButton.icon(
+                      const SizedBox(height: 8),
+                      AppButton(
+                        compact: true,
+                        variant: FButtonVariant.ghost,
                         onPressed: context.read<RouteListCubit>().load,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
+                        prefix: const Icon(FLucideIcons.refreshCw),
+                        label: 'Retry',
                       ),
                     ],
                   ),
@@ -135,7 +139,7 @@ class RouteListView extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(
-                        Icons.route_outlined,
+                        FLucideIcons.route,
                         size: 44,
                         color: AppTheme.muted,
                       ),
@@ -158,6 +162,7 @@ class RouteListView extends StatelessWidget {
                     itemBuilder: (context, index) {
                       if (index == routes.length) {
                         return Column(
+                          spacing: 8,
                           children: [
                             if (state.error case final error?)
                               Text(
@@ -167,19 +172,21 @@ class RouteListView extends StatelessWidget {
                                 ),
                               ),
                             if (state.hasMore)
-                              TextButton.icon(
+                              AppButton(
+                                compact: true,
+                                variant: FButtonVariant.ghost,
                                 onPressed: state.loadingMore
                                     ? null
                                     : context.read<RouteListCubit>().loadMore,
-                                icon: state.loadingMore
+                                prefix: state.loadingMore
                                     ? const SizedBox.square(
                                         dimension: 18,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
                                         ),
                                       )
-                                    : const Icon(Icons.expand_more),
-                                label: const Text('More routes'),
+                                    : const Icon(FLucideIcons.chevronDown),
+                                label: 'More routes',
                               ),
                           ],
                         );
@@ -188,7 +195,12 @@ class RouteListView extends StatelessWidget {
                       return _RouteEntry(
                         key: ValueKey(route.id),
                         route: route,
-                        config: config,
+                        thumbnail: thumbnailBuilder(
+                          route,
+                          onRouteRequested == null
+                              ? null
+                              : () => unawaited(_open(context, route)),
+                        ),
                         deleting: state.deletingId == route.id,
                         onOpen: onRouteRequested == null
                             ? null
@@ -226,22 +238,28 @@ class _RouteSearchState extends State<_RouteSearch> {
   }
 
   @override
-  Widget build(BuildContext context) => TextField(
-    controller: _controller,
-    onChanged: context.read<RouteListCubit>().search,
-    onSubmitted: (_) => unawaited(context.read<RouteListCubit>().load()),
+  Widget build(BuildContext context) => FTextField(
+    control: FTextFieldControl.managed(
+      controller: _controller,
+      onChange: (value) {
+        final cubit = context.read<RouteListCubit>();
+        if (value.text != cubit.query) cubit.search(value.text);
+      },
+    ),
+    onSubmit: (_) => unawaited(context.read<RouteListCubit>().load()),
     textInputAction: TextInputAction.search,
-    decoration: InputDecoration(
-      hintText: 'Search routes',
-      prefixIcon: const Icon(Icons.search),
-      suffixIcon: IconButton(
-        tooltip: 'Clear search',
-        icon: const Icon(Icons.close),
-        onPressed: () {
-          _controller.clear();
-          context.read<RouteListCubit>().search('');
-        },
-      ),
+    hint: 'Search routes',
+    prefixBuilder: (_, _, _) => const Padding(
+      padding: EdgeInsets.only(left: 12),
+      child: Icon(FLucideIcons.search, size: 20),
+    ),
+    suffixBuilder: (_, _, _) => AppIconButton(
+      tooltip: 'Clear search',
+      icon: const Icon(FLucideIcons.x),
+      onPressed: () {
+        _controller.clear();
+        context.read<RouteListCubit>().search('');
+      },
     ),
   );
 }
@@ -250,13 +268,13 @@ class _RouteEntry extends StatelessWidget {
   const _RouteEntry({
     super.key,
     required this.route,
-    required this.config,
+    required this.thumbnail,
     required this.deleting,
     this.onOpen,
     this.onDelete,
   });
   final RouteDM route;
-  final MapTileConfig config;
+  final Widget thumbnail;
   final bool deleting;
   final VoidCallback? onOpen;
   final VoidCallback? onDelete;
@@ -268,8 +286,9 @@ class _RouteEntry extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: InkWell(
-              onTap: onOpen,
+            child: FTappable(
+              style: const .delta(motion: FTappableMotion.none),
+              onPress: onOpen,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Column(
@@ -280,15 +299,15 @@ class _RouteEntry extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Created ${RouteLabels.date(context, route.startTime)}',
+                      RouteLabels.date(context, route.startTime),
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: AppTheme.muted,
                       ),
                     ),
@@ -311,9 +330,9 @@ class _RouteEntry extends StatelessWidget {
               ),
             )
           else if (onOpen != null || onDelete != null)
-            IconButton(
+            AppIconButton(
               tooltip: 'Route actions',
-              icon: const Icon(Icons.more_vert),
+              icon: const Icon(FLucideIcons.ellipsisVertical),
               onPressed: () async {
                 final action = await showAppActionSheet<String>(
                   context,
@@ -322,7 +341,7 @@ class _RouteEntry extends StatelessWidget {
                     if (onOpen != null)
                       SheetAction(
                         value: 'open',
-                        icon: Icons.route_outlined,
+                        icon: FLucideIcons.route,
                         label: route.status == Status.active
                             ? 'View route'
                             : 'View or rename',
@@ -331,7 +350,7 @@ class _RouteEntry extends StatelessWidget {
                       const SheetAction(
                         value: 'delete',
                         label: 'Delete',
-                        icon: Icons.delete_outline,
+                        icon: FLucideIcons.trash2,
                         destructive: true,
                       ),
                   ],
@@ -343,37 +362,9 @@ class _RouteEntry extends StatelessWidget {
         ],
       ),
       const SizedBox(height: 8),
-      LayoutBuilder(
-        builder: (context, constraints) {
-          final stacked =
-              constraints.maxWidth < 340 ||
-              MediaQuery.textScalerOf(context).scale(1) > 1.3;
-          final preview = AspectRatio(
-            aspectRatio: stacked ? 1.55 : 1.4,
-            child: RoutePreview(route: route, config: config, onTap: onOpen),
-          );
-          if (stacked) {
-            return Column(
-              children: [
-                preview,
-                const SizedBox(height: 16),
-                RouteStats(metrics: route.metrics),
-              ],
-            );
-          }
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: preview),
-              const SizedBox(width: 16),
-              SizedBox(
-                width: 96,
-                child: RouteStats(metrics: route.metrics, vertical: true),
-              ),
-            ],
-          );
-        },
-      ),
+      thumbnail,
+      const SizedBox(height: 16),
+      RouteStats(metrics: route.metrics),
     ],
   );
 }

@@ -121,6 +121,88 @@ void main() {
     );
   });
 
+  test('comment updates trim text, notify and survive reopening without changing the photo', () async {
+    await capture();
+    final before = (await photos.getPhotos(routeId)).single;
+    final notification = photos.changes.first;
+    await photos.updateComment(
+      routeId,
+      before.id,
+      '  A quiet place\nBy the river  ',
+    );
+    expect(await notification, routeId);
+    expect(
+      (await photos.getPhotos(routeId)).single,
+      before.copyWith(comment: 'A quiet place\nBy the river'),
+    );
+    await photos.dispose();
+    await storage.close();
+    storage = await SqliteStorage.open(
+      factory: databaseFactoryFfi,
+      path: '${directory.path}/routes.db',
+    );
+    photos = create();
+    expect(
+      (await photos.getPhotos(routeId)).single.comment,
+      'A quiet place\nBy the river',
+    );
+    expect(await File(before.path).readAsBytes(), await original.readAsBytes());
+    await photos.updateComment(routeId, before.id, '   ');
+    expect((await photos.getPhotos(routeId)).single, before);
+  });
+
+  test('comments reject overlong input, missing photos and a different route without notification', () async {
+    await capture();
+    final photo = (await photos.getPhotos(routeId)).single;
+    final changes = <int>[];
+    final subscription = photos.changes.listen(changes.add);
+    addTearDown(subscription.cancel);
+    await expectLater(
+      photos.updateComment(routeId, photo.id, 'x' * 1001),
+      throwsArgumentError,
+    );
+    await expectLater(
+      photos.updateComment(routeId + 1, photo.id, 'wrong route'),
+      throwsStateError,
+    );
+    await expectLater(
+      photos.updateComment(routeId, 'missing', 'missing photo'),
+      throwsStateError,
+    );
+    expect(changes, isEmpty);
+    expect((await photos.getPhotos(routeId)).single.comment, '');
+    final unicode = String.fromCharCodes([0x1f44d, 0x1f3fd]) * 1000;
+    await photos.updateComment(routeId, photo.id, unicode);
+    expect((await photos.getPhotos(routeId)).single.comment, unicode);
+  });
+
+  test('accepted comment write is drained on disposal and never resurrects deleted photos', () async {
+    await capture();
+    final photo = (await photos.getPhotos(routeId)).single;
+    final update = photos.updateComment(
+      routeId,
+      photo.id,
+      'Saved before closing',
+    );
+    await photos.dispose();
+    await update;
+    expect(
+      (await storage.routePhotos.getForRoute(routeId)).single.comment,
+      'Saved before closing',
+    );
+    await expectLater(
+      photos.updateComment(routeId, photo.id, 'closed'),
+      throwsStateError,
+    );
+    photos = create();
+    await photos.deletePhoto(routeId, photo.id);
+    await expectLater(
+      photos.updateComment(routeId, photo.id, 'deleted'),
+      throwsStateError,
+    );
+    expect(await photos.getPhotos(routeId), isEmpty);
+  });
+
   test(
     'cancel and permission denial leave no phantom photo or pending capture',
     () async {

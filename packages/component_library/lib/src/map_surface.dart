@@ -7,12 +7,22 @@ class MapSurface extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: Colors.white.withValues(alpha: 0.96),
-    elevation: 4,
-    shadowColor: Colors.black.withValues(alpha: 0.15),
-    shape: AppTheme.controlShape,
-    clipBehavior: Clip.antiAlias,
-    child: child,
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const ShapeDecoration(
+      shape: AppTheme.controlShape,
+      shadows: [
+        BoxShadow(
+          color: Color(0x1A000000),
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Material(
+      color: Colors.white,
+      shape: AppTheme.controlShape,
+      clipBehavior: Clip.antiAlias,
+      child: child,
+    ),
   );
 }

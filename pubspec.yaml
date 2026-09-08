@@ -7,6 +7,7 @@ environment:
   flutter: '>=3.47.2'
 
 workspace:
+  - packages/route_snapshots
   - packages/component_library
   - packages/domain_models
   - packages/features/map
@@ -22,6 +23,9 @@ workspace:
   - packages/features/statistics
 
 dependencies:
+  route_snapshots:
+    path: packages/route_snapshots
+  forui: ^0.26.0
   statistics:
     path: packages/features/statistics
   route_planning:

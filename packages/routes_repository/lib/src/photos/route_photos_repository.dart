@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:characters/characters.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:sqlite_storage/sqlite_storage.dart';
 import 'package:uuid/uuid.dart';
@@ -56,6 +57,7 @@ class RoutePhotosRepository {
           latitude: row.latitude,
           longitude: row.longitude,
           capturedAt: row.capturedAt,
+          comment: row.comment,
         ),
     ],
   );
@@ -142,6 +144,16 @@ class RoutePhotosRepository {
   });
 
   Future<void> collectGarbage() => _serialize(_prune);
+
+  Future<void> updateComment(int routeId, String id, String comment) =>
+      _serialize(() async {
+        final value = comment.trim();
+        if (value.characters.length > RoutePhotoDM.maxCommentLength) {
+          throw ArgumentError('Photo comment is too long.');
+        }
+        await _dao.updateComment(routeId, id, value);
+        _changes.add(routeId);
+      });
 
   Future<void> _prune() async {
     try {

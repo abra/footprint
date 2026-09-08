@@ -4,6 +4,7 @@ import 'package:component_library/component_library.dart';
 import 'package:domain_models/domain_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:forui/forui.dart';
 
 import 'map_cubit.dart';
 import 'map_state.dart';
@@ -12,28 +13,21 @@ class MapPhotoButton extends StatelessWidget {
   const MapPhotoButton({super.key});
 
   Future<void> _chooseSource(BuildContext context) async {
-    final source = await showModalBottomSheet<PhotoSource>(
-      context: context,
-      useSafeArea: true,
-      builder: (context) => SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera_alt_outlined),
-                title: const Text('Take photo'),
-                onTap: () => Navigator.pop(context, PhotoSource.camera),
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('Choose photo'),
-                onTap: () => Navigator.pop(context, PhotoSource.gallery),
-              ),
-            ],
-          ),
+    final source = await showAppActionSheet<PhotoSource>(
+      context,
+      title: 'Add photo',
+      actions: const [
+        SheetAction(
+          value: PhotoSource.camera,
+          label: 'Take photo',
+          icon: FLucideIcons.camera,
         ),
-      ),
+        SheetAction(
+          value: PhotoSource.gallery,
+          label: 'Choose photo',
+          icon: FLucideIcons.image,
+        ),
+      ],
     );
     if (source != null && context.mounted) {
       await context.read<MapCubit>().capturePhoto(source);
@@ -47,18 +41,13 @@ class MapPhotoButton extends StatelessWidget {
         before.recordingBusy != after.recordingBusy ||
         before.location != after.location,
     builder: (context, state) => MapSurface(
-      child: IconButton(
+      child: AppIconButton(
         tooltip: 'Add route photo',
         onPressed:
             state.photoBusy || state.recordingBusy || state.location == null
             ? null
             : () => unawaited(_chooseSource(context)),
-        icon: state.photoBusy
-            ? const SizedBox.square(
-                dimension: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.camera_alt, color: AppTheme.route, size: 28),
+        icon: const Icon(FLucideIcons.camera, color: AppTheme.route),
       ),
     ),
   );
@@ -93,12 +82,12 @@ class MapPhotoError extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
+              AppIconButton(
                 tooltip: 'Retry photo save',
                 onPressed: state.photoBusy ? null : cubit.retryPhotos,
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(FLucideIcons.refreshCw),
               ),
-              IconButton(
+              AppIconButton(
                 tooltip: 'Discard pending photo',
                 onPressed: state.photoBusy
                     ? null
@@ -112,7 +101,7 @@ class MapPhotoError extends StatelessWidget {
                             SheetAction(
                               value: true,
                               label: 'Discard',
-                              icon: Icons.close,
+                              icon: FLucideIcons.x,
                               destructive: true,
                             ),
                           ],
@@ -121,7 +110,7 @@ class MapPhotoError extends StatelessWidget {
                           await cubit.discardPendingPhoto();
                         }
                       },
-                icon: const Icon(Icons.close),
+                icon: const Icon(FLucideIcons.x),
               ),
             ],
           ),

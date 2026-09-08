@@ -11,12 +11,14 @@ import 'package:routes_repository/routes_repository.dart';
 import '../../map/test/fakes.dart';
 
 class TestRoutes extends Fake implements RoutesRepository {
-  RouteDM? route = RouteDM(
-    id: 1,
-    name: 'Morning walk',
-    startTime: DateTime(2026, 9, 6),
-    status: Status.completed,
-  );
+  TestRoutes({String? name = 'Morning walk'})
+    : route = RouteDM(
+        id: 1,
+        name: name,
+        startTime: DateTime(2026, 9, 6),
+        status: Status.completed,
+      );
+  RouteDM? route;
   Completer<RouteDM?>? loadGate;
   Completer<void>? saveGate;
   bool fail = false;
@@ -52,6 +54,168 @@ class TestPhotos extends FakeRoutePhotosRepository {
 }
 
 void main() {
+  for (final keyboard in [false, true]) {
+    for (final input in ['', '   ']) {
+      testWidgets(
+        'optional empty name closes via ${keyboard ? 'keyboard' : 'checkmark'} with ${input.length} spaces',
+        (tester) async {
+          final repository = TestRoutes(name: null)..fail = true;
+          var closes = 0;
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: AppTheme.light,
+              builder: AppTheme.builder,
+              home: RouteDetailsScreen(
+                justRecorded: true,
+                photosRepository: FakeRoutePhotosRepository(),
+                routeId: 1,
+                repository: repository,
+                onClosed: (value) {
+                  expect(value, isTrue);
+                  closes++;
+                },
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('Name this walk (optional)'), findsOneWidget);
+          await tester.enterText(find.byType(EditableText), input);
+          if (keyboard) {
+            await tester.testTextInput.receiveAction(TextInputAction.done);
+          } else {
+            await tester.tap(find.byTooltip('Save route name'));
+          }
+          await tester.pumpAndSettle();
+          expect(closes, 1);
+          expect(repository.saves, 0);
+          expect(repository.route!.name, isNull);
+          expect(repository.route!.status, Status.completed);
+          expect(find.textContaining('characters'), findsNothing);
+          expect(find.byType(AppSheet), findsNothing);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
+  test(
+    'unchanged name is accepted without persistence or duplicate completion',
+    () async {
+      final repository = TestRoutes()..fail = true;
+      final cubit = RouteDetailsCubit(
+        repository: repository,
+        routeId: 1,
+        photosRepository: FakeRoutePhotosRepository(),
+      );
+      addTearDown(cubit.close);
+      await cubit.load();
+      cubit.changeName('  Morning walk  ');
+      await cubit.save();
+      final saved = cubit.state as RouteDetailsReady;
+      expect(saved.saved, isTrue);
+      expect(saved.name, 'Morning walk');
+      expect(saved.error, isNull);
+      await cubit.save();
+      expect(cubit.state, same(saved));
+      expect(repository.saves, 0);
+    },
+  );
+
+  test(
+    'clearing a name persists the change and can retry after failure',
+    () async {
+      final repository = TestRoutes()..fail = true;
+      final cubit = RouteDetailsCubit(
+        repository: repository,
+        routeId: 1,
+        photosRepository: FakeRoutePhotosRepository(),
+      );
+      addTearDown(cubit.close);
+      await cubit.load();
+      cubit.changeName('   ');
+      expect((cubit.state as RouteDetailsReady).dirty, isTrue);
+      await cubit.save();
+      final failed = cubit.state as RouteDetailsReady;
+      expect(failed.name, '');
+      expect(failed.saved, isFalse);
+      expect(failed.saving, isFalse);
+      expect(failed.error, contains('Name could not be saved'));
+      repository.fail = false;
+      await cubit.save();
+      expect(repository.savedName, '');
+      expect((cubit.state as RouteDetailsReady).saved, isTrue);
+      expect((cubit.state as RouteDetailsReady).error, isNull);
+    },
+  );
+
+  testWidgets('recorded route is already saved and naming is optional', (
+    tester,
+  ) async {
+    final repository = TestRoutes();
+    bool? closed;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        builder: AppTheme.builder,
+        home: RouteDetailsScreen(
+          justRecorded: true,
+          photosRepository: FakeRoutePhotosRepository(),
+          routeId: 1,
+          repository: repository,
+          onClosed: (value) => closed = value,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Route saved'), findsOneWidget);
+    expect(find.text('Name this walk (optional)'), findsOneWidget);
+    expect(find.text('Save route'), findsNothing);
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(closed, isFalse);
+    expect(find.byType(AppSheet), findsNothing);
+    expect(repository.route, isNotNull);
+    expect(repository.saves, 0);
+  });
+
+  testWidgets('renaming retains the checkmark and exposes pending status', (
+    tester,
+  ) async {
+    final repository = TestRoutes()..saveGate = Completer<void>();
+    bool? closed;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        builder: AppTheme.builder,
+        home: RouteDetailsScreen(
+          justRecorded: true,
+          photosRepository: FakeRoutePhotosRepository(),
+          routeId: 1,
+          repository: repository,
+          onClosed: (value) => closed = value,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(EditableText), 'Evening');
+    final save = find.byWidgetPredicate(
+      (widget) =>
+          widget is AppIconButton && widget.tooltip == 'Save route name',
+    );
+    final icon = tester.widget<AppIconButton>(save).icon as Icon;
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(tester.widget<AppIconButton>(save).onPressed, isNull);
+    expect((tester.widget<AppIconButton>(save).icon as Icon).icon, icon.icon);
+    expect(find.text('Saving name...'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(closed, isNull);
+    repository.saveGate!.complete();
+    await tester.pumpAndSettle();
+    expect(closed, isTrue);
+    expect(repository.savedName, 'Evening');
+  });
+
   final photo = RoutePhotoDM(
     id: 'photo',
     routeId: 1,
@@ -123,6 +287,7 @@ void main() {
       final photos = TestPhotos()..photos.add(photo);
       await tester.pumpWidget(
         MaterialApp(
+          builder: AppTheme.builder,
           home: RouteDetailsScreen(
             routeId: 1,
             repository: TestRoutes(),
@@ -156,7 +321,7 @@ void main() {
     );
     addTearDown(cubit.close);
     await cubit.load();
-    cubit.changeName('  ');
+    cubit.changeName('a' * 81);
     await cubit.save();
     expect((cubit.state as RouteDetailsReady).error, isNotNull);
     expect(repository.saves, 0);
@@ -228,6 +393,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
+        builder: AppTheme.builder,
         home: RouteDetailsScreen(
           photosRepository: FakeRoutePhotosRepository(),
           routeId: 1,
@@ -237,7 +403,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Changed');
+    await tester.enterText(find.byType(EditableText), 'Changed');
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
     expect(find.text('Discard name changes?'), findsOneWidget);
@@ -260,6 +426,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
+        builder: AppTheme.builder,
         home: RouteDetailsScreen(
           photosRepository: FakeRoutePhotosRepository(),
           routeId: 1,
@@ -270,10 +437,47 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Clear name'));
-    await tester.enterText(find.byType(TextField), 'Forest walk');
+    await tester.enterText(find.byType(EditableText), 'Forest walk');
     await tester.tap(find.byTooltip('Save route name'));
     await tester.pumpAndSettle();
     expect(closed, isTrue);
     expect(repository.savedName, 'Forest walk');
+  });
+
+  testWidgets('cursor movement preserves a save error until the name changes', (
+    tester,
+  ) async {
+    final repository = TestRoutes()..fail = true;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        builder: AppTheme.builder,
+        home: RouteDetailsScreen(
+          photosRepository: FakeRoutePhotosRepository(),
+          routeId: 1,
+          repository: repository,
+          onClosed: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(EditableText), 'Forest walk');
+    await tester.tap(find.byTooltip('Save route name'));
+    await tester.pumpAndSettle();
+    final field = tester.widget<EditableText>(find.byType(EditableText));
+    final error = find.text(
+      'Name could not be saved. Your recorded route is still available.',
+    );
+    expect(error, findsOneWidget);
+    field.controller.selection = const TextSelection.collapsed(offset: 0);
+    await tester.pumpAndSettle();
+    expect(error, findsOneWidget);
+    await tester.enterText(find.byType(EditableText), 'Evening walk');
+    await tester.pumpAndSettle();
+    expect(error, findsNothing);
+    repository.fail = false;
+    await tester.tap(find.byTooltip('Save route name'));
+    await tester.pumpAndSettle();
+    expect(repository.savedName, 'Evening walk');
   });
 }
